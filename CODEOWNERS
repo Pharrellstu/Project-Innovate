@@ -1,1 +1,16 @@
+# This file designates who must review which parts of the codebase
+
+# The whole repository
+* @Pharrellstu
+
+# Specific folder
+# /backend/ @backend-devs @alice
+
+# Specific file
+# /config/settings.json @bob
+
+# All .js files in a directory
+# /frontend/*.js @frontend-team
+
+# Ignore patterns can’t be used—only match patterns like in .gitignore
 
