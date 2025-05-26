@@ -8,20 +8,56 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(title),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-              (Route<dynamic> route) => false,
-            );
-          },
-          child: const Text("Go to Explore Page"),
+      // Background - fill page
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 200),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(color: Colors.white),
+        
+        child: Center(
+          // Login form container
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            padding: const EdgeInsets.all(30),
+            decoration: ShapeDecoration(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              shadows: [
+                BoxShadow(
+                  color: Color(0x3F000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 25,
+              children: [
+                Image.asset("resources/img/logo.jpeg", width: 180, height: 180),
+              ], 
+            // Form(
+            //   child: ElevatedButton(
+            //     onPressed: () {
+            //       Navigator.pushAndRemoveUntil(
+            //         context,
+            //         MaterialPageRoute(builder: (context) => const HomePage()),
+            //         (Route<dynamic> route) => false,
+            //       );
+            //     },
+            //     child: const Text("Go to Explore Page"),
+            //   ),
+            ),
+          ),
         ),
       ),
     );
