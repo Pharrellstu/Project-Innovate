@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:campuslink/services/auth_gate.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,50 +14,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const LoginPage(),
+      home: const AuthGate(),
 
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false, // This hides the debug banner
     );
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-  final String title = "Explore Page";
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(title),
-      ),
-    );
-  }
-}
-
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
-  final String title = "LogIn Page";
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(title),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const HomePage()),
-            );
-          },
-          child: const Text("Go to Explore Page"),
-        ),
-      ),
-    );
-  }
-}
