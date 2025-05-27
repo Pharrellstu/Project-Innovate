@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:campuslink/widgets/nav_bar.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -11,6 +12,7 @@ class HomePage extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(title),
       ),
+      bottomNavigationBar: NavBar(),
     );
   }
 }
