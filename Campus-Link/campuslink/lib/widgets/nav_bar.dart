@@ -51,7 +51,11 @@ class NavBar extends StatelessWidget {
       onPressed: () {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => page),
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => page,
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
         );
       },
     );
