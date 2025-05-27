@@ -17,10 +17,26 @@ class NavBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _navItem(context, SvgPicture.asset("resources/icons/Home.svg"), HomePage()),
-          _navItem(context, SvgPicture.asset("resources/icons/Map.svg"), MapPage()),
-          _navItem(context, SvgPicture.asset("resources/icons/Chat.svg"), ChatPage()),
-          _navItem(context, SvgPicture.asset("resources/icons/Profile.svg"), ProfilePage()),
+          _navItem(
+            context,
+            SvgPicture.asset("resources/icons/Home.svg"),
+            HomePage(),
+          ),
+          _navItem(
+            context,
+            SvgPicture.asset("resources/icons/Map.svg"),
+            MapPage(),
+          ),
+          _navItem(
+            context,
+            SvgPicture.asset("resources/icons/Chat.svg"),
+            ChatPage(),
+          ),
+          _navItem(
+            context,
+            SvgPicture.asset("resources/icons/Profile.svg"),
+            ProfilePage(),
+          ),
         ],
       ),
     );
