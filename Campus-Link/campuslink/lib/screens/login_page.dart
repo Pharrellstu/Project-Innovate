@@ -143,7 +143,13 @@ class LoginPage extends StatelessWidget {
                               ),
                             ),
                             onPressed: () {
-                              // your login logic here
+                              // Navigate to Home Page
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HomePage(),
+                                ),
+                              );
                             },
                             child: Text(
                               'Log in',
