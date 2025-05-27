@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
+import 'package:campuslink/widgets/top_bar.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -8,10 +9,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(title),
-      ),
+      appBar: TopBar(title: title,),
       body: Center(
         child: Text(
           'Profile Page Content',
