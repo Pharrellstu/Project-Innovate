@@ -13,14 +13,33 @@ class NavBar extends StatelessWidget {
     return Container(
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 30),
-      color: Colors.white,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFCBCBCB), width: 1)),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _navItem(context, SvgPicture.asset("resources/icons/Home.svg"), HomePage()),
-          _navItem(context, SvgPicture.asset("resources/icons/Map.svg"), MapPage()),
-          _navItem(context, SvgPicture.asset("resources/icons/Chat.svg"), ChatPage()),
-          _navItem(context, SvgPicture.asset("resources/icons/Profile.svg"), ProfilePage()),
+          _navItem(
+            context,
+            SvgPicture.asset("resources/icons/Home.svg"),
+            HomePage(),
+          ),
+          _navItem(
+            context,
+            SvgPicture.asset("resources/icons/Map.svg"),
+            MapPage(),
+          ),
+          _navItem(
+            context,
+            SvgPicture.asset("resources/icons/Chat.svg"),
+            ChatPage(),
+          ),
+          _navItem(
+            context,
+            SvgPicture.asset("resources/icons/Profile.svg"),
+            ProfilePage(),
+          ),
         ],
       ),
     );
