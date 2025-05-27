@@ -11,14 +11,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Campus Link",
+      
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF0074CF)),
         fontFamily: 'Poppins',
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Color(0xFF0074CF),
+        ).copyWith(primary: Color(0xFF0074CF)),
       ),
+      
       home: const AuthGate(),
 
       debugShowCheckedModeBanner: false, // This hides the debug banner
     );
   }
 }
-
