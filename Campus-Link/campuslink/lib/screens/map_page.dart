@@ -16,4 +16,60 @@ class MapPage extends StatelessWidget {
       bottomNavigationBar: NavBar(),
     );
   }
+  }
+
+class SimpleSearchBar extends StatefulWidget {
+  @override
+  _SimpleSearchBarState createState() => _SimpleSearchBarState();
 }
+
+class _SimpleSearchBarState extends State<SimpleSearchBar> {
+  final List<String> _allItems = [
+    'Apple',
+    'Banana',
+    'Grapes',
+    'Orange',
+    'Watermelon'
+  ];
+  String _searchText = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredItems = _allItems
+        .where((item) => item.toLowerCase().contains(_searchText.toLowerCase()))
+        .toList();
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Search Example')),
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchText = value;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredItems.length,
+              itemBuilder: (_, index) => ListTile(
+                title: Text(filteredItems[index]),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
