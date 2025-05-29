@@ -20,19 +20,22 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          PostCardHeader(posterName: posterName, posterImage: posterImage),
-          PostCardContent(
-            postImage: postImage,
-            postText: postText,
-            postNumLikes: postNumLikes,
-            postNumComments: postNumComments,
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            PostCardHeader(posterName: posterName, posterImage: posterImage),
+            PostCardContent(
+              postImage: postImage,
+              postText: postText,
+              postNumLikes: postNumLikes,
+              postNumComments: postNumComments,
+            ),
+          ],
+        ),
       ),
     );
   }
