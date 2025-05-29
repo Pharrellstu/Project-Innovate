@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:location/location.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 
@@ -12,7 +13,7 @@ class MapPage extends StatefulWidget {
   _MapPageState createState() => _MapPageState();
 }
 
-class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
+class _MapPageState extends State<MapPage> {
   final List<String> _allItems = [
     'Apple',
     'Banana',
@@ -26,13 +27,39 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   ];
 
   String _searchText = '';
-
-  // Controls the height of the bottom panel (as fraction of screen height)
   double _panelHeightFraction = 0.4;
-
-  // To track drag gestures on the drag handle bar
   late double _dragStartY;
   late double _startHeightFraction;
+
+  LatLng? _userLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserLocation();
+  }
+
+  /// Fetch the user's location using the `location` package
+  Future<void> _getUserLocation() async {
+    final location = Location();
+
+    bool serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) return;
+    }
+
+    PermissionStatus permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) return;
+    }
+
+    final locData = await location.getLocation();
+    setState(() {
+      _userLocation = LatLng(locData.latitude!, locData.longitude!);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +74,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       appBar: TopBar(title: widget.title),
       body: Stack(
         children: [
-          // Full screen map in background
+          // Background map
           FlutterMap(
             options: MapOptions(
-              center: LatLng(37.7749, -122.4194),
+              center: _userLocation ?? LatLng(37.7749, -122.4194), // fallback
               zoom: 13.0,
             ),
             children: [
@@ -59,10 +86,25 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 subdomains: ['a', 'b', 'c'],
               ),
+              if (_userLocation != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _userLocation!,
+                      width: 80,
+                      height: 80,
+                      builder: (ctx) => const Icon(
+                        Icons.my_location,
+                        color: Colors.blue,
+                        size: 30,
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
 
-          // Search bar positioned just above the draggable list panel
+          // Search bar positioned above the draggable panel
           Positioned(
             left: 12,
             right: 12,
@@ -95,7 +137,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
           ),
 
-          // Draggable white panel with just the list, positioned at bottom
+          // Draggable bottom list panel
           Positioned(
             left: 0,
             right: 0,
@@ -106,7 +148,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                 color: Colors.white,
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(16)),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
                     color: Colors.black26,
                     blurRadius: 10,
@@ -116,7 +158,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               ),
               child: Column(
                 children: [
-                  // The drag handle bar only - gesture detector attached here
+                  // Drag handle bar
                   GestureDetector(
                     behavior: HitTestBehavior.translucent,
                     onVerticalDragStart: (details) {
@@ -124,19 +166,20 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       _startHeightFraction = _panelHeightFraction;
                     },
                     onVerticalDragUpdate: (details) {
-                      double dragDelta = _dragStartY - details.globalPosition.dy;
-                      double newHeight = _startHeightFraction + dragDelta / screenHeight;
+                      double dragDelta =
+                          _dragStartY - details.globalPosition.dy;
+                      double newHeight =
+                          _startHeightFraction + dragDelta / screenHeight;
 
-                      // Clamp between min and max
-                      if (newHeight > 0.85) newHeight = 0.85;
-                      if (newHeight < 0.2) newHeight = 0.2;
+                      // Clamp height between 20% and 85% of screen
+                      newHeight = newHeight.clamp(0.2, 0.85);
 
                       setState(() {
                         _panelHeightFraction = newHeight;
                       });
                     },
                     child: Container(
-                      width: 40,
+                      width: double.infinity,
                       height: 30,
                       alignment: Alignment.center,
                       child: Container(
@@ -150,10 +193,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     ),
                   ),
 
-                  // Divider line under drag bar
                   const Divider(height: 1),
 
-                  // Expanded scrollable list
+                  // Filtered scrollable list
                   Expanded(
                     child: ListView.builder(
                       itemCount: filteredItems.length,
