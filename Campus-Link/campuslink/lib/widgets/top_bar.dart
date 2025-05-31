@@ -1,3 +1,4 @@
+import 'package:campuslink/screens/create_event_page.dart';
 import 'package:flutter/material.dart';
 
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
@@ -14,6 +15,10 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
         isCreateBtnVisible ? IconButton(
           onPressed: () {
             // TODO: navigate to create post page
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => CreateEventPage()),
+            );
           },
           icon: Image.asset("resources/icons/newPostBtn.png"),
         ) : Container(),
