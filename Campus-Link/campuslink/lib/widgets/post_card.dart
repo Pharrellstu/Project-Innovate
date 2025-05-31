@@ -178,6 +178,68 @@ class PostCardContent extends StatelessWidget {
             ),
           ],
         ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          // Post image - if available
+          if (postImage.isNotEmpty)
+            Container(
+              width: double.infinity,
+              decoration: ShapeDecoration(
+                image: DecorationImage(
+                  image: NetworkImage("https://placehold.co/390x230"),
+                  fit: BoxFit.fitWidth,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          // Post main text
+          Container(
+            margin: const EdgeInsets.all(10),
+            child: Column(
+              spacing: 5,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  postText,
+                  // textAlign: TextAlign.left,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                    fontFamily: 'Kantumruy Pro',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                // Post stats
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$postNumLikes likes - $postNumComments comments',
+                      style: TextStyle(
+                        color: const Color(0xFFBBBBBB),
+                        fontSize: 12,
+                        fontFamily: 'Kantumruy Pro',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      'Tap to view more',
+                      style: TextStyle(
+                        color: const Color(0xFFBBBBBB),
+                        fontSize: 12,
+                        fontFamily: 'Kantumruy Pro',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
