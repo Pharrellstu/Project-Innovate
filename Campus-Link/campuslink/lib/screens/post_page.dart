@@ -15,6 +15,7 @@ class _PostPageState extends State<PostPage> {
       'Gather your mates and put your brains to the test at our lively Pub Quiz! Fun questions, cold drinks, and bragging rights up for grabs!';
 
   // Comment-related state
+  // Using a TextEditingController to manage the comment input
   final TextEditingController _commentController = TextEditingController();
   final List<Comment> comments = [
     Comment(user: 'Peter Kapsiar', text: 'Yall are getting clapped'),
