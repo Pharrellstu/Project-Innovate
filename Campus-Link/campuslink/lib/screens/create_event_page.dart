@@ -45,7 +45,7 @@ class _createEventPageState extends State<createEventPage> {
   List<Widget> get steps => [
     basicInputInfo(onValidityChanged: updateBasicInfoValidity),
     timeAndLocation(),
-    privacyAndSecurity(),
+    eventFormPage(),
   ];
 
   void nextStep() {
@@ -86,84 +86,8 @@ class _createEventPageState extends State<createEventPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    /*if (currentStep == 1) basicInputInfo(),
-                    if (currentStep == 2) timeAndLocation(),
-                    if (currentStep == 3) timeAndLocation(),*/
                     Expanded(child: IndexedStack(index: currentStep, children: steps)),
                     SizedBox(height: 40.0),
-                    /*Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              currentStep -= 1;
-                              if (currentStep <= 1) {
-                                currentStep = 1;
-                              }
-                            });
-                          },
-
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.arrow_back, color: Colors.black,),
-                              SizedBox(width: 5),
-                              Text(
-                                'Back',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              currentStep += 1;
-                              if (currentStep >= 3) {
-                                currentStep = 3;
-                              }
-                            });
-                          },
-
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Next',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              SizedBox(width: 5),
-                              Icon(Icons.arrow_forward, color: Colors.black,),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),*/
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
