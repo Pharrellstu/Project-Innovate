@@ -12,7 +12,7 @@ class NavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 30),
+      padding: const EdgeInsets.fromLTRB(30, 0, 30, 10),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Color(0xFFCBCBCB), width: 1)),

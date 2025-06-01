@@ -1,8 +1,7 @@
-import 'package:campuslink/screens/post_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
-import 'package:campuslink/screens/post_page.dart';
+import 'package:campuslink/widgets/feed.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -11,9 +10,9 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopBar(title: title,),
-      body: PostPage(),
+      appBar: TopBar(title: title),
       bottomNavigationBar: NavBar(),
+      body: Feed(),
     );
   }
 }
