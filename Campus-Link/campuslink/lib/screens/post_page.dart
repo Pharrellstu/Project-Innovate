@@ -212,3 +212,5 @@ class Comment {
   final String text;
   Comment({required this.user, required this.text});
 }
+//postPage.dart
+// This file defines the PostPage widget, which displays a detailed view of a post.
