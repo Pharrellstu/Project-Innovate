@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class eventFormPage extends StatefulWidget {
   const eventFormPage({super.key});
@@ -31,7 +32,7 @@ class _eventFormPageState extends State<eventFormPage> {
   void initState() {
     super.initState();
     // Initialize the max‐attendees field to “5”
-    _maxAttendeesController = TextEditingController(text: '5');
+    _maxAttendeesController = TextEditingController(text: null);
   }
 
   @override
@@ -70,12 +71,12 @@ class _eventFormPageState extends State<eventFormPage> {
     // Format the chosen deadline for display
     String deadlineText = _signUpDeadline == null
         ? 'Select date'
-        : 'Select date';
+        : DateFormat.yMMMMd().format(_signUpDeadline!);
 
     return Center(
           child: Padding(
             padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -91,92 +92,121 @@ class _eventFormPageState extends State<eventFormPage> {
                 const SizedBox(height: 12),
 
                 // Segmented control for Public / Private
-                ToggleButtons(
-                  isSelected: [_isPublic, !_isPublic],
-                  onPressed: (index) {
-                    setState(() {
-                      _isPublic = (index == 0);
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  selectedColor: Colors.white,
-                  fillColor: Theme.of(context).primaryColor,
-                  color: Theme.of(context).primaryColor,
-                  borderColor: Theme.of(context).primaryColor,
-                  selectedBorderColor: Theme.of(context).primaryColor,
+                Center(
+                  child: ToggleButtons(
+                    isSelected: [_isPublic, !_isPublic],
+                    onPressed: (index) {
+                      setState(() {
+                        _isPublic = (index == 0);
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    selectedColor: Colors.white,
+                    fillColor: Theme.of(context).primaryColor,
+                    color: Theme.of(context).primaryColor,
+                    borderColor: Theme.of(context).primaryColor,
+                    selectedBorderColor: Theme.of(context).primaryColor,
+                    constraints: BoxConstraints(
+                      minHeight: 22, // Reduce height
+                      minWidth: 60,  // Reduce width
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        child: Text(
+                          'Public',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        child: Text(
+                          'Private',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // “Max attendees (optional)” label + input
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 8),
-                      child: Text(
-                        'Public',
-                        style: TextStyle(fontSize: 16),
+                    Text(
+                      'Max attendees (optional)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade800,
+                        fontWeight: FontWeight.bold
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 8),
-                      child: Text(
-                        'Private',
-                        style: TextStyle(fontSize: 16),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextField(
+                        controller: _maxAttendeesController,
+                        keyboardType: TextInputType.number,
+                        style: TextStyle(fontSize: 13), // Smaller text inside input
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          prefixIcon: Icon(Icons.person, size: 18), // Smaller icon
+                          hintText: 'e.g. 10',
+                          hintStyle: TextStyle(fontSize: 13),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 24),
 
-                // “Max attendees (optional)” label + input
-                Text(
-                  'Max attendees (optional)',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _maxAttendeesController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person),
-                    hintText: 'e.g. 10',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 160,
+                      child: Text(
+                        'Sign-up Deadline (optional)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // “Sign-up Deadline (optional)” label + date picker
-                Text(
-                  'Sign-up Deadline (optional)',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                InkWell(
-                  onTap: _pickDeadline,
-                  borderRadius: BorderRadius.circular(8),
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.calendar_today),
-                      border: OutlineInputBorder(
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: InkWell(
+                        onTap: _pickDeadline,
                         borderRadius: BorderRadius.circular(8),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            prefixIcon: Icon(Icons.calendar_today, size: 18),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            deadlineText,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _signUpDeadline == null
+                                  ? Colors.grey.shade500
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    child: Text(
-                      deadlineText,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: _signUpDeadline == null
-                            ? Colors.grey.shade500
-                            : Colors.black,
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
+
                 const SizedBox(height: 24),
 
                 // “Offer Badge/Collectible?” switch
@@ -188,6 +218,7 @@ class _eventFormPageState extends State<eventFormPage> {
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey.shade800,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     Switch(
@@ -209,6 +240,7 @@ class _eventFormPageState extends State<eventFormPage> {
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey.shade800,
+                      fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 12),
