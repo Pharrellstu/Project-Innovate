@@ -45,7 +45,7 @@ class _createEventPageState extends State<createEventPage> {
   List<Widget> get steps => [
     basicInputInfo(onValidityChanged: updateBasicInfoValidity),
     timeAndLocation(),
-    privacyAndSecurity(),
+    eventFormPage(),
   ];
 
   void nextStep() {
