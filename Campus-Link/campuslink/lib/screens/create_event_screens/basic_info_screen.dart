@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class basicInputInfo extends StatefulWidget {
-  const basicInputInfo({super.key});
+  final Function(bool) onValidityChanged;
+
+  const basicInputInfo({Key? key, required this.onValidityChanged}) : super(key: key);
 
   @override
   State<basicInputInfo> createState() => _basicInputInfoState();
@@ -35,6 +37,13 @@ class _basicInputInfoState extends State<basicInputInfo> {
         _descriptionCharCount = _descriptionController.text.length;
       });
     });
+
+    _eventNameController.addListener(_checkValidity);
+  }
+
+  void _checkValidity() {
+    final isValid = _eventNameController.text.trim().isNotEmpty && _selectedCategory != null;
+    widget.onValidityChanged(isValid);
   }
 
   @override
@@ -99,6 +108,7 @@ class _basicInputInfoState extends State<basicInputInfo> {
             onChanged: (_) {
               setState(() {
                 // Trigger rebuild to update Next button state
+                _checkValidity();
               });
             },
           ),
@@ -126,6 +136,7 @@ class _basicInputInfoState extends State<basicInputInfo> {
                   setState(() {
                     _selectedCategory = cat.label;
                   });
+                  _checkValidity();
                 },
                 child: Semantics(
                   button: true,
