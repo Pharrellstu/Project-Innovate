@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:flutter_svg/svg.dart';
+import 'create_event_screens/basic_info_screen.dart';
+import 'create_event_screens/time_and_location_screen.dart';
+import 'create_event_screens/privacy_and_security_screen.dart';
 
 class CreateEventPage extends StatelessWidget {
   const CreateEventPage({super.key});
@@ -154,7 +157,7 @@ class _createEventPageState extends State<createEventPage> {
   }
 }
 
-class basicInputInfo extends StatefulWidget {
+/*class basicInputInfo extends StatefulWidget {
   const basicInputInfo({super.key});
 
   @override
@@ -446,9 +449,9 @@ class _basicInputInfoState extends State<basicInputInfo> {
       ],
     );
   }
-}
+}*/
 
-class timeAndLocation extends StatefulWidget {
+/*class timeAndLocation extends StatefulWidget {
   const timeAndLocation({super.key});
 
   @override
@@ -711,7 +714,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
       ]
     ]);
   }
-}
+}*/
 
 
 class StepIndicator extends StatelessWidget {
@@ -794,38 +797,6 @@ class StepIndicator extends StatelessWidget {
     );
   }
 }
-
-/*class MapPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('OpenStreetMap')),
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: LatLng(51.9244, 4.4777),
-          initialZoom: 13.0,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: ['a', 'b', 'c'],
-            userAgentPackageName: 'com.example.yourapp',
-          ),
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: LatLng(51.9244, 4.4777),
-                width: 80,
-                height: 80,
-                child: Icon(Icons.location_pin, size: 40, color: Colors.red),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}*/
 
 class _Category {
   final String label;
