@@ -13,6 +13,9 @@ class CreateEventPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+      ),
       body: createEventPage(),
       bottomNavigationBar: NavBar(),
     );
@@ -29,30 +32,45 @@ class createEventPage extends StatefulWidget {
 
 class _createEventPageState extends State<createEventPage> {
 
-  int pageNumber = 1;
-  //if (pageNumber => 3) pageNumber = 3;
+  bool isBasicInfoValid = false;
+
+  void updateBasicInfoValidity(bool isValid) {
+    setState(() {
+      isBasicInfoValid = isValid;
+    });
+  }
+
+  int currentStep = 0;
+
+  List<Widget> get steps => [
+    basicInputInfo(onValidityChanged: updateBasicInfoValidity),
+    timeAndLocation(),
+    privacyAndSecurity(),
+  ];
+
+  void nextStep() {
+    if (currentStep < steps.length - 1) {
+      setState(() => currentStep++);
+    }
+  }
+
+  void prevStep() {
+    if (currentStep > 0) {
+      setState(() => currentStep--);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        toolbarHeight: 25.0,
-        title: IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          splashColor: Colors.transparent, // optional: no ripple
-          highlightColor: Colors.transparent, // optional: no highlight
-        ),
-      ),
       body: Container(
         padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
             Container(
-              child: StepIndicator(value: pageNumber),
+              child: StepIndicator(value: currentStep),
             ),
             SizedBox(height: 20.0),
             Expanded(
@@ -68,21 +86,21 @@ class _createEventPageState extends State<createEventPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    if (pageNumber == 1) basicInputInfo(),
-                    if (pageNumber == 2) timeAndLocation(),
-                    if (pageNumber == 3) timeAndLocation(),
-
+                    /*if (currentStep == 1) basicInputInfo(),
+                    if (currentStep == 2) timeAndLocation(),
+                    if (currentStep == 3) timeAndLocation(),*/
+                    Expanded(child: IndexedStack(index: currentStep, children: steps)),
                     SizedBox(height: 40.0),
-                    Row(
+                    /*Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ElevatedButton(
                           onPressed: () {
                             setState(() {
-                              pageNumber -= 1;
-                              if (pageNumber <= 1) {
-                                pageNumber = 1;
+                              currentStep -= 1;
+                              if (currentStep <= 1) {
+                                currentStep = 1;
                               }
                             });
                           },
@@ -113,9 +131,9 @@ class _createEventPageState extends State<createEventPage> {
                         ElevatedButton(
                           onPressed: () {
                             setState(() {
-                              pageNumber += 1;
-                              if (pageNumber >= 3) {
-                                pageNumber = 3;
+                              currentStep += 1;
+                              if (currentStep >= 3) {
+                                currentStep = 3;
                               }
                             });
                           },
@@ -144,8 +162,18 @@ class _createEventPageState extends State<createEventPage> {
                           ),
                         ),
                       ],
-                    ),
+                    ),*/
 
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (currentStep > 0)
+                          TextButton(onPressed: prevStep, child: Text('Back')),
+                        TextButton(
+                            onPressed: currentStep == 0 && !isBasicInfoValid ? null : nextStep,
+                            child: Text(currentStep == steps.length - 1 ? 'Finish' : 'Next')),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -190,7 +218,7 @@ class StepIndicator extends StatelessWidget {
   }
 
   Widget _stepIndicator(int value) {
-    if(value == 1) {
+    if(value == 0) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -201,7 +229,7 @@ class StepIndicator extends StatelessWidget {
           _stepBox(false, '3'),
         ],
       );
-    } else if(value == 2) {
+    } else if(value == 1) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -212,7 +240,7 @@ class StepIndicator extends StatelessWidget {
           _stepBox(false, '3'),
         ],
       );
-    } else if(value == 3) {
+    } else if(value == 2) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
