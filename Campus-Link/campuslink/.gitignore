@@ -47,3 +47,9 @@ app.*.map.json
 
 #Ignore pubsec.lock file
 pubspec.lock
+
+#Ignore generated plugins
+*.cc
+*.h
+*.cmake
+*swift
