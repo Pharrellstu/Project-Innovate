@@ -43,13 +43,7 @@ class AuthGate extends StatelessWidget {
       password: password,
     );
 
-    if (response.user != null) {
-      debugPrint("✅ Logged in as ${response.user!.email}");
-      return true;
-    } else {
-      debugPrint("❌ Login failed: ${response.session?.accessToken}");
-      return false;
-    }
+    return response.user != null;
   }
 
   bool checkIfLoggedIn() {
