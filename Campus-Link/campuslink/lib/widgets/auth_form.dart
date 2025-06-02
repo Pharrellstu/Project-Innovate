@@ -48,31 +48,33 @@ class _AuthFormState extends State<AuthForm> {
     }
 
     AuthGate()
-        .registerDirect(email, password)
+        .register(email, password)
         .then((_) {
           _showSnackBar('Registration successful!');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AuthGate()),
+          );
         })
         .catchError((error) {
-          _showSnackBar('Registration failed: $error');
+          String errorMessage = error.message ?? 'An unknown error occurred';
+          _showSnackBar('Registration failed: $errorMessage');
         });
   }
 
   void _handleLogin(String email, String password) {
     AuthGate()
         .login(email, password)
-        .then((success) {
-          if (success) {
-            _showSnackBar('Login successful!');
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => ProfilePage()),
-            );
-          } else {
-            _showSnackBar('Login failed');
-          }
+        .then((_) {
+          _showSnackBar('Login successful!');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AuthGate()),
+          );
         })
         .catchError((error) {
-          _showSnackBar('Login failed: $error');
+          String errorMessage = error.message ?? 'An unknown error occurred';
+          _showSnackBar('Login failed: $errorMessage');
         });
   }
 
