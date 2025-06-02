@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/auth_gate.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  await dotenv.load(fileName: ".env");
+
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  );
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -11,14 +20,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Campus Link",
-      
+
       theme: ThemeData(
         fontFamily: 'Poppins',
         colorScheme: ColorScheme.fromSeed(
           seedColor: Color(0xFF0074CF),
         ).copyWith(primary: Color(0xFF0074CF)),
       ),
-      
+
       home: const AuthGate(),
 
       debugShowCheckedModeBanner: false, // This hides the debug banner

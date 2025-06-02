@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/login_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -13,10 +14,46 @@ class AuthGate extends StatelessWidget {
     }
   }
 
+  // Method send SignUp request to the backend
+  Future<void> registerDirect(String email, String password) async {
+    final supabase = Supabase.instance.client;
+    final response = await supabase.auth.signUp(
+      email: email,
+      password: password,
+    );
+    final userId = response.user?.id;
+
+    if (userId != null) {
+      await supabase.from('account').insert({
+        'auth_user_id': userId,
+        'username': email.split('@')[0], // TEMP: Use email prefix as username
+        'email': email,
+        'isadmin': false, // ENSURE this is portected on backend
+        'isverified': false,
+        // Add other fields as needed
+      });
+    }
+  }
+
+  // Method to Login the user
+  Future<bool> login(String email, String password) async {
+    final supabase = Supabase.instance.client;
+    final response = await supabase.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+
+    if (response.user != null) {
+      debugPrint("✅ Logged in as ${response.user!.email}");
+      return true;
+    } else {
+      debugPrint("❌ Login failed: ${response.session?.accessToken}");
+      return false;
+    }
+  }
+
   bool checkIfLoggedIn() {
-    // TODO: Implement your logic to check if the user is logged in.
-    // This could be checking a token, shared preferences, or any other method
-    // Example: check from shared prefs, Firebase auth, etc.
-    return false;
+    final session = Supabase.instance.client.auth.currentSession;
+    return session != null;
   }
 }

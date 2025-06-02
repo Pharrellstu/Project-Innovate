@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/screens/home_page.dart';
+import 'package:campuslink/services/auth_gate.dart';
 
 class AuthForm extends StatefulWidget {
   const AuthForm({super.key});
@@ -30,20 +31,55 @@ class _AuthFormState extends State<AuthForm> {
 
     if (isRegistering) {
       // Sign up logic here
-      print('Signing up with $email / $password');
+      if (password != confirmPassword) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Passwords do not match')));
+        return;
+      }
+      print('Registering with $email / $password');
+      // Call the register method from AuthGate
+      AuthGate()
+          .registerDirect(email, password)
+          .then((_) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Registration successful!')));
+          })
+          .catchError((error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Registration failed: $error')),
+            );
+            print(error);
+          });
     } else {
       // Login logic here
       print('Logging in with $email / $password');
+      AuthGate()
+          .login(email, password)
+          .then((success) {
+            if (success) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Login successful!')));
+              // Navigate to HomePage after successful login
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => HomePage()),
+              );
+            } else {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Login failed')));
+            }
+          })
+          .catchError((error) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Login failed: $error')));
+            print(error);
+          });
     }
-
-    // FOR DEMO PURPOSES ONLY
-    // Navigate to HomePage after submission
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HomePage(),
-      ), // Replace with your home page
-    );
   }
 
   @override
