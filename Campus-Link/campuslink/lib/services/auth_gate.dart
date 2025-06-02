@@ -46,6 +46,12 @@ class AuthGate extends StatelessWidget {
     return response.user != null;
   }
 
+  // Methood to Logout the user
+  Future<void> logout() async {
+    final supabase = Supabase.instance.client;
+    await supabase.auth.signOut();
+  }
+
   bool checkIfLoggedIn() {
     final session = Supabase.instance.client.auth.currentSession;
     return session != null;
