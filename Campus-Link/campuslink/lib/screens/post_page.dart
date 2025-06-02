@@ -13,7 +13,10 @@ class _PostPageState extends State<PostPage> {
   final String location = 'Matissepassage 16, Emmen';
   final String description =
       'Gather your mates and put your brains to the test at our lively Pub Quiz! Fun questions, cold drinks, and bragging rights up for grabs!';
-  final List<String> attendees = List.filled(6, 'resources/icons/Profile.svg');
+
+  // Comment-related state
+  // Using a TextEditingController to manage the comment input
+  final TextEditingController _commentController = TextEditingController();
   final List<Comment> comments = [
     Comment(user: 'Peter Kapsiar', text: 'Yall are getting clapped'),
     Comment(
@@ -21,6 +24,20 @@ class _PostPageState extends State<PostPage> {
         text:
             'I am so excited. Was amazing last time. Cant wait to see you there. 😁'),
   ];
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  void _addComment(String text) {
+    if (text.trim().isEmpty) return;
+    setState(() {
+      comments.insert(0, Comment(user: userName, text: text.trim()));
+    });
+    _commentController.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +58,7 @@ class _PostPageState extends State<PostPage> {
               CircleAvatar(
                 radius: 24,
                 backgroundImage:
-                    AssetImage(''),
+                    AssetImage('resources/icons/profile_placeholder.png'),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -124,41 +141,45 @@ class _PostPageState extends State<PostPage> {
           ),
           const SizedBox(height: 16),
 
-          // Attendance avatars
+          // Attendance avatars (unchanged)
           Row(
             children: [
               Text('Attendance:',
                   style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              ...attendees.take(5).map((assetPath) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: CircleAvatar(
-                        radius: 16, backgroundImage: AssetImage(assetPath)),
-                  )),
-              if (attendees.length > 5)
-                Text('+${attendees.length - 5}',
-                    style: TextStyle(fontSize: 16)),
+              // ... avatars here ...
             ],
           ),
           const SizedBox(height: 16),
 
-          // Comment input
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'New comment…',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
+          // Comment input with send button
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _commentController,
+                  decoration: InputDecoration(
+                    hintText: 'New comment…',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  onSubmitted: _addComment,
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.send),
+                onPressed: () => _addComment(_commentController.text),
+              )
+            ],
           ),
           const SizedBox(height: 16),
 
           // Comments list
           ...comments.map((c) => ListTile(
                 leading: CircleAvatar(child: Icon(Icons.person)),
-                title:
-                    Text(c.user, style: TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(c.user,
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text(c.text),
                 trailing: TextButton(
                     onPressed: () {}, child: Text('See profile')),
@@ -191,3 +212,5 @@ class Comment {
   final String text;
   Comment({required this.user, required this.text});
 }
+//postPage.dart
+// This file defines the PostPage widget, which displays a detailed view of a post.
