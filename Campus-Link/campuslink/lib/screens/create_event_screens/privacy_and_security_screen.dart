@@ -135,12 +135,15 @@ class _eventFormPageState extends State<eventFormPage> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      'Max attendees (optional)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade800,
-                        fontWeight: FontWeight.bold
+                    SizedBox(
+                      width: 180,
+                      child: Text(
+                        'Max attendees (optional)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.bold
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -169,7 +172,7 @@ class _eventFormPageState extends State<eventFormPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(
-                      width: 160,
+                      width: 180,
                       child: Text(
                         'Sign-up Deadline (optional)',
                         style: TextStyle(
