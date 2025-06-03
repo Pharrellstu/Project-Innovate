@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+
 
 class timeAndLocation extends StatefulWidget {
   const timeAndLocation({super.key});
@@ -8,7 +16,7 @@ class timeAndLocation extends StatefulWidget {
 }
 
 class _timeAndLocationState extends State<timeAndLocation> {
-
+  bool isEditingLocation = true;
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay(hour: 15, minute: 0);
   Duration selectedDuration = Duration.zero;
@@ -16,6 +24,26 @@ class _timeAndLocationState extends State<timeAndLocation> {
   bool repeatEvent = true;
   List<bool> repeatDays = [false, false, false, false, false, false, false];
   int repeatEveryWeeks = 1;
+
+  LatLng? selectedLocation; // For marker// For marker
+  MapController mapController = MapController();
+  TextEditingController locationController = TextEditingController();
+  
+
+  Future<void> _searchLocation(String query) async {
+    try {
+      List<Location> locations = await locationFromAddress(query);
+      if (locations.isNotEmpty) {
+        final loc = locations.first;
+        setState(() {
+          selectedLocation = LatLng(loc.latitude, loc.longitude);
+        });
+      }
+    } catch (e) {
+      print('Location not found: $e');
+    }
+  }
+
 
   Future<void> _pickDate() async {
     final DateTime? picked = await showDatePicker(
@@ -146,6 +174,21 @@ class _timeAndLocationState extends State<timeAndLocation> {
           _buildRepeatSection(),
           SizedBox(height: 20),
           //MapPage(),
+          _locationPicker(
+            selectedLocation: selectedLocation,
+            isEditingLocation: isEditingLocation,
+            mapController: mapController,
+            locationController: locationController,
+            onEdit: () => setState(() => isEditingLocation = true),
+            onLocationSelected: (latLng, displayName) {
+              setState(() {
+                selectedLocation = latLng;
+                locationController.text = displayName;
+                isEditingLocation = false;
+              });
+              mapController.move(latLng, 15.0);
+            },
+          )
         ]),
       ),
     );
@@ -262,5 +305,120 @@ class _timeAndLocationState extends State<timeAndLocation> {
             ])
       ]
     ]);
+  }
+
+  Widget _locationPicker({
+    required LatLng? selectedLocation,
+    required bool isEditingLocation,
+    required MapController mapController,
+    required TextEditingController locationController,
+    required void Function() onEdit,
+    required void Function(LatLng latLng, String displayName) onLocationSelected,
+  }) {
+    if (selectedLocation != null && !isEditingLocation) {
+      return Column(
+        children: [
+          Center(
+            child: Container(
+              width: 300,
+              height: 160,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: Colors.black,
+                  width: 2,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: FlutterMap(
+                  mapController: mapController,
+                  options: MapOptions(
+                    center: selectedLocation,
+                    zoom: 13.0,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      subdomains: ['a', 'b', 'c'],
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          width: 80.0,
+                          height: 80.0,
+                          point: selectedLocation,
+                          builder: (ctx) =>
+                              Icon(Icons.location_pin, color: Colors.red, size: 40),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 10),
+          ElevatedButton.icon(
+            onPressed: onEdit,
+            icon: Icon(Icons.edit_location),
+            label: Text("Edit Location"),
+          ),
+        ],
+      );
+    } else {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Search for a location:", style: TextStyle(fontWeight: FontWeight.bold)),
+          SizedBox(height: 10),
+          TypeAheadFormField<String>(
+            textFieldConfiguration: TextFieldConfiguration(
+              controller: locationController,
+              decoration: InputDecoration(
+                hintText: "Enter location",
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.search),
+              ),
+            ),
+            suggestionsCallback: (pattern) async {
+              if (pattern.length < 3) return [];
+
+              final url = Uri.parse(
+                'https://nominatim.openstreetmap.org/search?q=$pattern&format=json&addressdetails=1&limit=5',
+              );
+
+              final response = await http.get(url, headers: {
+                'User-Agent': 'CampusLinkApp/1.0 (youremail@domain.com)'
+              });
+
+              if (response.statusCode == 200) {
+                final List<dynamic> data = json.decode(response.body);
+                return data.map<String>((item) {
+                  final displayName = item['display_name'];
+                  final lat = item['lat'];
+                  final lon = item['lon'];
+                  return '$displayName|$lat|$lon';
+                }).toList();
+              } else {
+                return [];
+              }
+            },
+            itemBuilder: (context, suggestion) {
+              final displayName = suggestion.split('|')[0];
+              return ListTile(title: Text(displayName));
+            },
+            onSuggestionSelected: (suggestion) {
+              final parts = suggestion.split('|');
+              final displayName = parts[0];
+              final lat = double.parse(parts[1]);
+              final lon = double.parse(parts[2]);
+
+              onLocationSelected(LatLng(lat, lon), displayName);
+            },
+          ),
+        ],
+      );
+    }
   }
 }
