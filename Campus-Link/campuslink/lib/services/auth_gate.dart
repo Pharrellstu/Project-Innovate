@@ -7,8 +7,6 @@ class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
   @override
   Widget build(BuildContext context) {
-    logout();
-
     if (checkIfLoggedIn()) {
       return HomePage(); // Main app screen
     } else {

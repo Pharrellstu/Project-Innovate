@@ -1,6 +1,4 @@
-import 'package:campuslink/screens/profile_page.dart';
 import 'package:flutter/material.dart';
-import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/services/auth_gate.dart';
 
 class AuthForm extends StatefulWidget {
