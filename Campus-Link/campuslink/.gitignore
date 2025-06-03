@@ -44,9 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Secrets
-.env
-
 #Ignore pubsec.lock file
 pubspec.lock
 
