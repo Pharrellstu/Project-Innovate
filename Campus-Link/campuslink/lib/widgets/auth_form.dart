@@ -46,6 +46,11 @@ class _AuthFormState extends State<AuthForm> {
       _showSnackBar('Passwords do not match');
       return;
     }
+    if(!email.endsWith("@student.nhlstenden.com"))
+    {
+      _showSnackBar("Only nhlstenden students email addresses are allowed");
+      return;
+    }
 
     AuthGate()
         .register(email, password)
