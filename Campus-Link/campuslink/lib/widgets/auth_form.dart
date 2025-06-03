@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:campuslink/screens/home_page.dart';
+import 'package:campuslink/services/auth_gate.dart';
 
 class AuthForm extends StatefulWidget {
   const AuthForm({super.key});
@@ -29,21 +29,62 @@ class _AuthFormState extends State<AuthForm> {
     final confirmPassword = confirmPasswordController.text.trim();
 
     if (isRegistering) {
-      // Sign up logic here
-      print('Signing up with $email / $password');
+      _handleRegistration(email, password, confirmPassword);
     } else {
-      // Login logic here
-      print('Logging in with $email / $password');
+      _handleLogin(email, password);
+    }
+  }
+
+  void _handleRegistration(
+    String email,
+    String password,
+    String confirmPassword,
+  ) {
+    if (password != confirmPassword) {
+      _showSnackBar('Passwords do not match');
+      return;
+    }
+    if(!email.endsWith("@student.nhlstenden.com"))
+    {
+      _showSnackBar("Only nhlstenden students email addresses are allowed");
+      return;
     }
 
-    // FOR DEMO PURPOSES ONLY
-    // Navigate to HomePage after submission
-    Navigator.pushReplacement(
+    AuthGate()
+        .register(email, password)
+        .then((_) {
+          _showSnackBar('Registration successful!');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AuthGate()),
+          );
+        })
+        .catchError((error) {
+          String errorMessage = error.message ?? 'An unknown error occurred';
+          _showSnackBar('Registration failed: $errorMessage');
+        });
+  }
+
+  void _handleLogin(String email, String password) {
+    AuthGate()
+        .login(email, password)
+        .then((_) {
+          _showSnackBar('Login successful!');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AuthGate()),
+          );
+        })
+        .catchError((error) {
+          String errorMessage = error.message ?? 'An unknown error occurred';
+          _showSnackBar('Login failed: $errorMessage');
+        });
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
       context,
-      MaterialPageRoute(
-        builder: (context) => HomePage(),
-      ), // Replace with your home page
-    );
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
