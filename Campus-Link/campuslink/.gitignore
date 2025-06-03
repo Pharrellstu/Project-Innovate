@@ -46,3 +46,12 @@ app.*.map.json
 
 # Secrets
 .env
+
+#Ignore pubsec.lock file
+pubspec.lock
+
+#Ignore generated plugins
+*.cc
+*.h
+*.cmake
+*swift

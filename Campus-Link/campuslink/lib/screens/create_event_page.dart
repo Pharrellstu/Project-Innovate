@@ -87,7 +87,6 @@ class _createEventPageState extends State<createEventPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(child: IndexedStack(index: currentStep, children: steps)),
-                    SizedBox(height: 40.0),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
