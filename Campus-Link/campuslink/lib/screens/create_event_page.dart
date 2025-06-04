@@ -34,11 +34,13 @@ class createEventPage extends StatefulWidget {
 
 class _createEventPageState extends State<createEventPage> {
 
+  int currentStep = 0;
   bool isBasicInfoValid = false;
   bool isLocationValid = false;
+  bool isPrivacyValid = false;
   final EventData _eventData = EventData();
 
-  void updateBasicInfoValidity(bool isValid) {
+  /*void updateBasicInfoValidity(bool isValid) {
     setState(() {
       isBasicInfoValid = isValid;
     });
@@ -50,12 +52,34 @@ class _createEventPageState extends State<createEventPage> {
     });
   }
 
-  int currentStep = 0;
+  void updatePrivacyValidity(bool isValid) {
+    setState(() {
+      isPrivacyValid = isValid;
+    });
+  }
+
 
   List<Widget> get steps => [
     basicInputInfo(onValidityChanged: updateBasicInfoValidity, eventData: _eventData),
     timeAndLocation(onValidityChanged: updateLocationValidity, eventData: _eventData),
-    eventFormPage(),
+    eventFormPage(onValidityChanged: updatePrivacyValidity, eventData: _eventData,),
+    OverviewPage(eventData: _eventData),
+  ];*/
+
+  List<Widget> get steps => [
+    basicInputInfo(
+      eventData: _eventData,
+      onValidityChanged: (isValid) => setState(() => isBasicInfoValid = isValid),
+    ),
+    timeAndLocation(
+      eventData: _eventData,
+      onValidityChanged: (isValid) => setState(() => isLocationValid = isValid),
+    ),
+    eventFormPage(
+      eventData: _eventData,
+      onValidityChanged: (isValid) => setState(() => isPrivacyValid = isValid),
+    ),
+    // Add your OverviewPage here
     OverviewPage(eventData: _eventData),
   ];
 
@@ -103,9 +127,29 @@ class _createEventPageState extends State<createEventPage> {
                       children: [
                         if (currentStep > 0)
                           TextButton(onPressed: prevStep, child: Text('Back')),
+                        // In CreateEventPage's build method:
                         TextButton(
-                            onPressed: currentStep == 0 && !isBasicInfoValid ? null : nextStep,
-                            child: Text(currentStep == steps.length - 1 ? 'Finish' : 'Next')),
+                          onPressed: () {
+                            bool currentStepValid;
+                            switch (currentStep) {
+                              case 0:
+                                currentStepValid = isBasicInfoValid;
+                                break;
+                              case 1:
+                                currentStepValid = isLocationValid;
+                                break;
+                              case 2:
+                                currentStepValid = true; // Event form page is always valid
+                                break;
+                              case 3:
+                                currentStepValid = true; // Overview page is always valid
+                              default:
+                                currentStepValid = true;
+                            }
+                            return currentStepValid ? nextStep : null;
+                          }(),
+                          child: Text(currentStep == steps.length - 1 ? 'Finish' : 'Next'),
+                        )
                       ],
                     ),
                   ],
@@ -234,4 +278,10 @@ class EventData {
   LatLng? locationLatLng;
   String? locationName;
 // You can also add badges, limits, privacy, etc.
+
+  bool isPublic = true;
+  int? maxAttendees;
+  DateTime? signUpDeadline;
+  bool offerBadge = true;
+  List<String> invitedUserIds = [];
 }

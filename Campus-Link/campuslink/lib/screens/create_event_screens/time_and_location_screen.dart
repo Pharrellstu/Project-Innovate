@@ -27,8 +27,12 @@ class _timeAndLocationState extends State<timeAndLocation> {
   @override
   void initState() {
     super.initState();
-    // Initialize from eventData
-    locationController.text = widget.eventData.locationName ?? '';
+    locationController.text = widget.eventData.location ?? '';
+
+    // Defer initial validity check
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkValidity();
+    });
   }
 
   late TextEditingController _eventLinkController = TextEditingController();
@@ -153,7 +157,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
     if (newDuration != null) {
       setState(() {
         widget.eventData.eventDuration = newDuration;
-        _checkValidity();
+        //_checkValidity();
       });
     }
   }
