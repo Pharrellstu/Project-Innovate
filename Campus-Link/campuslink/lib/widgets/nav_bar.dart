@@ -4,6 +4,7 @@ import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/map_page.dart';
 import 'package:campuslink/screens/chat_page.dart';
 import 'package:campuslink/screens/profile_page.dart';
+import 'package:campuslink/screens/chat_list.dart';
 
 class NavBar extends StatelessWidget {
   const NavBar({super.key});
@@ -33,7 +34,7 @@ class NavBar extends StatelessWidget {
           _navItem(
             context,
             SvgPicture.asset("resources/icons/Chat.svg"),
-            ChatPage(),
+            CampusLinkPage(),
           ),
           _navItem(
             context,
