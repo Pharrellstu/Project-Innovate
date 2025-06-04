@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:latlong2/latlong.dart';
 import 'create_event_screens/basic_info_screen.dart';
 import 'create_event_screens/time_and_location_screen.dart';
 import 'create_event_screens/privacy_and_security_screen.dart';
@@ -34,6 +35,7 @@ class createEventPage extends StatefulWidget {
 class _createEventPageState extends State<createEventPage> {
 
   bool isBasicInfoValid = false;
+  bool isLocationValid = false;
   final EventData _eventData = EventData();
 
   void updateBasicInfoValidity(bool isValid) {
@@ -42,11 +44,17 @@ class _createEventPageState extends State<createEventPage> {
     });
   }
 
+  void updateLocationValidity(bool isValid) {
+    setState(() {
+      isLocationValid = isValid;
+    });
+  }
+
   int currentStep = 0;
 
   List<Widget> get steps => [
     basicInputInfo(onValidityChanged: updateBasicInfoValidity, eventData: _eventData),
-    timeAndLocation(),
+    timeAndLocation(onValidityChanged: updateLocationValidity, eventData: _eventData),
     eventFormPage(),
     OverviewPage(eventData: _eventData),
   ];
@@ -209,8 +217,14 @@ class EventData {
   bool isOnline = false;
 
   // Add other fields from other steps as needed
-  DateTime? date;
+  DateTime? eventDate;
   String? location;
-
+  TimeOfDay? eventTime;
+  Duration? eventDuration;
+  bool repeatEvent = false;
+  List<bool> repeatDays = [false, false, false, false, false, false, false];
+  int repeatEveryWeeks = 1;
+  LatLng? locationLatLng;
+  String? locationName;
 // You can also add badges, limits, privacy, etc.
 }
