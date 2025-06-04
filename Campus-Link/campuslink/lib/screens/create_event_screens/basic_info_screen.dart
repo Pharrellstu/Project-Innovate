@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../create_event_page.dart';
+
 class basicInputInfo extends StatefulWidget {
   final Function(bool) onValidityChanged;
+  final EventData eventData;
 
-  const basicInputInfo({Key? key, required this.onValidityChanged}) : super(key: key);
+  const basicInputInfo({Key? key, required this.onValidityChanged, required this.eventData}) : super(key: key);
 
   @override
   State<basicInputInfo> createState() => _basicInputInfoState();
@@ -37,12 +40,11 @@ class _basicInputInfoState extends State<basicInputInfo> {
         _descriptionCharCount = _descriptionController.text.length;
       });
     });
-
     _eventNameController.addListener(_checkValidity);
   }
 
   void _checkValidity() {
-    final isValid = _eventNameController.text.trim().isNotEmpty && _selectedCategory != null;
+    final isValid = widget.eventData.eventName.isNotEmpty && widget.eventData.category != null;
     widget.onValidityChanged(isValid);
   }
 
@@ -70,7 +72,7 @@ class _basicInputInfoState extends State<basicInputInfo> {
               style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18)
-          ),
+              ),
           SizedBox(height: 8),
           TextField(
             controller: _eventNameController,

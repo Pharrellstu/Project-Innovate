@@ -348,8 +348,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
                           width: 80.0,
                           height: 80.0,
                           point: selectedLocation,
-                          builder: (ctx) =>
-                              Icon(Icons.location_pin, color: Colors.red, size: 40),
+                          child: Icon(Icons.location_pin, color: Colors.red, size: 40),
                         ),
                       ],
                     ),
@@ -372,50 +371,42 @@ class _timeAndLocationState extends State<timeAndLocation> {
         children: [
           Text("Search for a location:", style: TextStyle(fontWeight: FontWeight.bold)),
           SizedBox(height: 10),
-          TypeAheadFormField<String>(
-            textFieldConfiguration: TextFieldConfiguration(
-              controller: locationController,
-              decoration: InputDecoration(
-                hintText: "Enter location",
-                border: OutlineInputBorder(),
-                suffixIcon: Icon(Icons.search),
-              ),
-            ),
-            suggestionsCallback: (pattern) async {
-              if (pattern.length < 3) return [];
+          TypeAheadField(
+              itemBuilder: (context, suggestion) {
+                final displayName = suggestion.split('|')[0];
+                return ListTile(title: Text(displayName));
+              },
+              onSelected: (suggestion) {
+                final parts = suggestion.split('|');
+                final displayName = parts[0];
+                final lat = double.parse(parts[1]);
+                final lon = double.parse(parts[2]);
 
-              final url = Uri.parse(
-                'https://nominatim.openstreetmap.org/search?q=$pattern&format=json&addressdetails=1&limit=5',
-              );
+                onLocationSelected(LatLng(lat, lon), displayName);
+                },
+              suggestionsCallback: (pattern) async {
+                if (pattern.length < 3) return [];
 
-              final response = await http.get(url, headers: {
-                'User-Agent': 'CampusLinkApp/1.0 (youremail@domain.com)'
-              });
+                final url = Uri.parse(
+                  'https://nominatim.openstreetmap.org/search?q=$pattern&format=json&addressdetails=1&limit=5',
+                );
 
-              if (response.statusCode == 200) {
-                final List<dynamic> data = json.decode(response.body);
-                return data.map<String>((item) {
-                  final displayName = item['display_name'];
-                  final lat = item['lat'];
-                  final lon = item['lon'];
-                  return '$displayName|$lat|$lon';
-                }).toList();
-              } else {
-                return [];
-              }
-            },
-            itemBuilder: (context, suggestion) {
-              final displayName = suggestion.split('|')[0];
-              return ListTile(title: Text(displayName));
-            },
-            onSuggestionSelected: (suggestion) {
-              final parts = suggestion.split('|');
-              final displayName = parts[0];
-              final lat = double.parse(parts[1]);
-              final lon = double.parse(parts[2]);
+                final response = await http.get(url, headers: {
+                  'User-Agent': 'CampusLinkApp/1.0 (youremail@domain.com)'
+                });
 
-              onLocationSelected(LatLng(lat, lon), displayName);
-            },
+                if (response.statusCode == 200) {
+                  final List<dynamic> data = json.decode(response.body);
+                  return data.map<String>((item) {
+                    final displayName = item['display_name'];
+                    final lat = item['lat'];
+                    final lon = item['lon'];
+                    return '$displayName|$lat|$lon';
+                  }).toList();
+                } else {
+                  return [];
+                }
+              },
           ),
         ],
       );

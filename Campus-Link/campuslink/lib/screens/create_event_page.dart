@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'create_event_screens/basic_info_screen.dart';
 import 'create_event_screens/time_and_location_screen.dart';
 import 'create_event_screens/privacy_and_security_screen.dart';
+import 'create_event_screens/overview.dart';
 
 class CreateEventPage extends StatelessWidget {
   const CreateEventPage({super.key});
@@ -33,6 +34,7 @@ class createEventPage extends StatefulWidget {
 class _createEventPageState extends State<createEventPage> {
 
   bool isBasicInfoValid = false;
+  final EventData _eventData = EventData();
 
   void updateBasicInfoValidity(bool isValid) {
     setState(() {
@@ -43,9 +45,10 @@ class _createEventPageState extends State<createEventPage> {
   int currentStep = 0;
 
   List<Widget> get steps => [
-    basicInputInfo(onValidityChanged: updateBasicInfoValidity),
+    basicInputInfo(onValidityChanged: updateBasicInfoValidity, eventData: _eventData),
     timeAndLocation(),
     eventFormPage(),
+    OverviewPage(eventData: _eventData),
   ];
 
   void nextStep() {
@@ -197,4 +200,17 @@ class _Category {
     required this.label,
     required this.icon,
   });
+}
+
+class EventData {
+  String eventName = '';
+  String? category;
+  String description = '';
+  bool isOnline = false;
+
+  // Add other fields from other steps as needed
+  DateTime? date;
+  String? location;
+
+// You can also add badges, limits, privacy, etc.
 }
