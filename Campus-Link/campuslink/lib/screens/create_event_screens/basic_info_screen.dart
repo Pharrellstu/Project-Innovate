@@ -280,7 +280,7 @@ class _basicInputInfoState extends State<basicInputInfo> {
             ],
           ),
           Text(
-            _isOnline
+            widget.eventData.isOnline
                 ? 'Guests will join via a link.'
                 : 'You will add a location in the next step.',
             style: TextStyle(

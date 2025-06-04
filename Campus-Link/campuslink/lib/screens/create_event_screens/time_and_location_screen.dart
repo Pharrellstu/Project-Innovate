@@ -31,6 +31,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
     locationController.text = widget.eventData.locationName ?? '';
   }
 
+  late TextEditingController _eventLinkController = TextEditingController();
   bool isEditingLocation = true;
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay(hour: 15, minute: 0);
@@ -236,25 +237,42 @@ class _timeAndLocationState extends State<timeAndLocation> {
           SizedBox(height: 20),
           _buildRepeatSection(),
           SizedBox(height: 20),
-          _locationPicker(
-            selectedLocation: widget.eventData.location != null
-              ? _parseLocation(widget.eventData.location!)
-              :null,
-            isEditingLocation: isEditingLocation,
-            mapController: mapController,
-            locationController: locationController,
-            onEdit: () => setState(() => isEditingLocation = true),
-            onLocationSelected: (latLng, displayName) {
-              setState(() {
-                widget.eventData.location = latLng as String?;
-                widget.eventData.locationName = displayName;
-                isEditingLocation = false;
-              });
-              mapController.move(latLng, 15.0);
-              _checkValidity();
-            },
-          )
-        ]),
+
+          if (widget.eventData.isOnline) ... [
+            Row(
+              children: [
+                Text(
+                    "Add a link to your online event",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    )
+                ),
+                SizedBox(width: 10, height: 10,),
+              ],
+            ),
+          ] else ...[
+
+            _locationPicker(
+              selectedLocation: widget.eventData.location != null
+                  ? _parseLocation(widget.eventData.location!)
+                  : null,
+              isEditingLocation: isEditingLocation,
+              mapController: mapController,
+              locationController: locationController,
+              onEdit: () => setState(() => isEditingLocation = true),
+              onLocationSelected: (latLng, displayName) {
+                setState(() {
+                  widget.eventData.location = "${latLng.latitude},${latLng.longitude}";
+                  locationController.text = displayName;
+                  isEditingLocation = false;
+                });
+                mapController.move(latLng, 15.0);
+                _checkValidity();
+              },
+            ),
+          ]
+        ]
+        ),
       ),
     );
   }
@@ -450,7 +468,9 @@ class _timeAndLocationState extends State<timeAndLocation> {
           TypeAheadField(
             itemBuilder: (context, suggestion) {
               final displayName = suggestion.split('|')[0];
-              return ListTile(title: Text(displayName));
+              return ListTile(
+                title: Text(displayName),
+              );
             },
             onSelected: (suggestion) {
               final parts = suggestion.split('|');
@@ -467,20 +487,24 @@ class _timeAndLocationState extends State<timeAndLocation> {
                 'https://nominatim.openstreetmap.org/search?q=$pattern&format=json&addressdetails=1&limit=5',
               );
 
-              final response = await http.get(url, headers: {
-                'User-Agent': 'CampusLinkApp/1.0 (youremail@domain.com)'
-              });
+              try {
+                final response = await http.get(url, headers: {
+                  'User-Agent': 'CampusLinkApp/1.0 (contact@example.com)'
+                });
 
-              if (response.statusCode == 200) {
-                final List<dynamic> data = json.decode(response.body);
-                return data.map<String>((item) {
-                  final displayName = item['display_name'];
-                  final lat = item['lat'];
-                  final lon = item['lon'];
-                  return '$displayName|$lat|$lon';
-                }).toList();
-              } else {
-                return [];
+                if (response.statusCode == 200) {
+                  final List<dynamic> data = json.decode(response.body);
+                  return data.map<String>((item) {
+                    final displayName = item['display_name'];
+                    final lat = item['lat'];
+                    final lon = item['lon'];
+                    return '$displayName|$lat|$lon';
+                  }).toList();
+                } else {
+                  return []; // Return empty list on error
+                }
+              } catch (e) {
+                return []; // Return empty list on exception
               }
             },
           ),

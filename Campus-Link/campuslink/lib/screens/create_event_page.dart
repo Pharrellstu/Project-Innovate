@@ -185,6 +185,13 @@ class StepIndicator extends StatelessWidget {
           _stepBox(true, '3. Privacy & Settings'),
         ],
       );
+    } else if (value == 3) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _stepBox(true, 'Review your event'),
+        ],
+      );
     }
 
     return Row(
