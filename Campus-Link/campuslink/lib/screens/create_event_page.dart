@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:latlong2/latlong.dart';
 import 'create_event_screens/basic_info_screen.dart';
 import 'create_event_screens/time_and_location_screen.dart';
 import 'create_event_screens/privacy_and_security_screen.dart';
+import 'create_event_screens/overview.dart';
 
 class CreateEventPage extends StatelessWidget {
   const CreateEventPage({super.key});
@@ -33,6 +35,8 @@ class createEventPage extends StatefulWidget {
 class _createEventPageState extends State<createEventPage> {
 
   bool isBasicInfoValid = false;
+  bool isLocationValid = false;
+  final EventData _eventData = EventData();
 
   void updateBasicInfoValidity(bool isValid) {
     setState(() {
@@ -40,12 +44,19 @@ class _createEventPageState extends State<createEventPage> {
     });
   }
 
+  void updateLocationValidity(bool isValid) {
+    setState(() {
+      isLocationValid = isValid;
+    });
+  }
+
   int currentStep = 0;
 
   List<Widget> get steps => [
-    basicInputInfo(onValidityChanged: updateBasicInfoValidity),
-    timeAndLocation(),
+    basicInputInfo(onValidityChanged: updateBasicInfoValidity, eventData: _eventData),
+    timeAndLocation(onValidityChanged: updateLocationValidity, eventData: _eventData),
     eventFormPage(),
+    OverviewPage(eventData: _eventData),
   ];
 
   void nextStep() {
@@ -174,6 +185,13 @@ class StepIndicator extends StatelessWidget {
           _stepBox(true, '3. Privacy & Settings'),
         ],
       );
+    } else if (value == 3) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _stepBox(true, 'Review your event'),
+        ],
+      );
     }
 
     return Row(
@@ -197,4 +215,23 @@ class _Category {
     required this.label,
     required this.icon,
   });
+}
+
+class EventData {
+  String eventName = '';
+  String? category;
+  String description = '';
+  bool isOnline = false;
+
+  // Add other fields from other steps as needed
+  DateTime? eventDate;
+  String? location;
+  TimeOfDay? eventTime;
+  Duration? eventDuration;
+  bool repeatEvent = false;
+  List<bool> repeatDays = [false, false, false, false, false, false, false];
+  int repeatEveryWeeks = 1;
+  LatLng? locationLatLng;
+  String? locationName;
+// You can also add badges, limits, privacy, etc.
 }

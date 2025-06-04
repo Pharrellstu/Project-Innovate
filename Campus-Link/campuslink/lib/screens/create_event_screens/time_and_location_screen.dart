@@ -5,17 +5,33 @@ import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
+import '../create_event_page.dart';
 
 
 class timeAndLocation extends StatefulWidget {
-  const timeAndLocation({super.key});
+  final EventData eventData;
+  final Function(bool) onValidityChanged;
+
+  const timeAndLocation({
+    Key? key,
+    required this.eventData,
+    required this.onValidityChanged,
+  }) : super(key: key);
 
   @override
   State<timeAndLocation> createState() => _timeAndLocationState();
 }
 
 class _timeAndLocationState extends State<timeAndLocation> {
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize from eventData
+    locationController.text = widget.eventData.locationName ?? '';
+  }
+
+  late TextEditingController _eventLinkController = TextEditingController();
   bool isEditingLocation = true;
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay(hour: 15, minute: 0);
@@ -28,7 +44,13 @@ class _timeAndLocationState extends State<timeAndLocation> {
   LatLng? selectedLocation; // For marker// For marker
   MapController mapController = MapController();
   TextEditingController locationController = TextEditingController();
-  
+
+  void _checkValidity() {
+    final isValid = widget.eventData.eventDate != null &&
+        widget.eventData.eventTime != null &&
+        (widget.eventData.isOnline || widget.eventData.location != null);
+    widget.onValidityChanged(isValid);
+  }
 
   Future<void> _searchLocation(String query) async {
     try {
@@ -48,19 +70,29 @@ class _timeAndLocationState extends State<timeAndLocation> {
   Future<void> _pickDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: widget.eventData.eventDate ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
     );
-    if (picked != null) setState(() => selectedDate = picked);
+    if (picked != null) {
+      setState(() {
+        widget.eventData.eventDate = picked;
+        _checkValidity();
+      });
+    }
   }
 
   Future<void> _pickTime() async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: selectedTime,
+      initialTime: widget.eventData.eventTime ?? TimeOfDay(hour: 15, minute: 0),
     );
-    if (picked != null) setState(() => selectedTime = picked);
+    if (picked != null) {
+      setState(() {
+        widget.eventData.eventTime = picked;
+        _checkValidity();
+      });
+    }
   }
 
   Future<void> _pickDuration() async {
@@ -117,14 +149,32 @@ class _timeAndLocationState extends State<timeAndLocation> {
         ],
       ),
     );
-    if (newDuration != null) setState(() => selectedDuration = newDuration);
+
+    if (newDuration != null) {
+      setState(() {
+        widget.eventData.eventDuration = newDuration;
+        _checkValidity();
+      });
+    }
   }
 
   String get eventDescription {
-    final start = DateTime(selectedDate.year, selectedDate.month,
-        selectedDate.day, selectedTime.hour, selectedTime.minute);
-    final end = start.add(selectedDuration);
-    return "This event will take place on ${_formatDate(selectedDate)} from ${_formatTime(selectedTime)} until ${_formatTime(TimeOfDay.fromDateTime(end))}";
+    if (widget.eventData.eventDate == null || widget.eventData.eventTime == null) {
+      return "Select date and time";
+    }
+
+    final start = DateTime(
+      widget.eventData.eventDate!.year,
+      widget.eventData.eventDate!.month,
+      widget.eventData.eventDate!.day,
+      widget.eventData.eventTime!.hour,
+      widget.eventData.eventTime!.minute,
+    );
+
+    final end = start.add(widget.eventData.eventDuration ?? Duration.zero);
+    return "This event will take place on ${_formatDate(widget.eventData.eventDate!)} "
+        "from ${_formatTime(widget.eventData.eventTime!)} "
+        "until ${_formatTime(TimeOfDay.fromDateTime(end))}";
   }
 
   String _formatDate(DateTime date) {
@@ -141,9 +191,6 @@ class _timeAndLocationState extends State<timeAndLocation> {
     return "${hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} $period";
   }
 
-
-
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -151,17 +198,34 @@ class _timeAndLocationState extends State<timeAndLocation> {
         padding: const EdgeInsets.all(16.0),
         child: Column(children: [
           GestureDetector(
-              onTap: _pickDate,
-              child: _buildInputRow("Date", _formatDate(selectedDate),
-                  Icons.calendar_today)),
+            onTap: _pickDate,
+            child: _buildInputRow(
+              "Date",
+              widget.eventData.eventDate != null
+                  ? _formatDate(widget.eventData.eventDate!)
+                  : "Select date",
+              Icons.calendar_today,
+            ),
+          ),
           GestureDetector(
-              onTap: _pickTime,
-              child: _buildInputRow(
-                  "Time", _formatTime(selectedTime), Icons.access_time)),
+            onTap: _pickTime,
+            child: _buildInputRow(
+              "Time",
+              widget.eventData.eventTime != null
+                  ? _formatTime(widget.eventData.eventTime!)
+                  : "Select time",
+              Icons.access_time,
+            ),
+          ),
           GestureDetector(
               onTap: _pickDuration,
-              child: _buildInputRow("Duration",
-                  "${selectedDuration.inHours}h ${selectedDuration.inMinutes.remainder(60)}m", Icons.timer)),
+              child: _buildInputRow(
+                  "Duration",
+                  widget.eventData.eventDuration != null
+                  ? "${widget.eventData.eventDuration!.inHours}h ${widget.eventData.eventDuration!.inMinutes.remainder(60)}m"
+                  : "Select duration",
+                  Icons.timer)
+          ),
           SizedBox(height: 8),
           Align(
               alignment: Alignment.centerLeft,
@@ -173,25 +237,52 @@ class _timeAndLocationState extends State<timeAndLocation> {
           SizedBox(height: 20),
           _buildRepeatSection(),
           SizedBox(height: 20),
-          //MapPage(),
-          _locationPicker(
-            selectedLocation: selectedLocation,
-            isEditingLocation: isEditingLocation,
-            mapController: mapController,
-            locationController: locationController,
-            onEdit: () => setState(() => isEditingLocation = true),
-            onLocationSelected: (latLng, displayName) {
-              setState(() {
-                selectedLocation = latLng;
-                locationController.text = displayName;
-                isEditingLocation = false;
-              });
-              mapController.move(latLng, 15.0);
-            },
-          )
-        ]),
+
+          if (widget.eventData.isOnline) ... [
+            Row(
+              children: [
+                Text(
+                    "Add a link to your online event",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    )
+                ),
+                SizedBox(width: 10, height: 10,),
+              ],
+            ),
+          ] else ...[
+
+            _locationPicker(
+              selectedLocation: widget.eventData.location != null
+                  ? _parseLocation(widget.eventData.location!)
+                  : null,
+              isEditingLocation: isEditingLocation,
+              mapController: mapController,
+              locationController: locationController,
+              onEdit: () => setState(() => isEditingLocation = true),
+              onLocationSelected: (latLng, displayName) {
+                setState(() {
+                  widget.eventData.location = "${latLng.latitude},${latLng.longitude}";
+                  locationController.text = displayName;
+                  isEditingLocation = false;
+                });
+                mapController.move(latLng, 15.0);
+                _checkValidity();
+              },
+            ),
+          ]
+        ]
+        ),
       ),
     );
+  }
+
+  LatLng? _parseLocation(String location) {
+    final parts = location.split(',');
+    if (parts.length != 2) return null;
+    final lat = double.tryParse(parts[0]);
+    final lng = double.tryParse(parts[1]);
+    return (lat != null && lng != null) ? LatLng(lat, lng) : null;
   }
 
   Widget _buildInputRow(String title, String value, IconData icon) {
@@ -212,7 +303,10 @@ class _timeAndLocationState extends State<timeAndLocation> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(icon, color: Colors.grey),
-              Text(value, style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+              Text(
+                  value,
+                  style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)
+              ),
             ],
           ),
         ),
@@ -226,11 +320,11 @@ class _timeAndLocationState extends State<timeAndLocation> {
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Text("Repeat Event?", style: TextStyle(fontWeight: FontWeight.bold)),
         Switch(
-          value: repeatEvent,
-          onChanged: (val) => setState(() => repeatEvent = val),
+          value: widget.eventData.repeatEvent,
+          onChanged: (val) => setState(() => widget.eventData.repeatEvent = val),
         )
       ]),
-      if (repeatEvent) ...[
+      if (widget.eventData.repeatEvent) ...[
         SizedBox(height: 10),
         Text(
           "Select days to repeat the event:",
@@ -242,10 +336,10 @@ class _timeAndLocationState extends State<timeAndLocation> {
         Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(days.length, (i) {
-              final selected = repeatDays[i];
+              final selected = widget.eventData.repeatDays[i];
               return GestureDetector(
                 onTap: () =>
-                    setState(() => repeatDays[i] = !repeatDays[i]),
+                    setState(() => widget.eventData.repeatDays[i] = !widget.eventData.repeatDays[i]),
                 child: Container(
                   width: 36,
                   height: 36,
@@ -295,7 +389,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
                           .map((e) => DropdownMenuItem(value: e, child: Text("[$e]")))
                           .toList(),
                       onChanged: (val) {
-                        if (val != null) setState(() => repeatEveryWeeks = val);
+                        //if (val != null) setState(() => repeatEveryWeeks = val);
                       },
                     ),
                     Text(" week(s)"),
@@ -348,8 +442,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
                           width: 80.0,
                           height: 80.0,
                           point: selectedLocation,
-                          builder: (ctx) =>
-                              Icon(Icons.location_pin, color: Colors.red, size: 40),
+                          child: Icon(Icons.location_pin, color: Colors.red, size: 40),
                         ),
                       ],
                     ),
@@ -372,15 +465,21 @@ class _timeAndLocationState extends State<timeAndLocation> {
         children: [
           Text("Search for a location:", style: TextStyle(fontWeight: FontWeight.bold)),
           SizedBox(height: 10),
-          TypeAheadFormField<String>(
-            textFieldConfiguration: TextFieldConfiguration(
-              controller: locationController,
-              decoration: InputDecoration(
-                hintText: "Enter location",
-                border: OutlineInputBorder(),
-                suffixIcon: Icon(Icons.search),
-              ),
-            ),
+          TypeAheadField(
+            itemBuilder: (context, suggestion) {
+              final displayName = suggestion.split('|')[0];
+              return ListTile(
+                title: Text(displayName),
+              );
+            },
+            onSelected: (suggestion) {
+              final parts = suggestion.split('|');
+              final displayName = parts[0];
+              final lat = double.parse(parts[1]);
+              final lon = double.parse(parts[2]);
+
+              onLocationSelected(LatLng(lat, lon), displayName);
+            },
             suggestionsCallback: (pattern) async {
               if (pattern.length < 3) return [];
 
@@ -388,33 +487,25 @@ class _timeAndLocationState extends State<timeAndLocation> {
                 'https://nominatim.openstreetmap.org/search?q=$pattern&format=json&addressdetails=1&limit=5',
               );
 
-              final response = await http.get(url, headers: {
-                'User-Agent': 'CampusLinkApp/1.0 (youremail@domain.com)'
-              });
+              try {
+                final response = await http.get(url, headers: {
+                  'User-Agent': 'CampusLinkApp/1.0 (contact@example.com)'
+                });
 
-              if (response.statusCode == 200) {
-                final List<dynamic> data = json.decode(response.body);
-                return data.map<String>((item) {
-                  final displayName = item['display_name'];
-                  final lat = item['lat'];
-                  final lon = item['lon'];
-                  return '$displayName|$lat|$lon';
-                }).toList();
-              } else {
-                return [];
+                if (response.statusCode == 200) {
+                  final List<dynamic> data = json.decode(response.body);
+                  return data.map<String>((item) {
+                    final displayName = item['display_name'];
+                    final lat = item['lat'];
+                    final lon = item['lon'];
+                    return '$displayName|$lat|$lon';
+                  }).toList();
+                } else {
+                  return []; // Return empty list on error
+                }
+              } catch (e) {
+                return []; // Return empty list on exception
               }
-            },
-            itemBuilder: (context, suggestion) {
-              final displayName = suggestion.split('|')[0];
-              return ListTile(title: Text(displayName));
-            },
-            onSuggestionSelected: (suggestion) {
-              final parts = suggestion.split('|');
-              final displayName = parts[0];
-              final lat = double.parse(parts[1]);
-              final lon = double.parse(parts[2]);
-
-              onLocationSelected(LatLng(lat, lon), displayName);
             },
           ),
         ],
