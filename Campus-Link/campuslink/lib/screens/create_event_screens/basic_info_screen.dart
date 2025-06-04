@@ -14,8 +14,8 @@ class basicInputInfo extends StatefulWidget {
 
 class _basicInputInfoState extends State<basicInputInfo> {
 
-  final TextEditingController _eventNameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  late TextEditingController _eventNameController = TextEditingController();
+  late TextEditingController _descriptionController = TextEditingController();
   bool _isOnline = false;
   String? _selectedCategory;
   int _descriptionCharCount = 0;
@@ -34,13 +34,23 @@ class _basicInputInfoState extends State<basicInputInfo> {
   void initState() {
     super.initState();
 
+    _eventNameController = TextEditingController(text: widget.eventData.eventName);
+    _descriptionController = TextEditingController(text: widget.eventData.description);
     // Listen to description changes to update character count
     _descriptionController.addListener(() {
       setState(() {
         _descriptionCharCount = _descriptionController.text.length;
       });
     });
-    _eventNameController.addListener(_checkValidity);
+
+    _eventNameController.addListener(() {
+      setState(() {
+        widget.eventData.eventName = _eventNameController.text; // Update eventData
+        _checkValidity();
+      });
+    });
+
+    //_eventNameController.addListener(_checkValidity);
   }
 
   void _checkValidity() {
@@ -132,11 +142,11 @@ class _basicInputInfoState extends State<basicInputInfo> {
             crossAxisSpacing: 16,
             childAspectRatio: 1,
             children: _categories.map((cat) {
-              final bool isSelected = _selectedCategory == cat.label;
+              final bool isSelected = widget.eventData.category == cat.label;
               return GestureDetector(
                 onTap: () {
                   setState(() {
-                    _selectedCategory = cat.label;
+                    widget.eventData.category = cat.label;
                   });
                   _checkValidity();
                 },
@@ -195,6 +205,7 @@ class _basicInputInfoState extends State<basicInputInfo> {
           ),
           TextField(
             controller: _descriptionController,
+            onChanged: (value) => widget.eventData.description = value,
             maxLines: 2,
             decoration: InputDecoration(
               hintText: 'Tell guests what to expect, any special notes, etc.',
@@ -258,10 +269,10 @@ class _basicInputInfoState extends State<basicInputInfo> {
                   activeTrackColor: Colors.green,
                   inactiveThumbColor: Colors.white,
                   inactiveTrackColor: Colors.grey.shade400,
-                  value: _isOnline,
+                  value: widget.eventData.isOnline,
                   onChanged: (val) {
                     setState(() {
-                      _isOnline = val;
+                      widget.eventData.isOnline = val;
                     });
                   },
                 ),
