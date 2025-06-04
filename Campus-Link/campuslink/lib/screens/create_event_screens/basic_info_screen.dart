@@ -50,6 +50,10 @@ class _basicInputInfoState extends State<basicInputInfo> {
       });
     });
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkValidity();
+    });
+
     //_eventNameController.addListener(_checkValidity);
   }
 
