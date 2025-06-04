@@ -34,7 +34,7 @@ class NavBar extends StatelessWidget {
           _navItem(
             context,
             SvgPicture.asset("resources/icons/Chat.svg"),
-            CampusLinkPage(),
+            ChatList(),
           ),
           _navItem(
             context,

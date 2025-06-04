@@ -1,16 +1,17 @@
 import 'package:campuslink/screens/create_event_page.dart';
+import 'package:campuslink/screens/chat_page.dart';    // ← import the ChatPage
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 
-class CampusLinkPage extends StatefulWidget {
-  const CampusLinkPage({super.key});
+class ChatList extends StatefulWidget {
+  const ChatList({super.key});
 
   @override
-  _CampusLinkPageState createState() => _CampusLinkPageState();
+  _ChatListState createState() => _ChatListState();
 }
 
-class _CampusLinkPageState extends State<CampusLinkPage> {
+class _ChatListState extends State<ChatList> {
   final List<_MessageItem> _messages = List.generate(
     4,
     (i) => _MessageItem(
@@ -26,79 +27,82 @@ class _CampusLinkPageState extends State<CampusLinkPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1) Use TopBar without “actions:”
       appBar: TopBar(
         title: 'CampusLink',
-        // `isCreateBtnVisible` is true by default, so TopBar will show its “+” button.
-        // If you wanted to HIDE the create icon here, you could explicitly do:
-        // isCreateBtnVisible: false
       ),
 
       body: ListView.builder(
         itemCount: _messages.length,
         itemBuilder: (context, index) {
           final item = _messages[index];
-          return _buildMessageTile(item);
+          return _buildMessageTile(context, item);
         },
       ),
 
-      // 2) Use the shared NavBar
       bottomNavigationBar: const NavBar(),
     );
   }
 
-  Widget _buildMessageTile(_MessageItem item) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: item.avatarColor,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildMessageTile(BuildContext context, _MessageItem item) {
+    return InkWell(
+      onTap: () {
+        // Navigate to ChatPage when tapped
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ChatPage()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: item.avatarColor,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.subtitle,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  item.title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  item.time,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.green[700],
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  item.subtitle,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green[700],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${item.unreadCount}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                item.time,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.green[700],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green[700],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${item.unreadCount}',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
