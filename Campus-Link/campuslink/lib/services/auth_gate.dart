@@ -30,6 +30,12 @@ class AuthGate extends StatelessWidget {
     );
   }
 
+  // Get current userID
+  static String? getCurrentUserId() {
+    final session = Supabase.instance.client.auth.currentSession;
+    return session?.user.id;
+  }
+
   // Method send SignUp request to the backend
   Future<bool> register(String email, String password) async {
     final supabase = Supabase.instance.client;

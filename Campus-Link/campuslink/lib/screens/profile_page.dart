@@ -104,11 +104,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => EditProfilePage(
-                            name: name,
-                            nationality: nationality,
-                            bio: bio,
-                          ),
+                          builder: (context) => EditProfilePage(),
                         ),
                       );
 
