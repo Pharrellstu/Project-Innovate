@@ -8,16 +8,24 @@ body{
 }
 
 .navigation{
+    padding: 0.5rem;
     position: fixed;
-    z-index: 2;
+    z-index: 999;
     background-color: white;
     white-space: nowrap;
-    margin: 30px auto;
     min-width: 100%;
+    margin-bottom: 5rem;
 
+}
+
+.arrowIconNav
+{
+    width: 15px;
+    height: 15px;
 }
 .logo
 {
+    font-size: 40px;
     display: flex;
     flex-shrink: 0;
     align-items: center;
@@ -31,6 +39,7 @@ body{
     height: auto;
     min-height: 60px;
     justify-content: space-between;
+    z-index: 999;
 
 }
 
@@ -43,15 +52,23 @@ body{
 }
 
 .listNavBar{
+    margin-bottom: 0;
     display:  flex;
     align-items: center;
-
+    padding: 0;
 
 }
 
+.listNavBar a{
+    text-decoration: none;
+    color: black;
+}
 
-.listNavBar li
+
+.listNavBarElement
 {
+
+    margin-bottom: 0px;
     margin-right: 5vw;
     list-style: none;
 }
@@ -90,6 +107,7 @@ body{
 .downloadButton
 {
     display: flex;
+    align-items: center;
     background-color: #005FA9;
     color: white;
     padding: 0.5rem 1rem;
@@ -187,14 +205,15 @@ body{
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 1rem;
+        padding: 1rem 30px;
         position: relative; /* required for stacking */
         background-color: white;
+        z-index: 99;
 
     }
     .mobileMenu {
         width: 100%;
-        padding: 1rem;
+        padding: 1rem 30px;
         display: none;
         flex-direction: column;
         gap: 1rem;
@@ -203,7 +222,6 @@ body{
         top: 100%;
         left: 0;
         border-top: 1px solid #ccc;
-        z-index: 1;
     }
 
     .mobileMenu a {

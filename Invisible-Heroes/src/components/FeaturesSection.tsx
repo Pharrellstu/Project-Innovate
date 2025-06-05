@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import "../css/FeaturesSection.css";
+import "./css/FeaturesSection.css";
 
 function FeaturesSection() {
   return (

@@ -230,7 +230,7 @@ body{
         max-width: 100%;
         background-color: #DEDEE0;
         border-radius: 25px 25px 0 0;
-        padding: 1rem;
+        padding: 1rem 30px;
     }
 
     .leftInfoDivMobile p,
@@ -291,7 +291,7 @@ body{
         background: #1C1A1A;
         border-radius: 25px 25px 0 0;
         margin-right: 0;
-        padding: 1rem;
+        padding: 1rem 30px;
         height: 100%;
         width: 100%;
     }
