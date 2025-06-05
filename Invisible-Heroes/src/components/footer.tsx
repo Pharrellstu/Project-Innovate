@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import "../css/footer.css"
+import "../css/Footer.css"
 
 
 

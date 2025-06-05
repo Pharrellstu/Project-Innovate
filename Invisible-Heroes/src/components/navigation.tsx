@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import "../css/navigation.css";
+import "../css/Navigation.css";
 
 
 function Navigation() {

@@ -3,6 +3,7 @@ import Navigation from "./components/Navigation";
 import AboutSection from "./components/AboutSection";
 import HeroSection from "./components/HeroSection";
 import FeaturesSection from "./components/FeaturesSection";
+import Footer from "./components/Footer";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         </section>
         <FeaturesSection />
       </div>
+      <Footer />
     </>
   );
 }
