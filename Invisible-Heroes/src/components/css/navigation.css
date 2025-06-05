@@ -1,0 +1,261 @@
+body{
+    font-family: Syne;
+}
+
+* p
+{
+    font-family: Syne;
+}
+
+.navigation{
+    position: fixed;
+    z-index: 2;
+    background-color: white;
+    white-space: nowrap;
+    margin: 30px auto;
+    min-width: 100%;
+
+}
+.logo
+{
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.contentDiv{
+    margin: 0 auto;
+    max-width: 1240px;
+    display: flex;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 60px;
+    justify-content: space-between;
+
+}
+
+.navRight{
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.listNavBar{
+    display:  flex;
+    align-items: center;
+
+
+}
+
+
+.listNavBar li
+{
+    margin-right: 5vw;
+    list-style: none;
+}
+
+.signButton
+{
+    text-overflow: ellipsis;
+    margin-right: 5vw;
+    border: 1px black solid;
+    border-radius: 25px;
+    padding: 0.5rem 1rem;
+    height: auto;
+    max-height: none;
+    display: flex;
+    align-items: center;
+    white-space: nowrap
+
+}
+
+.downloadButton li
+{
+    margin-right: 5px;
+    max-width: 10em;
+}
+.arrowImg
+{
+    width: 15px;
+    height: 15px;
+
+}
+.signButton li
+{
+    margin-right: 1vw;
+}
+
+.downloadButton
+{
+    display: flex;
+    background-color: #005FA9;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: 1px black solid;
+    border-radius: 25px;
+    gap: 0.5rem;
+}
+
+.signButton:hover
+{
+    background-color: #005FA9;
+    color: white;
+}
+.downloadButton:hover
+{
+    background-color: #004080;
+}
+
+
+.nav-toggle {
+    display: none;
+}
+
+.nav-toggle-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 30px;
+    padding: 20px 0;
+    cursor: pointer;
+    z-index: 10;
+    position: relative;
+}
+
+.nav-toggle-label span,
+.nav-toggle-label span::before,
+.nav-toggle-label span::after {
+    display: block;
+    background: black;
+    height: 3px;
+    width: 100%;
+    border-radius: 3px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.nav-toggle-label span::before,
+.nav-toggle-label span::after {
+    content: "";
+    position: absolute;
+}
+
+.nav-toggle-label span::before {
+    top: -8px;
+}
+
+.nav-toggle-label span::after {
+    top: 8px;
+}
+
+/* Burger animation when open */
+.nav-toggle:checked + .nav-toggle-label span {
+    background: transparent;
+}
+
+.nav-toggle:checked + .nav-toggle-label span::before {
+    transform: rotate(45deg);
+    top: 0;
+}
+
+.nav-toggle:checked + .nav-toggle-label span::after {
+    transform: rotate(-45deg);
+    top: 0;
+}
+
+/* Mobile menu */
+
+.nav-toggle:checked ~ .mobileMenu {
+    display: flex;
+}
+
+
+
+.navigationMobile{
+    display: none;
+}
+
+
+
+@media screen and (max-width: 768px) {
+
+    .contentMobileDiv
+    {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        position: relative; /* required for stacking */
+        background-color: white;
+
+    }
+    .mobileMenu {
+        width: 100%;
+        padding: 1rem;
+        display: none;
+        flex-direction: column;
+        gap: 1rem;
+        background-color: white;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        border-top: 1px solid #ccc;
+        z-index: 1;
+    }
+
+    .mobileMenu a {
+        text-decoration: none;
+        color: black;
+        border-radius: 5px;
+    }
+
+    .signButton
+    {
+        padding: 0.5rem;
+        max-width: 70px;
+        cursor: pointer;
+    }
+
+    .downloadButton {
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        max-width: 110px;
+        padding: 0.5rem 1rem;
+        width: auto;
+    }
+
+    .arrowImg
+    {
+        width: 10px;
+        height: 10px;
+    }
+
+    .navigationMobile {
+        width: 100%;
+        max-width: 768px;
+        z-index: 1;
+        position: fixed;
+        display: block;
+
+    }
+
+    .navigation {
+        display: none;
+    }
+
+
+
+
+
+}
+
+
+@font-face {
+    font-family: "Syne";
+    src: url("../font/Syne-VariableFont_wght.ttf");
+}
