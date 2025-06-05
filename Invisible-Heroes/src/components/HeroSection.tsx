@@ -1,4 +1,4 @@
-import "./HeroSection.css";
+import "./css/HeroSection.css";
 import Button from "./Button";
 
 const HeroSection = () => (

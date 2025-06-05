@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import "./AboutSection.css";
+import "./css/AboutSection.css";
 import Button from "./Button";
 
 function AboutSection() {

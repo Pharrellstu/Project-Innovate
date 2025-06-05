@@ -1,5 +1,5 @@
 /* Import CSS Variables */
-@import "../styles/variables.css";
+@import "../../styles/variables.css";
 
 /* Hero Section Styles */
 .hero-section {
