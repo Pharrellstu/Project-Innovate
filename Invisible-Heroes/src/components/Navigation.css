@@ -1,0 +1,117 @@
+/* Import CSS Variables */
+@import "../styles/variables.css";
+
+/* Navigation Styles */
+.navigation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transition: var(--transition-smooth);
+}
+
+.nav-container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(12px, 2vw, 20px) 0;
+  transition: var(--transition-smooth);
+}
+
+/* Logo */
+.nav-logo h2 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.nav-logo h2:hover {
+  color: var(--color-primary);
+}
+
+/* Navigation Links */
+.nav-links {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+
+.nav-links li a {
+  font-family: var(--font-body);
+  font-size: var(--fs-nav);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  text-decoration: none;
+  transition: var(--transition-smooth);
+  position: relative;
+}
+
+.nav-links li a:hover {
+  color: var(--color-primary);
+}
+
+.nav-links li a::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.nav-links li a:hover::after {
+  width: 100%;
+}
+
+/* Action Buttons */
+.nav-buttons {
+  display: flex;
+  gap: clamp(12px, 1.5vw, 16px);
+  align-items: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1280px) {
+  .nav-container {
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    gap: clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .nav-buttons {
+    gap: clamp(8px, 1vw, 12px);
+  }
+}
+
+@media (max-width: 640px) {
+  .nav-links {
+    display: none;
+  }
+
+  .nav-container {
+    justify-content: space-between;
+  }
+
+  .nav-buttons {
+    gap: 8px;
+  }
+}

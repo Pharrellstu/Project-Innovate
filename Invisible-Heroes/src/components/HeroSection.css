@@ -1,0 +1,157 @@
+/* Import CSS Variables */
+@import "../styles/variables.css";
+
+/* Hero Section Styles */
+.hero-section {
+  width: 100%;
+  max-width: var(--max-width);
+  height: clamp(600px, 80vh, 800px);
+  border-radius: var(--border-radius);
+  background: var(--color-dark);
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  color: var(--color-white);
+  text-align: start;
+  padding: var(--section-padding) clamp(50px, 6vw, 80px);
+  position: relative;
+  margin-bottom: 14rem;
+  transition: var(--transition-smooth);
+}
+
+.hero-bg-svg {
+  position: absolute;
+  bottom: clamp(32px, 6vw, 80px);
+  right: clamp(32px, 6vw, 80px);
+  z-index: 1;
+  opacity: 0.85;
+  pointer-events: none;
+  width: clamp(280px, 35vw, 439px);
+  height: clamp(280px, 35vw, 444px);
+  transition: var(--transition-smooth);
+}
+
+.hero-content {
+  max-width: 100%;
+  position: relative;
+  z-index: 5;
+}
+
+/* Desktop/Tablet Content - Show by default */
+.hero-desktop {
+  display: block;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* Mobile Content - Hide by default */
+.hero-mobile {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hero-content h3 {
+  font-family: var(--font-heading);
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  opacity: 0.8;
+  letter-spacing: 0.5px;
+  transition: var(--transition-smooth);
+}
+
+.hero-content h1 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-hero);
+  margin-bottom: 2.5rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  transition: font-size 0.3s ease;
+}
+
+.hero-content p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  margin-bottom: 0.2rem;
+  opacity: 0.9;
+  font-weight: var(--font-weight-normal);
+  transition: var(--transition-smooth);
+}
+
+.hero-content p:last-of-type {
+  margin-bottom: clamp(3rem, 5vw, 4rem);
+}
+
+/* Mobile bullet points styling */
+.hero-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem 0;
+}
+
+.hero-bullets li {
+  font-family: "Roboto", sans-serif;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  opacity: 0.9;
+  font-weight: clamp(300, 1vw + 300, 400);
+  position: relative;
+  padding-left: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.hero-bullets li:before {
+  content: "✓";
+  color: var(--color-white);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+/* Responsive design for hero section */
+@media (max-width: 1280px) {
+  .hero-section {
+    max-width: 95%;
+  }
+}
+
+/* Tablet breakpoint - gradual transition */
+@media (max-width: 1024px) {
+  .hero-content {
+    transition: all 0.4s ease;
+  }
+}
+
+/* Small tablet / large mobile */
+@media (max-width: 900px) {
+  .hero-desktop {
+    display: none;
+    opacity: 0;
+  }
+
+  .hero-mobile {
+    display: block;
+    opacity: 1;
+  }
+
+  .hero-section {
+    transition: all 0.4s ease;
+  }
+}
+
+/* Mobile breakpoint - final adjustments */
+@media (max-width: 768px) {
+  .hero-bullets li:last-of-type {
+    margin-bottom: 3rem;
+  }
+}
+
+/* Very small mobile devices */
+@media (max-width: 480px) {
+  .hero-section {
+    margin-bottom: 8rem;
+  }
+}

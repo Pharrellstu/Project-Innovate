@@ -1,0 +1,296 @@
+/* Import CSS Variables */
+@import "../styles/variables.css";
+
+/* Features Section Styles */
+.features-section {
+  width: 100%;
+  max-width: var(--max-width);
+  border-radius: var(--border-radius);
+  background: var(--color-dark);
+  color: var(--color-white);
+  padding: var(--section-padding);
+  margin: 0 auto 14rem auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background SVG Symbols */
+.features-bg-symbols {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.features-bg-symbols svg {
+  position: absolute;
+  opacity: 0.1;
+  transition: var(--transition-smooth);
+}
+
+#symbol-1 {
+  top: 10%;
+  right: 5%;
+  width: clamp(150px, 20vw, 200px);
+  height: auto;
+}
+
+#symbol-2 {
+  top: 60%;
+  left: 5%;
+  width: clamp(120px, 18vw, 180px);
+  height: auto;
+}
+
+#symbol-3 {
+  bottom: 10%;
+  right: 15%;
+  width: clamp(180px, 22vw, 220px);
+  height: auto;
+}
+
+/* Content Container */
+.features-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3rem, 6vw, 4rem);
+}
+
+/* Main Layout: Steps on Left, Features on Right */
+.features-layout {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: clamp(3rem, 6vw, 5rem);
+  align-items: start;
+}
+
+/* Steps Section */
+.features-steps {
+  position: sticky;
+  top: 2rem;
+}
+
+/* Features Step Counter */
+.features-step-counter {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h1);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-white);
+  margin: 0;
+}
+
+/* Features Grid */
+.features-grid {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+
+/* Individual Feature Cards */
+.feature-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius-small);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition-smooth);
+}
+
+.feature-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.feature-card h2 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h2);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  color: var(--color-white);
+}
+
+.feature-card p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: var(--font-weight-light);
+  line-height: 1.6;
+  color: var(--color-light);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+
+.feature-card p:last-child {
+  margin-bottom: 0;
+}
+
+.feature-card ul {
+  list-style: none;
+  padding: 0;
+  margin: clamp(1rem, 2vw, 1.5rem) 0;
+}
+
+.feature-card li {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: var(--font-weight-light);
+  line-height: 1.6;
+  color: var(--color-light);
+  margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.feature-card li:before {
+  content: "•";
+  color: var(--color-white);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.feature-card li strong {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-white);
+}
+
+/* CTA Section */
+.features-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .features-section {
+    padding: clamp(2rem, 6vw, 3rem);
+    margin-bottom: 8rem;
+  }
+  
+  .features-layout {
+    grid-template-columns: 1fr;
+    gap: clamp(2rem, 4vw, 3rem);
+  }
+  
+  .features-steps {
+    position: static;
+    text-align: center;
+  }
+  
+  .features-grid {
+    gap: clamp(1.5rem, 3vw, 2rem);
+  }
+  
+  .features-bg-symbols svg {
+    opacity: 0.05;
+  }
+  
+  #symbol-1 {
+    width: clamp(100px, 15vw, 150px);
+  }
+  
+  #symbol-2 {
+    width: clamp(80px, 12vw, 120px);
+  }
+  
+  #symbol-3 {
+    width: clamp(120px, 18vw, 160px);
+  }
+}
+
+/* Individual Feature Cards */
+.feature-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius-small);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition-smooth);
+}
+
+.feature-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.feature-card h2 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h2);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  color: var(--color-white);
+}
+
+.feature-card p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: var(--font-weight-light);
+  line-height: 1.6;
+  color: var(--color-light);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+
+.feature-card ul {
+  list-style: none;
+  padding: 0;
+  margin: clamp(1rem, 2vw, 1.5rem) 0;
+}
+
+.feature-card li {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: var(--font-weight-light);
+  line-height: 1.6;
+  color: var(--color-light);
+  margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.feature-card li:before {
+  content: "•";
+  color: var(--color-white);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.feature-card li strong {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-white);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .features-section {
+    padding: clamp(2rem, 6vw, 3rem);
+    margin-bottom: 8rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: clamp(1.5rem, 3vw, 2rem);
+  }
+  
+  .features-bg-symbols svg {
+    opacity: 0.05;
+  }
+  
+  #symbol-1 {
+    width: clamp(100px, 15vw, 150px);
+  }
+  
+  #symbol-2 {
+    width: clamp(80px, 12vw, 120px);
+  }
+  
+  #symbol-3 {
+    width: clamp(120px, 18vw, 160px);
+  }
+}

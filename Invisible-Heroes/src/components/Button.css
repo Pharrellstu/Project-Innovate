@@ -1,0 +1,104 @@
+/* Import CSS Variables */
+@import "../styles/variables.css";
+
+/* Universal Button Styles */
+.btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(15px, 2vw, 20px);
+  border-radius: var(--border-radius-button);
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn__icon {
+  display: flex;
+  align-items: center;
+}
+
+.btn__icon svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+/* Button Variants */
+.btn--filled {
+  background: var(--gradient-button);
+  color: var(--color-white);
+}
+
+.btn--filled:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-button);
+}
+
+.btn--hollow {
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+
+.btn--hollow:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.btn--rounded-hollow {
+  background: transparent;
+  color: var(--color-text);
+  border: 2px solid var(--color-text);
+  border-radius: 50px;
+  padding: clamp(12px, 2vw, 16px) clamp(24px, 4vw, 32px);
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  gap: clamp(8px, 1.5vw, 12px);
+}
+
+.btn--rounded-hollow:hover:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 95, 169, 0.3);
+}
+
+.btn--rounded-hollow svg {
+  transition: var(--transition-smooth);
+}
+
+.btn--rounded-hollow:hover:not(:disabled) svg path {
+  fill: var(--color-white);
+}
+
+/* Button Sizes */
+.btn--small {
+  height: clamp(45px, 6vw, 50px);
+  padding: 0 clamp(20px, 3vw, 24px);
+  font-size: clamp(0.85rem, 1vw, 0.9rem);
+}
+
+.btn--medium {
+  height: var(--button-height);
+  padding: 0 clamp(40px, 6vw, 50px);
+  font-size: var(--fs-body);
+}
+
+.btn--large {
+  height: clamp(70px, 10vw, 80px);
+  padding: 0 clamp(50px, 8vw, 60px);
+  font-size: clamp(1.1rem, 1.8vw, 1.3rem);
+}
