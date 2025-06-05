@@ -18,6 +18,24 @@ class DbHandler {
     }
   }
 
+  // Function to update user profile
+  static Future<void> updateUserData(String column, var newData) async
+  {
+    final userId = AuthGate.getCurrentUserId();
+      
+    if (userId == null) {
+      throw Exception('No user is logged in');
+    }
+
+    try {
+      await supabase.from('account').update({
+        column: newData,
+      }).eq('auth_user_id', userId);
+    } catch (e) {
+      log('Error updating user profile: $e');
+    }
+  }
+
   // Function to get current user data
   static Future<UserObject> getCurrentUser() async {
     final userId = AuthGate.getCurrentUserId();

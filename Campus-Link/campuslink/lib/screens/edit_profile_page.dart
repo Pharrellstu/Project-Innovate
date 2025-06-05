@@ -56,11 +56,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Scaffold(
       appBar: const TopBar(title: "Edit Profile"),
       bottomNavigationBar: const NavBar(),
+      
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Profile Picture Section
             GestureDetector(
               onTap: _pickImage,
               child: Column(
@@ -87,21 +89,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
             
             const SizedBox(height: 24),
 
-            _buildTextField(label: 'Name', controller: nameController!),
+            // Name input field
+            _buildTextField(label: 'Name', controller: nameController),
             
-            const SizedBox(height: 16),
+            const SizedBox(height: 28),
 
-            const SizedBox(height: 16),
-
+            // Bio input field
             _buildTextField(
               label: 'Bio',
-              controller: bioController!,
+              controller: bioController,
               maxLines: 4,
             ),
+
             const SizedBox(height: 24),
 
+            // Save Changes button
             ElevatedButton(
               onPressed: () {
+                DbHandler.updateUserData("username", nameController.text);
+                DbHandler.updateUserData("bio", bioController.text);
+
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
