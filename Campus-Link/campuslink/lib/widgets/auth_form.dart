@@ -54,10 +54,6 @@ class _AuthFormState extends State<AuthForm> {
         .register(email, password)
         .then((_) {
           _showSnackBar('Registration successful!');
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => AuthGate()),
-          );
         })
         .catchError((error) {
           String errorMessage = error.message ?? 'An unknown error occurred';
@@ -70,10 +66,6 @@ class _AuthFormState extends State<AuthForm> {
         .login(email, password)
         .then((_) {
           _showSnackBar('Login successful!');
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => AuthGate()),
-          );
         })
         .catchError((error) {
           String errorMessage = error.message ?? 'An unknown error occurred';

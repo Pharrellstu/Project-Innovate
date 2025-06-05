@@ -1,3 +1,4 @@
+import 'package:campuslink/services/auth_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
@@ -69,6 +70,13 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 12),
             Row(
               children: [
+                // TEMP LOGOUT BUTTON
+                ElevatedButton(
+                  onPressed: () {
+                    AuthGate.logout(context);
+                  },
+                  child: const Text('Logout'),
+                ),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {},
