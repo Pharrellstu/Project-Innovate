@@ -31,11 +31,8 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: TopBar(title: 'Profile view', isCreateBtnVisible: false, isLogoutBtnVisible: true),
       bottomNavigationBar: const NavBar(),
-      appBar: const PreferredSize(
-        preferredSize: Size.fromHeight(60),
-        child: TopBar(title: 'Profile view'),
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -48,7 +45,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Text('Nationality: $nationality'),
                       const Text('Age: 20'),
@@ -58,7 +61,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 const ClipRRect(
                   borderRadius: BorderRadius.all(Radius.circular(30)),
                   child: Image(
-                    image: AssetImage('resources/img/manny-cat-takes-selfies-dogs-gopro-9.webp'),
+                    image: AssetImage(
+                      'resources/img/manny-cat-takes-selfies-dogs-gopro-9.webp',
+                    ),
                     width: 80,
                     height: 80,
                   ),
@@ -83,7 +88,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFE6F2FB),
                       foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -118,7 +126,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: const Color(0xFFE6F2FB),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
                       ),
@@ -142,57 +153,77 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 20),
-            const Text('Following', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text(
+              'Following',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 10,
               runSpacing: 10,
-              children: followingImages
-                  .map((img) => Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 1),
-                          borderRadius: BorderRadius.circular(15),
+              children:
+                  followingImages
+                      .map(
+                        (img) => Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black, width: 1),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15),
+                            child: Image.asset(
+                              img,
+                              width: 70,
+                              height: 70,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(15),
-                          child: Image.asset(img, width: 70, height: 70, fit: BoxFit.cover),
-                        ),
-                      ))
-                  .toList(),
+                      )
+                      .toList(),
             ),
             const SizedBox(height: 20),
-            const Text('Earned badges:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text(
+              'Earned badges:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 10,
               runSpacing: 10,
-              children: badgeImages.asMap().entries.map((entry) {
-                int index = entry.key;
-                String img = entry.value;
+              children:
+                  badgeImages.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    String img = entry.value;
 
-                final List<List<Color>> gradients = [
-                  [Colors.orangeAccent, Colors.white],
-                  [Colors.lightBlueAccent, Colors.white],
-                  [Colors.purpleAccent, Colors.white],
-                  [Colors.blueAccent, Colors.white],
-                  [Colors.redAccent, Colors.white],
-                ];
+                    final List<List<Color>> gradients = [
+                      [Colors.orangeAccent, Colors.white],
+                      [Colors.lightBlueAccent, Colors.white],
+                      [Colors.purpleAccent, Colors.white],
+                      [Colors.blueAccent, Colors.white],
+                      [Colors.redAccent, Colors.white],
+                    ];
 
-                return Container(
-                  padding: const EdgeInsets.all(2.5),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: gradients[index % gradients.length],
-                    ),
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(img, width: 75, height: 75, fit: BoxFit.cover),
-                  ),
-                );
-              }).toList(),
+                    return Container(
+                      padding: const EdgeInsets.all(2.5),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: gradients[index % gradients.length],
+                        ),
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          img,
+                          width: 75,
+                          height: 75,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    );
+                  }).toList(),
             ),
           ],
         ),
