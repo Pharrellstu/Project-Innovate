@@ -2,16 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/login_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:campuslink/services/db_handler.dart';
+// import 'package:campuslink/screens/edit_profile_page.dart'; //TODO: Uncomment when EditProfilePage is implemented
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
+
   @override
   Widget build(BuildContext context) {
-    if (checkIfLoggedIn()) {
-      return HomePage(); // Main app screen
-    } else {
-      return LoginPage(); // Login/register first
-    }
+    return StreamBuilder<AuthState>(
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        final session = Supabase.instance.client.auth.currentSession;
+
+        if (session == null) {
+          return LoginPage();
+        }
+
+        final isNewUser = session.user.userMetadata?['isNewUser'] ?? false;
+        if (isNewUser) {
+          // TODO: If the user is new, redirect to the edit profile page
+          // return EditProfilePage();
+        }
+
+        return HomePage();
+      },
+    );
+  }
+
+  // Get current userID
+  static String? getCurrentUserId() {
+    final session = Supabase.instance.client.auth.currentSession;
+    return session?.user.id;
   }
 
   // Method send SignUp request to the backend
@@ -20,6 +42,9 @@ class AuthGate extends StatelessWidget {
     final response = await supabase.auth.signUp(
       email: email,
       password: password,
+      data: {
+        'isNewUser': true, // Custom metadata
+      },
     );
 
     final userId = response.user?.id;
@@ -27,15 +52,9 @@ class AuthGate extends StatelessWidget {
     if (userId == null) {
       return false; // Registration failed
     }
+
     // If the user is created successfully, insert into aditional values in the 'account' table
-    await supabase.from('account').insert({
-      'auth_user_id': userId,
-      'username': email.split('@')[0], // TEMP: Use email prefix as username
-      'email': email,
-      'isadmin': false, // ENSURE this is portected on backend
-      'isverified': false,
-      // Add other fields as needed
-    });
+    await DbHandler().insertUser(userId, email);
 
     login(email, password); // Automatically log in after registration
 
@@ -54,13 +73,12 @@ class AuthGate extends StatelessWidget {
   }
 
   // Methood to Logout the user
-  Future<void> logout() async {
-    final supabase = Supabase.instance.client;
-    await supabase.auth.signOut();
-  }
-
-  bool checkIfLoggedIn() {
-    final session = Supabase.instance.client.auth.currentSession;
-    return session != null;
+  static Future<void> logout(BuildContext context) async {
+    await Supabase.instance.client.auth.signOut();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const AuthGate()),
+      (route) => false,
+    );
   }
 }

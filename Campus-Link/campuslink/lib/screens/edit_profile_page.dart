@@ -1,37 +1,39 @@
 import 'dart:io';
+import 'package:campuslink/services/user.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:campuslink/services/db_handler.dart';
 
 class EditProfilePage extends StatefulWidget {
-  final String name;
-  final String nationality;
-  final String bio;
-
-  const EditProfilePage({
-    super.key,
-    required this.name,
-    required this.nationality,
-    required this.bio,
-  });
+  const EditProfilePage({super.key});
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
+  late UserObject currentUser;
   late TextEditingController nameController;
-  late TextEditingController nationalityController;
   late TextEditingController bioController;
   File? selectedImage;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController(text: widget.name);
-    nationalityController = TextEditingController(text: widget.nationality);
-    bioController = TextEditingController(text: widget.bio);
+    initializeUser();
+  }
+
+  Future<void> initializeUser() async {
+    final user = await DbHandler.getCurrentUser();
+    setState(() {
+      currentUser = user;
+      nameController = TextEditingController(text: currentUser.username);
+      bioController = TextEditingController(text: currentUser.bio);
+      isLoading = false;
+    });
   }
 
   Future<void> _pickImage() async {
@@ -47,26 +49,31 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
+      appBar: const TopBar(title: "Edit Profile"),
       bottomNavigationBar: const NavBar(),
-      appBar: const PreferredSize(
-        preferredSize: Size.fromHeight(60),
-        child: TopBar(title: 'Edit Profile'),
-      ),
+      
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Profile Picture Section
             GestureDetector(
               onTap: _pickImage,
               child: Column(
                 children: [
                   CircleAvatar(
                     radius: 45,
-                    backgroundImage: selectedImage != null
-                        ? FileImage(selectedImage!)
-                        : const AssetImage('resources/img/pfp.jpg') as ImageProvider,
+                    backgroundImage:
+                        selectedImage != null
+                            ? FileImage(selectedImage!)
+                            : const AssetImage('resources/img/pfp.jpg') // TODO: use DB image
+                                as ImageProvider,
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -79,36 +86,44 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ],
               ),
             ),
+            
             const SizedBox(height: 24),
 
+            // Name input field
             _buildTextField(label: 'Name', controller: nameController),
-            const SizedBox(height: 16),
+            
+            const SizedBox(height: 28),
 
-            _buildTextField(label: 'Nationality', controller: nationalityController),
-            const SizedBox(height: 16),
+            // Bio input field
+            _buildTextField(
+              label: 'Bio',
+              controller: bioController,
+              maxLines: 4,
+            ),
 
-            _buildTextField(label: 'Bio', controller: bioController, maxLines: 4),
             const SizedBox(height: 24),
 
+            // Save Changes button
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context, {
-                  'name': nameController.text,
-                  'nationality': nationalityController.text,
-                  'bio': bioController.text,
-                  'image': selectedImage, // You can handle this in profile if needed
-                });
+                DbHandler.updateUserData("username", nameController.text);
+                DbHandler.updateUserData("bio", bioController.text);
+
+                Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
               child: const Text('Save Changes'),
-            )
+            ),
           ],
         ),
       ),
@@ -133,7 +148,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
             label,
             style: const TextStyle(
               color: Colors.lightBlue,
-              fontWeight: FontWeight.bold,
             ),
           ),
           TextField(
