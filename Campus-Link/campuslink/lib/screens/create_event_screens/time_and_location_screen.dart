@@ -269,6 +269,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
                   widget.eventData.location = "${latLng.latitude},${latLng.longitude}";
                   locationController.text = displayName;
                   isEditingLocation = false;
+                  widget.eventData.locationName = displayName;
                 });
                 mapController.move(latLng, 15.0);
                 _checkValidity();
