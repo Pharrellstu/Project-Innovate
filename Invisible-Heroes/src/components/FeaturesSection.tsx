@@ -4,7 +4,7 @@ import "./css/FeaturesSection.css";
 function FeaturesSection() {
   return (
     <Fragment>
-      <div className="featuresDiv">
+      <div id="features" className="featuresDiv">
         <div className="headingDiv">
           <h1 className="featuresHeading">Features</h1>
           <p className="featuresText">
