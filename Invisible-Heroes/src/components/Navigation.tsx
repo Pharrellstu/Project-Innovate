@@ -33,7 +33,6 @@ function Navigation() {
       }, 100);
     }
   };
-
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     
@@ -47,6 +46,13 @@ function Navigation() {
       // If we're on another page, navigate to homepage (will scroll to top automatically)
       navigate('/');
     }
+  };
+  const handleDownloadClick = () => {
+    navigate('/download');
+  };
+
+  const handleSignInClick = () => {
+    navigate('/signin');
   };
 
   return (
@@ -66,14 +72,13 @@ function Navigation() {
               <li className="listNavBarElement">
                 <a href="">Contact</a>
               </li>
-            </ul>            <Button variant="hollow" size="medium" className="nav-sign-button">
+            </ul>            <Button variant="hollow" size="medium" className="nav-sign-button" onClick={handleSignInClick}>
               Sign in
-            </Button>
-
-            <Button 
+            </Button><Button 
               variant="filled" 
               size="medium" 
               className="nav-download-button"
+              onClick={handleDownloadClick}
               icon={
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -109,13 +114,13 @@ function Navigation() {
           </label>          <div className="mobileMenu">
             <Link to="/about">About</Link>
             <a href="#features" onClick={handleFeaturesClick}>Features</a>
-            <a href="#">Contact</a><Button variant="hollow" size="medium" className="nav-sign-button-mobile">
+            <a href="#">Contact</a>            <Button variant="hollow" size="medium" className="nav-sign-button-mobile" onClick={handleSignInClick}>
               Sign in
-            </Button>
-            <Button 
+            </Button><Button 
               variant="filled" 
               size="medium" 
               className="nav-download-button-mobile"
+              onClick={handleDownloadClick}
               icon={
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

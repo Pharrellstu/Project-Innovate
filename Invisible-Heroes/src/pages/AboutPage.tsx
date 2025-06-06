@@ -66,8 +66,11 @@ function AboutPage() {
             hard to connect, or missing a close confidant.
           </p>
           <p className="interaction-hint">(Hover/Tap)</p>
-            <div className="loneliness-cards">
-            <div className={`loneliness-card ${activeCard === 0 ? 'active' : ''}`} onClick={() => handleCardClick(0)}>
+          <div className="loneliness-cards">
+            <div
+              className={`loneliness-card ${activeCard === 0 ? "active" : ""}`}
+              onClick={() => handleCardClick(0)}
+            >
               <h4>Situational</h4>
               <div className="card-content">
                 <p>Feeling isolated due to specific circumstances:</p>
@@ -80,8 +83,11 @@ function AboutPage() {
                 </ul>
               </div>
             </div>
-            
-            <div className={`loneliness-card ${activeCard === 1 ? 'active' : ''}`} onClick={() => handleCardClick(1)}>
+
+            <div
+              className={`loneliness-card ${activeCard === 1 ? "active" : ""}`}
+              onClick={() => handleCardClick(1)}
+            >
               <h4>Emotional</h4>
               <div className="card-content">
                 <p>Missing deep, meaningful connections:</p>
@@ -94,8 +100,11 @@ function AboutPage() {
                 </ul>
               </div>
             </div>
-            
-            <div className={`loneliness-card ${activeCard === 2 ? 'active' : ''}`} onClick={() => handleCardClick(2)}>
+
+            <div
+              className={`loneliness-card ${activeCard === 2 ? "active" : ""}`}
+              onClick={() => handleCardClick(2)}
+            >
               <h4>Social</h4>
               <div className="card-content">
                 <p>Lacking a broader social network:</p>
@@ -108,8 +117,11 @@ function AboutPage() {
                 </ul>
               </div>
             </div>
-            
-            <div className={`loneliness-card ${activeCard === 3 ? 'active' : ''}`} onClick={() => handleCardClick(3)}>
+
+            <div
+              className={`loneliness-card ${activeCard === 3 ? "active" : ""}`}
+              onClick={() => handleCardClick(3)}
+            >
               <h4>Cultural</h4>
               <div className="card-content">
                 <p>Feeling disconnected due to cultural differences:</p>
@@ -117,13 +129,20 @@ function AboutPage() {
                   <li>Language barriers and communication challenges</li>
                   <li>Missing familiar cultural traditions and customs</li>
                   <li>Feeling misunderstood due to different backgrounds</li>
-                  <li>Struggling with different social norms and expectations</li>
-                  <li>Being away from cultural community and support systems</li>
+                  <li>
+                    Struggling with different social norms and expectations
+                  </li>
+                  <li>
+                    Being away from cultural community and support systems
+                  </li>
                 </ul>
               </div>
             </div>
-            
-            <div className={`loneliness-card ${activeCard === 4 ? 'active' : ''}`} onClick={() => handleCardClick(4)}>
+
+            <div
+              className={`loneliness-card ${activeCard === 4 ? "active" : ""}`}
+              onClick={() => handleCardClick(4)}
+            >
               <h4>Transitional</h4>
               <div className="card-content">
                 <p>Temporary loneliness during major life transitions:</p>
@@ -137,7 +156,6 @@ function AboutPage() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
       <Footer />

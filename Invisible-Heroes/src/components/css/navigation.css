@@ -91,7 +91,7 @@
 
 .listNavBar a::after,
 .mobileMenu a::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -147,12 +147,20 @@
 
 .nav-download-button,
 .nav-download-button-mobile {
-  background: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
+  background: linear-gradient(
+    to right,
+    var(--color-primary),
+    var(--color-primary-dark)
+  );
 }
 
 .nav-download-button:hover,
 .nav-download-button-mobile:hover {
-  background: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
+  background: linear-gradient(
+    to right,
+    var(--color-primary),
+    var(--color-primary-dark)
+  );
   color: var(--color-white);
   transform: translateY(-1px);
   box-shadow: var(--shadow-button);
@@ -180,6 +188,15 @@
   cursor: pointer;
   z-index: 10;
   position: relative;
+  transition: transform 0.2s ease;
+}
+
+.nav-toggle-label:hover {
+  transform: scale(1.1);
+}
+
+.nav-toggle-label:active {
+  transform: scale(0.95);
 }
 
 .nav-toggle-label span,
@@ -191,7 +208,7 @@
   width: 100%;
   border-radius: 3px;
   position: relative;
-  transition: var(--transition-smooth);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-toggle-label span::before,
@@ -223,14 +240,139 @@
   top: 0;
 }
 
+/* Smooth mobile menu reveal animation */
 .nav-toggle:checked ~ .mobileMenu {
-  display: flex;
+  opacity: 1;
+  max-height: 500px;
+  transform: translateY(0);
+  animation: slideDownBounce 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Keyframe animation for smooth slide-down with subtle bounce */
+@keyframes slideDownBounce {
+  0% {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-15px);
+  }
+  60% {
+    opacity: 0.8;
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
 }
 
 /* ================================
    MOBILE RESPONSIVE STYLES
    ================================ */
 
+/* Tablet screens (769px to 1024px) - keep dropdown menu behavior */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .navigation {
+    display: none;
+  }
+
+  .navigationMobile {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: var(--color-white);
+    transition: backdrop-filter 0.3s ease;
+  }
+
+  .contentMobileDiv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 30px;
+    position: relative;
+    background-color: var(--color-white);
+  }
+
+  .mobileMenu {
+    width: 100%;
+    padding: 0 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: var(--color-white);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    border-top: 1px solid var(--color-light);
+    box-shadow: var(--shadow-nav);
+
+    /* Animation properties for smooth slide-down */
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition-delay: 0s;
+  }
+
+  /* Add padding when menu is open */
+  .nav-toggle:checked ~ .mobileMenu {
+    padding: 1rem 30px;
+  }
+
+  /* Staggered animation for menu items */
+  .mobileMenu > * {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .nav-toggle:checked ~ .mobileMenu > * {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Add hover effects for menu items */
+  .mobileMenu a {
+    padding: 0.5rem 0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .mobileMenu a:hover {
+    transform: translateX(8px);
+    color: var(--color-primary);
+  }
+
+  /* Stagger the animation delays for each menu item */
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(1) {
+    transition-delay: 0.05s;
+  }
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(2) {
+    transition-delay: 0.1s;
+  }
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(3) {
+    transition-delay: 0.15s;
+  }
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(4) {
+    transition-delay: 0.2s;
+  }
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(5) {
+    transition-delay: 0.25s;
+  }
+
+  .nav-sign-button-mobile,
+  .nav-download-button-mobile {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+/* Mobile phones (768px and below) - full screen menu */
 @media screen and (max-width: 768px) {
   .navigation {
     display: none;
@@ -245,7 +387,6 @@
     z-index: 100;
     background-color: var(--color-white);
   }
-
   .contentMobileDiv {
     display: flex;
     align-items: center;
@@ -253,26 +394,125 @@
     padding: 1rem 30px;
     position: relative;
     background-color: var(--color-white);
+    z-index: 102;
+    border-bottom: 1px solid var(--color-light);
   }
 
+  /* Ensure logo stays visible when menu is open */
+  .nav-toggle:checked ~ .mobileMenu + .logoMobile,
+  .logoMobile {
+    position: relative;
+    z-index: 103;
+  }
   .mobileMenu {
-    width: 100%;
-    padding: 1rem 30px;
-    display: none;
-    flex-direction: column;
-    gap: 1rem;
-    background-color: var(--color-white);
-    position: absolute;
-    top: 100%;
+    position: fixed;
+    top: 0;
     left: 0;
-    border-top: 1px solid var(--color-light);
-    box-shadow: var(--shadow-nav);
+    width: 100vw;
+    min-height: 100dvh;
+    padding: 0;
+    padding-top: 100px; /* Space for the logo/header */
+    padding-bottom: 40px; /* Bottom padding to prevent cutoff */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2.5rem;
+    background-color: var(--color-white);
+    overflow-y: auto; /* Allow scrolling if content is too tall */
+
+    /* Full screen animation properties */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-100%);
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 101;
+  }
+  /* Full screen menu reveal animation */
+  .nav-toggle:checked ~ .mobileMenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
   }
 
+  /* Closing animation - faster for better UX */
+  .nav-toggle:not(:checked) ~ .mobileMenu {
+    transition: opacity 0.2s ease-out, visibility 0.2s ease-out,
+      transform 0.2s ease-out;
+  }
+
+  /* Enhanced hamburger icon positioning for full screen */
+  .nav-toggle-label {
+    z-index: 103;
+    position: relative;
+  } /* Staggered animation for menu items - full screen version */
+  .mobileMenu > * {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0; /* Prevent items from shrinking */
+  }
+
+  .nav-toggle:checked ~ .mobileMenu > * {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Faster closing animation for menu items */
+  .nav-toggle:not(:checked) ~ .mobileMenu > * {
+    transition: all 0.15s ease-out;
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  /* Full screen menu item styling */
+  .mobileMenu a {
+    font-size: 1.4rem;
+    line-height: 1.5;
+    padding: 1.2rem 2rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    text-align: center;
+    min-width: 220px;
+    display: block;
+  }
+
+  .mobileMenu a:hover {
+    transform: scale(1.05);
+    color: var(--color-primary);
+    background-color: rgba(0, 95, 169, 0.1);
+  }
+
+  /* Enhanced stagger delays for full screen */
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(1) {
+    transition-delay: 0.1s;
+  }
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(2) {
+    transition-delay: 0.2s;
+  }
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(3) {
+    transition-delay: 0.3s;
+  }
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(4) {
+    transition-delay: 0.4s;
+  }
+  .nav-toggle:checked ~ .mobileMenu > *:nth-child(5) {
+    transition-delay: 0.5s;
+  }
   .nav-sign-button-mobile,
   .nav-download-button-mobile {
-    width: 100%;
-    max-width: 200px;
+    width: auto;
+    min-width: 220px;
+    max-width: 320px;
+    height: 50px;
+    padding: 0 2rem;
+    font-size: 1.1rem;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.5rem;
   }
 }
 
