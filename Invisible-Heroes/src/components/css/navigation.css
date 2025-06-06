@@ -8,11 +8,13 @@ body{
 }
 
 .navigation{
-    padding: 0.5rem;
+    padding: 0 2.5rem;
     position: fixed;
     z-index: 999;
     background-color: white;
     white-space: nowrap;
+    width: 100%;
+    max-width: 1117px;
     min-width: 100%;
     margin-bottom: 5rem;
 
@@ -35,7 +37,6 @@ body{
     margin: 0 auto;
     max-width: 1240px;
     display: flex;
-    flex-wrap: wrap;
     height: auto;
     min-height: 60px;
     justify-content: space-between;
@@ -48,7 +49,7 @@ body{
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
+    white-space: nowrap;
 }
 
 .listNavBar{
@@ -222,6 +223,7 @@ body{
         top: 100%;
         left: 0;
         border-top: 1px solid #ccc;
+        z-index: 99;
     }
 
     .mobileMenu a {
