@@ -7,6 +7,7 @@ import 'create_event_screens/basic_info_screen.dart';
 import 'create_event_screens/time_and_location_screen.dart';
 import 'create_event_screens/privacy_and_security_screen.dart';
 import 'create_event_screens/overview.dart';
+import 'package:campuslink/services/event_service.dart';
 
 class CreateEventPage extends StatelessWidget {
   const CreateEventPage({super.key});
@@ -129,8 +130,10 @@ class _createEventPageState extends State<createEventPage> {
                           TextButton(onPressed: prevStep, child: Text('Back')),
                         // In CreateEventPage's build method:
                         TextButton(
-                          onPressed: () {
+                          onPressed: () async {
+                            final isLastStep = currentStep == steps.length - 1;
                             bool currentStepValid;
+
                             switch (currentStep) {
                               case 0:
                                 currentStepValid = isBasicInfoValid;
@@ -143,12 +146,33 @@ class _createEventPageState extends State<createEventPage> {
                                 break;
                               case 3:
                                 currentStepValid = true; // Overview page is always valid
+                                break;
                               default:
                                 currentStepValid = true;
                             }
-                            return currentStepValid ? nextStep : null;
-                          }(),
-                          child: Text(currentStep == steps.length - 1 ? 'Finish' : 'Next'),
+                            //return currentStepValid ? nextStep : null;
+                            if (!currentStepValid) return;
+
+                            if (isLastStep) {
+                              // Attempt to create the event in Supabase
+                              final success = await EventService.createEvent(_eventData);
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Event created successfully!')),
+                                );
+                                Navigator.of(context).pop();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed to create event.')),
+                                );
+                              }
+                            } else {
+                              nextStep();
+                            }
+                          },
+                          child: Text(
+                              currentStep == steps.length - 1 ? 'Finish' : 'Next'
+                          ),
                         )
                       ],
                     ),
@@ -275,7 +299,7 @@ class EventData {
   bool repeatEvent = false;
   List<bool> repeatDays = [false, false, false, false, false, false, false];
   int repeatEveryWeeks = 1;
-  LatLng? locationLatLng;
+  //LatLng? locationLatLng;
   String? locationName;
 // You can also add badges, limits, privacy, etc.
 
