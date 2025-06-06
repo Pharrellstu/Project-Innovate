@@ -34,7 +34,7 @@
 .hero-content {
   max-width: 100%;
   position: relative;
-  z-index: 5;
+  z-index: 2;
 }
 
 /* Desktop/Tablet Content - Show by default */

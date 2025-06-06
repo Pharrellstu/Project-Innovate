@@ -1,0 +1,270 @@
+/* Importing Variables to use */
+@import "../../styles/variables.css";
+
+/* About Page Styles */
+.about-page-container {
+  min-height: 100vh;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--section-padding) 20px 0;
+  text-align: start;
+}
+
+.about-page-container h1 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-bold);
+  width: 60%;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  margin-top: clamp(2rem, 5vw, 6rem);
+  margin-bottom: clamp(1rem, 3vw, 2rem);
+  color: var(--color-text);
+}
+
+.about-page-container h2 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-semibold);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  margin-bottom: clamp(1rem, 3vw, 2rem);
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.about-page-container p {
+  font-family: var(--font-heading);
+  margin-bottom: clamp(1rem, 3vw, 2rem);
+}
+
+.about-page-container img {
+  width: 100%;
+  border-radius: clamp(2rem, 5vw, 3rem);
+  margin-bottom: clamp(2rem, 5vw, 3rem);
+}
+
+.about-page-content {
+  padding: var(--section-gap) 0;
+}
+
+.about-small-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: var(--section-padding) 0;
+  gap: clamp(2rem, 4vw, 4rem);
+}
+
+.about-small-section img {
+  flex: 1;
+  width: 50%;
+  border-radius: clamp(2rem, 5vw, 3rem);
+  margin-bottom: 0;
+  transition: all 0.8s ease-in-out;
+}
+
+.about-small-section img.expanded {
+  flex: 2;
+  width: 100%;
+}
+
+.about-small-section-text {
+  flex: 1;
+  width: 50%;
+}
+
+.about-small-section-text h3 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  color: var(--color-text);
+}
+
+.about-small-section-text p {
+  font-family: var(--font-heading);
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  line-height: 1.6;
+  color: var(--color-text);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+
+/* Types of Loneliness Section */
+.types-of-loneliness {
+  padding: var(--section-padding) 0;
+}
+
+.types-of-loneliness h3 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  color: var(--color-text);
+}
+
+.types-of-loneliness p {
+  font-family: var(--font-heading);
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  line-height: 1.6;
+  color: var(--color-text);
+  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+}
+
+.loneliness-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: clamp(1rem, 2vw, 1.5rem);
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.loneliness-card {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1f2937 100%);
+  border-radius: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1.5rem, 3vw, 2rem);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.loneliness-card:nth-child(4),
+.loneliness-card:nth-child(5) {
+  grid-column: span 1;
+}
+
+.loneliness-card:nth-child(4) {
+  grid-column: 1 / 2;
+}
+
+.loneliness-card:nth-child(5) {
+  grid-column: 3 / 4;
+}
+
+.loneliness-card h4 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-bold);
+  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+  margin-bottom: 1rem;
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.card-content {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  position: absolute;
+  top: clamp(4rem, 8vw, 5rem);
+  left: clamp(1.5rem, 3vw, 2rem);
+  right: clamp(1.5rem, 3vw, 2rem);
+  bottom: clamp(1.5rem, 3vw, 2rem);
+}
+
+.loneliness-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.loneliness-card:hover h4 {
+  top: clamp(1.5rem, 3vw, 2rem);
+  transform: translate(-50%, 0);
+}
+
+.loneliness-card:hover .card-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card-content p {
+  font-family: var(--font-heading);
+  font-size: clamp(0.9rem, 1.8vw, 1rem);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 0.8rem 0;
+}
+
+.card-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.card-content li {
+  font-family: var(--font-heading);
+  font-size: clamp(0.85rem, 1.6vw, 0.95rem);
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 0.5rem;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.card-content li:before {
+  content: "•";
+  color: rgba(255, 255, 255, 0.7);
+  position: absolute;
+  left: 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .about-page-container {
+    padding: var(--section-padding) 15px 0;
+  }
+
+  .about-page-container h1 {
+    width: 100%;
+  }
+  
+  .about-small-section {
+    flex-direction: column;
+    gap: clamp(1.5rem, 3vw, 2rem);
+  }
+  
+  .about-small-section img,
+  .about-small-section-text {
+    width: 100%;
+  }
+
+  .loneliness-cards {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(5, 1fr);
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+  
+  .loneliness-card:nth-child(4),
+  .loneliness-card:nth-child(5) {
+    grid-column: span 1;
+  }
+    .loneliness-card {
+    min-height: 150px;
+  }
+  
+  .card-content {
+    opacity: 1;
+    transform: translateY(0);
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+  }
+  
+  .loneliness-card h4 {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    text-align: left;
+    margin-bottom: 1rem;
+  }
+}

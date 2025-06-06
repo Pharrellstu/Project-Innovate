@@ -307,3 +307,21 @@ body{
 
 
 }
+
+/* Footer Link Styles */
+.leftInfoDiv a,
+.rightInfoDiv a,
+.leftInfoDivMobile a,
+.rightInfoDivMobile a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.leftInfoDiv a:hover,
+.rightInfoDiv a:hover,
+.leftInfoDivMobile a:hover,
+.rightInfoDivMobile a:hover {
+    color: #005FA9;
+    text-decoration: none;
+}

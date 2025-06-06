@@ -1,24 +1,17 @@
 import "./App.css";
-import Navigation from "./components/Navigation";
-import AboutSection from "./components/AboutSection";
-import HeroSection from "./components/HeroSection";
-import FeaturesSection from "./components/FeaturesSection";
-import Footer from "./components/Footer";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import AboutPage from "./pages/AboutPage";
 
 function App() {
   return (
-    <>
-      <Navigation />
-      <div className="app-container">
-        <HeroSection />
-        <section className="about-section">
-          <AboutSection />
-        </section>
-        <FeaturesSection />
-      </div>
-      <Footer />
-    </>
-  );
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutPage />} />
+      </Routes>
+    </Router>
+  ); 
 }
 
 export default App;
