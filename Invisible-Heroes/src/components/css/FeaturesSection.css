@@ -140,8 +140,9 @@
 
 .arrowImgFeaturesButton
 {
-    width: 17px;
-    height: 17px;
+    margin-left: 1rem;
+    width: 15px;
+    height: 15px;
 }
 
 .starLeft
@@ -180,13 +181,31 @@
         display: none;
     }
 
+    .featuresDivMobile h2
+    {
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
+        position: relative;
+        z-index: 2;
+    }
+
+    .featuresDivMobile h1
+    {
+        font-size: 30px;
+    }
+
+    .featuresDivMobile ul
+    {
+        padding: 0;
+        margin-bottom: 3rem;
+    }
+
     .featuresDivMobile
     {
         width: 100%;
-
         display: block;
         margin-top: 10rem;
         padding: 1rem;
+
     }
 
     .headingDivMobile
@@ -201,9 +220,11 @@
     {
         overflow: hidden;
         width: auto;
+        position: relative;
         background-color: #1C1A1A;
         border-radius: 50px;
-        padding: 3rem;
+        padding: 5rem;
+
     }
 
     .featuresContentDivMobile h1,h2,p{
@@ -213,6 +234,11 @@
     .stepHeadingMobile{
         display: flex;
         margin-bottom: 3rem;
+    }
+
+    .stepHeadingMobile h1{
+        font-size: 30px;
+        margin-right: 1rem;
     }
 
     .stepHeadingDivMobile h2
@@ -261,11 +287,26 @@
     }
     .starLeftMobile
     {
+        max-height: 200px;
+        height: auto;
+        width: 140px;
         pointer-events: none;
         z-index: 0;
         position: absolute;
-        left: -50px;
-        top: 200px;
+        left: -20px;
+        top: 100px;
+    }
+
+    .starBottomRightMobile
+    {
+        max-height: 200px;
+        height: auto;
+        width: 140px;
+        pointer-events: none;
+        z-index: 0;
+        position: absolute;
+        right: -20px;
+        bottom: -90px;
     }
 
 }
