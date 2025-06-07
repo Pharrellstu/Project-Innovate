@@ -55,8 +55,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           // Map background
           FlutterMap(
             options: MapOptions(
-              center: LatLng(37.7749, -122.4194),
-              zoom: 13.0,
+              initialCenter: LatLng(52.778312, 6.912101),
+              initialZoom: 13.0,
             ),
             children: [
               TileLayer(
