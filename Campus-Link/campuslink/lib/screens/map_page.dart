@@ -55,13 +55,47 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           // Map background
           FlutterMap(
             options: MapOptions(
-              center: LatLng(37.7749, -122.4194),
-              zoom: 13.0,
+              initialCenter: LatLng(52.78763152831689, 6.890577720352046),
+              initialZoom: 13.0,
             ),
             children: [
               TileLayer(
                 urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 subdomains: ['a', 'b', 'c'],
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    //width: 80.0,
+                    //height: 80.0,
+                    point: LatLng(52.78763152831689, 6.890577720352046),
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      width: 10.0,
+                      height: 10.0,
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+
+                    ),
+                  ),
+                  Marker(
+                    //width: 80.0,
+                    //height: 80.0,
+                    point: LatLng(52.7925561, 6.9384339),
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      width: 10.0,
+                      height: 10.0,
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
