@@ -5,12 +5,10 @@ import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/create_event_page.dart';
 import 'package:campuslink/services/event.dart';
 
-
 class EventService {
   static final SupabaseClient _supabase = Supabase.instance.client;
 
   static Future<bool> createEvent(EventData data) async {
-
     final creatorId = AuthGate.getCurrentUserId();
     if (creatorId == null) {
       throw Exception('No user is logged in');
@@ -18,19 +16,14 @@ class EventService {
 
     String formatTimeOfDayForDb(TimeOfDay tod) {
       final twoDigit = (int value) => value.toString().padLeft(2, '0');
-      final hour   = twoDigit(tod.hour);
+      final hour = twoDigit(tod.hour);
       final minute = twoDigit(tod.minute);
       return '$hour:$minute:00';
     }
 
-
     String? eventDateString;
     if (data.eventDate != null) {
-      // Convert DateTime → "YYYY-MM-DD"
-      eventDateString = data.eventDate!
-          .toIso8601String()
-          .split('T')
-          .first;
+      eventDateString = data.eventDate!.toIso8601String().split('T').first;
     }
 
     String? eventTimeString;
@@ -39,7 +32,6 @@ class EventService {
     }
 
     try {
-      //await _supabase.from('events').insert(data);
       final insertPayload = <String, dynamic>{
         'eventname': data.eventName,
         'locationLatLng': data.location,
@@ -47,7 +39,6 @@ class EventService {
         'eventcreatorid_uuid': creatorId,
         'startdate': eventDateString,
         'eventTime': eventTimeString,
-        //'duration': data.eventDuration,
         'locationName': data.locationName,
         'isPhysical': data.isOnline,
         'eventimageurl': 'first',
@@ -55,13 +46,27 @@ class EventService {
         'eventdescription': data.description,
       };
 
-      final _ = await _supabase
+      final eventResponse = await _supabase
           .from('event')
-          .insert(insertPayload);
-      //print('Response: $response');
+          .insert(insertPayload)
+          .select('event_id')
+          .single();
+
+      final int newEventId = eventResponse['event_id'];
+
+      // Insert into `chat` table, linked to this event
+      final chatResponse = await _supabase
+          .from('chat')
+          .insert({'event_id': newEventId})
+          .select('chat_id')
+          .single();
+
+      final int newChatId = chatResponse['chat_id'];
+      print('Chat created with ID: $newChatId for event $newEventId');
+
       return true;
     } catch (e) {
-      print('Error creating event: $e');
+      print('Error creating event or chat: $e');
       return false;
     }
   }
@@ -72,13 +77,11 @@ class EventService {
           .from('event')
           .select('*');
 
-      // Ensure response is List<dynamic>
       if (response is! List) {
         throw Exception('Invalid response format');
       }
 
       return response.map<EventModel>((json) {
-        // Convert to proper format for EventModel
         return EventModel.fromMap({
           'id': json['id']?.toString() ?? '',
           'event_name': json['eventname'] ?? 'Untitled Event',
@@ -91,10 +94,10 @@ class EventService {
           'location_name': json['locationName'],
           'location_lat': _parseLocation(json['locationLatLng'], true),
           'location_lng': _parseLocation(json['locationLatLng'], false),
-          'is_public': true, // Default to public
+          'is_public': true,
           'max_attendees': json['maxnumberofpeople'],
-          'sign_up_deadline': null, // Not in current schema
-          'offer_badge': false, // Not in current schema
+          'sign_up_deadline': null,
+          'offer_badge': false,
           'creator_user_id': json['eventcreatorid_uuid'] ?? 'unknown',
         });
       }).toList();
