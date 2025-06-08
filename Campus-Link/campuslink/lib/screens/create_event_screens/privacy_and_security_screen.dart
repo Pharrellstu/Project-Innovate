@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../create_event_page.dart';
 
 class eventFormPage extends StatefulWidget {
-  const eventFormPage({super.key});
+  final EventData eventData;
+  final Function(bool) onValidityChanged;
+
+  const eventFormPage({
+    Key? key,
+    required this.eventData,
+    required this.onValidityChanged,
+  }) : super(key: key);
   
   @override
   State<eventFormPage> createState() => _eventFormPageState();
@@ -10,29 +18,35 @@ class eventFormPage extends StatefulWidget {
 
 class _eventFormPageState extends State<eventFormPage> {
   // Track whether the event is Public (true) or Private (false)
-  bool _isPublic = true;
+  //bool _isPublic = true;
 
   // Controller for the max‐attendees TextField
   late TextEditingController _maxAttendeesController;
 
   // The chosen sign‐up deadline (nullable if none)
-  DateTime? _signUpDeadline;
+  //DateTime? _signUpDeadline;
 
   // Whether “Offer Badge/Collectible” is ON
-  bool _offerBadge = true;
+  //bool _offerBadge = true;
 
   // A list of “invited” user placeholders; each entry is just a Color/ID for demo
-  List<Color> _invitedAvatars = [
+  /*List<Color> _invitedAvatars = [
     Colors.teal,
     Colors.purple,
     Colors.redAccent,
-  ];
+  ];*/
 
   @override
   void initState() {
     super.initState();
-    // Initialize the max‐attendees field to “5”
-    _maxAttendeesController = TextEditingController(text: null);
+    _maxAttendeesController = TextEditingController(
+        text: widget.eventData.maxAttendees?.toString()
+    );
+
+    // Defer validity notification until after build completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onValidityChanged(true);
+    });
   }
 
   @override
@@ -43,50 +57,46 @@ class _eventFormPageState extends State<eventFormPage> {
 
   /// Opens a date picker and updates `_signUpDeadline`.
   Future<void> _pickDeadline() async {
-    DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _signUpDeadline ?? now,
-      firstDate: now,
-      lastDate: DateTime(now.year + 5),
+      initialDate: widget.eventData.signUpDeadline ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(DateTime.now().year + 5),
     );
-    if (picked != null && picked != _signUpDeadline) {
+
+    if (picked != null) {
       setState(() {
-        _signUpDeadline = picked;
+        widget.eventData.signUpDeadline = picked;
       });
     }
   }
 
   /// Adds a new “invited” placeholder avatar to the list.
   void _addGuest() {
-    // For demo we just pick a random color each time.
-    final randomColor = Colors.primaries[_invitedAvatars.length % Colors.primaries.length];
+    // In real app, this would open a user selector
+    // For demo, just add a placeholder
     setState(() {
-      _invitedAvatars.add(randomColor);
+      widget.eventData.invitedUserIds.add("user_${widget.eventData.invitedUserIds.length}");
     });
   }
 
   @override
   Widget build(BuildContext context) {
     // Format the chosen deadline for display
-    String deadlineText = _signUpDeadline == null
+    /*String deadlineText = _signUpDeadline == null
         ? 'Select date'
-        : DateFormat.yMMMMd().format(_signUpDeadline!);
+        : DateFormat.yMMMMd().format(_signUpDeadline!);*/
 
     return Center(
           child: Padding(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // “Is it a Public or a Private Event?” header
+                // Public/Private toggle
                 Text(
                   'Is it a Public or a Private Event?',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
@@ -94,10 +104,10 @@ class _eventFormPageState extends State<eventFormPage> {
                 // Segmented control for Public / Private
                 Center(
                   child: ToggleButtons(
-                    isSelected: [_isPublic, !_isPublic],
+                    isSelected: [widget.eventData.isPublic, !widget.eventData.isPublic],
                     onPressed: (index) {
                       setState(() {
-                        _isPublic = (index == 0);
+                        widget.eventData.isPublic = (index == 0);
                       });
                     },
                     borderRadius: BorderRadius.circular(20),
@@ -135,12 +145,15 @@ class _eventFormPageState extends State<eventFormPage> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      'Max attendees (optional)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade800,
-                        fontWeight: FontWeight.bold
+                    SizedBox(
+                      width: 180,
+                      child: Text(
+                        'Max attendees (optional)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.bold
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -158,6 +171,15 @@ class _eventFormPageState extends State<eventFormPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
+                        onChanged: (value) {
+                          // Validate and update event data
+                          final parsed = int.tryParse(value);
+                          if (parsed != null && parsed > 0) {
+                            widget.eventData.maxAttendees = parsed;
+                          } else {
+                            widget.eventData.maxAttendees = null;
+                          }
+                        },
                       ),
                     ),
                   ],
@@ -169,7 +191,7 @@ class _eventFormPageState extends State<eventFormPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(
-                      width: 160,
+                      width: 180,
                       child: Text(
                         'Sign-up Deadline (optional)',
                         style: TextStyle(
@@ -193,10 +215,12 @@ class _eventFormPageState extends State<eventFormPage> {
                             ),
                           ),
                           child: Text(
-                            deadlineText,
+                            widget.eventData.signUpDeadline != null
+                                ? DateFormat.yMMMMd().format(widget.eventData.signUpDeadline!)
+                                : 'Select date',
                             style: TextStyle(
                               fontSize: 13,
-                              color: _signUpDeadline == null
+                              color: widget.eventData.signUpDeadline == null
                                   ? Colors.grey.shade500
                                   : Colors.black,
                             ),
@@ -222,13 +246,12 @@ class _eventFormPageState extends State<eventFormPage> {
                       ),
                     ),
                     Switch(
-                      value: _offerBadge,
+                      value: widget.eventData.offerBadge,
                       onChanged: (v) {
                         setState(() {
-                          _offerBadge = v;
+                          widget.eventData.offerBadge = v;
                         });
                       },
-                      activeColor: Theme.of(context).primaryColor,
                     ),
                   ],
                 ),
@@ -244,7 +267,7 @@ class _eventFormPageState extends State<eventFormPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
+                /*SizedBox(
                   height: 60,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
@@ -283,11 +306,38 @@ class _eventFormPageState extends State<eventFormPage> {
                       );
                     },
                   ),
+                ),*/
+                SizedBox(
+                  height: 60,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.eventData.invitedUserIds.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == widget.eventData.invitedUserIds.length) {
+                        return GestureDetector(
+                          onTap: _addGuest,
+                          child: CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.grey.shade300,
+                            child: Icon(Icons.add, size: 32, color: Colors.grey.shade700),
+                          ),
+                        );
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: CircleAvatar(
+                          radius: 28,
+                          backgroundColor: Colors.primaries[index % Colors.primaries.length],
+                          child: Icon(Icons.person, color: Colors.white),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-                const SizedBox(height: 32),
+                //const SizedBox(height: 32),
 
                 // “Overview →” button
-                ElevatedButton(
+                /*ElevatedButton(
                   onPressed: () {
                     // For demo, just show a simple dialog of current values:
                     showDialog(
@@ -328,7 +378,7 @@ class _eventFormPageState extends State<eventFormPage> {
                     'Overview  →',
                     style: TextStyle(fontSize: 16),
                   ),
-                ),
+                ),*/
               ],
             ),
           ),

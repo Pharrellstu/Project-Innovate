@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:latlong2/latlong.dart';
 import 'create_event_screens/basic_info_screen.dart';
 import 'create_event_screens/time_and_location_screen.dart';
 import 'create_event_screens/privacy_and_security_screen.dart';
+import 'create_event_screens/overview.dart';
+import 'package:campuslink/services/event_service.dart';
 
 class CreateEventPage extends StatelessWidget {
   const CreateEventPage({super.key});
@@ -32,20 +35,53 @@ class createEventPage extends StatefulWidget {
 
 class _createEventPageState extends State<createEventPage> {
 
+  int currentStep = 0;
   bool isBasicInfoValid = false;
+  bool isLocationValid = false;
+  bool isPrivacyValid = false;
+  final EventData _eventData = EventData();
 
-  void updateBasicInfoValidity(bool isValid) {
+  /*void updateBasicInfoValidity(bool isValid) {
     setState(() {
       isBasicInfoValid = isValid;
     });
   }
 
-  int currentStep = 0;
+  void updateLocationValidity(bool isValid) {
+    setState(() {
+      isLocationValid = isValid;
+    });
+  }
+
+  void updatePrivacyValidity(bool isValid) {
+    setState(() {
+      isPrivacyValid = isValid;
+    });
+  }
+
 
   List<Widget> get steps => [
-    basicInputInfo(onValidityChanged: updateBasicInfoValidity),
-    timeAndLocation(),
-    eventFormPage(),
+    basicInputInfo(onValidityChanged: updateBasicInfoValidity, eventData: _eventData),
+    timeAndLocation(onValidityChanged: updateLocationValidity, eventData: _eventData),
+    eventFormPage(onValidityChanged: updatePrivacyValidity, eventData: _eventData,),
+    OverviewPage(eventData: _eventData),
+  ];*/
+
+  List<Widget> get steps => [
+    basicInputInfo(
+      eventData: _eventData,
+      onValidityChanged: (isValid) => setState(() => isBasicInfoValid = isValid),
+    ),
+    timeAndLocation(
+      eventData: _eventData,
+      onValidityChanged: (isValid) => setState(() => isLocationValid = isValid),
+    ),
+    eventFormPage(
+      eventData: _eventData,
+      onValidityChanged: (isValid) => setState(() => isPrivacyValid = isValid),
+    ),
+    // Add your OverviewPage here
+    OverviewPage(eventData: _eventData),
   ];
 
   void nextStep() {
@@ -87,15 +123,57 @@ class _createEventPageState extends State<createEventPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(child: IndexedStack(index: currentStep, children: steps)),
-                    SizedBox(height: 40.0),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         if (currentStep > 0)
                           TextButton(onPressed: prevStep, child: Text('Back')),
+                        // In CreateEventPage's build method:
                         TextButton(
-                            onPressed: currentStep == 0 && !isBasicInfoValid ? null : nextStep,
-                            child: Text(currentStep == steps.length - 1 ? 'Finish' : 'Next')),
+                          onPressed: () async {
+                            final isLastStep = currentStep == steps.length - 1;
+                            bool currentStepValid;
+
+                            switch (currentStep) {
+                              case 0:
+                                currentStepValid = isBasicInfoValid;
+                                break;
+                              case 1:
+                                currentStepValid = isLocationValid;
+                                break;
+                              case 2:
+                                currentStepValid = true; // Event form page is always valid
+                                break;
+                              case 3:
+                                currentStepValid = true; // Overview page is always valid
+                                break;
+                              default:
+                                currentStepValid = true;
+                            }
+                            //return currentStepValid ? nextStep : null;
+                            if (!currentStepValid) return;
+
+                            if (isLastStep) {
+                              // Attempt to create the event in Supabase
+                              final success = await EventService.createEvent(_eventData);
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Event created successfully!')),
+                                );
+                                Navigator.of(context).pop();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed to create event.')),
+                                );
+                              }
+                            } else {
+                              nextStep();
+                            }
+                          },
+                          child: Text(
+                              currentStep == steps.length - 1 ? 'Finish' : 'Next'
+                          ),
+                        )
                       ],
                     ),
                   ],
@@ -175,6 +253,13 @@ class StepIndicator extends StatelessWidget {
           _stepBox(true, '3. Privacy & Settings'),
         ],
       );
+    } else if (value == 3) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _stepBox(true, 'Review your event'),
+        ],
+      );
     }
 
     return Row(
@@ -198,4 +283,29 @@ class _Category {
     required this.label,
     required this.icon,
   });
+}
+
+class EventData {
+  String eventName = '';
+  String? category;
+  String description = '';
+  bool isOnline = false;
+
+  // Add other fields from other steps as needed
+  DateTime? eventDate;
+  String? location;
+  TimeOfDay? eventTime;
+  Duration? eventDuration;
+  bool repeatEvent = false;
+  List<bool> repeatDays = [false, false, false, false, false, false, false];
+  int repeatEveryWeeks = 1;
+  //LatLng? locationLatLng;
+  String? locationName;
+// You can also add badges, limits, privacy, etc.
+
+  bool isPublic = true;
+  int? maxAttendees;
+  DateTime? signUpDeadline;
+  bool offerBadge = true;
+  List<String> invitedUserIds = [];
 }

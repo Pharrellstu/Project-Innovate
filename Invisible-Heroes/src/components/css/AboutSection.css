@@ -1,0 +1,311 @@
+/* Import CSS Variables */
+@import "../../styles/variables.css";
+
+/* About Section Styles */
+.about-section-panel {
+  width: 100%;
+  max-width: var(--max-width);
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(2, auto);
+  gap: var(--section-gap);
+  margin: 0 auto;
+  transition: var(--transition-smooth);
+  margin-bottom: 14rem;
+  /* Animation properties */
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.about-section-panel.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.about-section-panel.fade-out {
+  opacity: 0.3;
+  transform: translateY(20px);
+}
+
+.about-slide {
+  padding: clamp(2rem, 4vw, 3rem);
+  border-radius: var(--border-radius);
+  transition: var(--transition-smooth);
+  /* Individual slide animation properties */
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Staggered animation delays for slides within a panel */
+.about-section-panel.fade-in .about-slide:nth-child(1) {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-delay: 0.1s;
+}
+
+.about-section-panel.fade-in .about-slide:nth-child(2) {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-delay: 0.2s;
+}
+
+.about-section-panel.fade-in .about-slide:nth-child(3) {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-delay: 0.3s;
+}
+
+#about-section-1-pannel-1 h1,
+#about-section-1-pannel-2 h1,
+#about-section-1-pannel-3 h1 {
+  font-size: var(--fs-h1);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: clamp(1rem, 1vw, 2.5rem);
+}
+
+#about-section-1-pannel-1 p,
+#about-section-1-pannel-2 p,
+#about-section-1-pannel-3 p,
+#about-section-1-pannel-1 ul {
+  font-size: clamp(1rem, 1vw, 2.5rem);
+  line-height: 1.6;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-light);
+}
+
+#about-section-1-pannel-1,
+#about-section-1-pannel-2 {
+  color: var(--color-white);
+}
+
+#about-section-1-pannel-1,
+#about-section-1-pannel-2 {
+  color: var(--color-white);
+}
+
+/* About section list styling */
+#about-section-1-pannel-1 ul {
+  list-style: none;
+  padding: 0;
+  margin: clamp(1.5rem, 2vw, 2rem) 0 clamp(1.5rem, 2vw, 2rem) 0;
+}
+
+#about-section-1-pannel-1 li {
+  margin-bottom: clamp(0.4rem, 1vw, 1rem);
+  position: relative;
+  padding-left: 1.2rem;
+}
+
+#about-section-1-pannel-1 li:before {
+  content: "•";
+  color: var(--color-white);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+#about-section-1-pannel-1 li strong {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-light);
+}
+
+#about-section-1-pannel-1 {
+  grid-column: 1 / 6;
+  grid-row: 1 / 3;
+  background: var(--color-secondary);
+}
+
+#about-section-1-pannel-2 {
+  grid-column: 6 / 13;
+  grid-row: 1 / 2;
+  background: var(--color-secondary);
+}
+
+#about-section-1-pannel-3 {
+  grid-column: 6 / 13;
+  grid-row: 2 / 3;
+  background: var(--color-white);
+}
+
+/* Section 2 Panel Styles */
+#about-section-2-pannel-1 h1,
+#about-section-2-pannel-2 h1,
+#about-section-2-pannel-3 h1 {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 600;
+  margin-bottom: clamp(1rem, 1vw, 2.5rem);
+}
+
+#about-section-2-pannel-1 p,
+#about-section-2-pannel-2 p,
+#about-section-2-pannel-3 p {
+  font-size: clamp(1rem, 1vw, 2.5rem);
+  line-height: 1.6;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-light);
+}
+
+#about-section-2-pannel-3 p {
+  margin-bottom: clamp(1.5rem, 1vw, 2.5rem);
+}
+
+/* Section 2 Panel Colors */
+#about-section-2-pannel-1 {
+  grid-column: 1 / 8;
+  grid-row: 1 / 2;
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+#about-section-2-pannel-2 {
+  grid-column: 1 / 8;
+  grid-row: 2 / 3;
+  background: var(--color-secondary);
+  color: var(--color-white);
+}
+
+#about-section-2-pannel-3 {
+  grid-column: 8 / 13;
+  grid-row: 1 / 3;
+  background: var(--color-white);
+}
+
+#about-section-2-pannel-2 {
+  color: var(--color-white);
+}
+
+/* White button variant for dark backgrounds */
+#about-section-1-pannel-1 .btn--rounded-hollow {
+  background: transparent;
+  color: var(--color-white);
+  border: 2px solid var(--color-white);
+}
+
+#about-section-1-pannel-1 .btn--rounded-hollow:hover:not(:disabled) {
+  background: var(--color-white);
+  border-color: var(--color-white);
+  color: var(--color-secondary);
+}
+
+#about-section-1-pannel-1 .btn--rounded-hollow svg path {
+  fill: var(--color-white);
+}
+
+#about-section-1-pannel-1 .btn--rounded-hollow:hover:not(:disabled) svg path {
+  fill: var(--color-secondary);
+}
+
+/* Section 3 Panel Styles */
+#about-section-3-pannel-1 {
+  grid-column: 1 / 13; /* Spans the full grid width */
+  grid-row: 1 / 2;
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+#about-section-3-pannel-1 h1 {
+  font-size: var(--fs-h1);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: clamp(1rem, 1vw, 2.5rem);
+  color: var(--color-white);
+}
+
+#about-section-3-pannel-1 p {
+  font-size: clamp(1rem, 1vw, 2.5rem);
+  line-height: 1.6;
+  font-family: var(--font-body);
+  font-weight: var(--font-weight-light);
+  color: var(--color-white);
+  margin-bottom: clamp(1.5rem, 2vw, 2rem);
+}
+
+/* Form styling for section 3 */
+#about-section-3-pannel-1 form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+#about-section-3-pannel-1 input,
+#about-section-3-pannel-1 textarea {
+  padding: clamp(12px, 2vw, 16px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  transition: var(--transition-smooth);
+}
+
+#about-section-3-pannel-1 input::placeholder,
+#about-section-3-pannel-1 textarea::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+#about-section-3-pannel-1 input:focus,
+#about-section-3-pannel-1 textarea:focus {
+  outline: none;
+  border-color: var(--color-white);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+#about-section-3-pannel-1 textarea {
+  resize: vertical;
+  min-height: clamp(100px, 15vw, 150px);
+}
+
+/* White button variant for section 3 dark background */
+#about-section-3-pannel-1 .btn--rounded-hollow {
+  background: transparent;
+  color: var(--color-white);
+  border: 2px solid var(--color-white);
+  align-self: flex-start;
+  margin-top: clamp(0.5rem, 1vw, 1rem);
+}
+
+#about-section-3-pannel-1 .btn--rounded-hollow:hover:not(:disabled) {
+  background: var(--color-white);
+  border-color: var(--color-white);
+  color: var(--color-dark);
+}
+
+#about-section-3-pannel-1 .btn--rounded-hollow svg path {
+  fill: var(--color-white);
+}
+
+#about-section-3-pannel-1 .btn--rounded-hollow:hover:not(:disabled) svg path {
+  fill: var(--color-dark);
+}
+
+/* Responsive design for about section */
+@media (max-width: 1280px) {
+  .about-section-panel {
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 768px) {
+  .about-section-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: clamp(16px, 4vw, 24px);
+  }
+
+  #about-section-1-pannel-1,
+  #about-section-1-pannel-2,
+  #about-section-1-pannel-3,
+  #about-section-2-pannel-1,
+  #about-section-2-pannel-2,
+  #about-section-2-pannel-3 {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .about-section {
+    margin-bottom: 8rem;
+  }
+}

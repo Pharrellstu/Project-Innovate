@@ -1,0 +1,42 @@
+/* SignUpPage.css */
+
+.signUpPage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.signUpPage .content {
+  flex: 1;
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.signUpPage .content h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.signUpPage .content p {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .signUpPage .content {
+    padding: 3rem 1rem;
+  }
+  
+  .signUpPage .content h1 {
+    font-size: 2rem;
+  }
+  
+  .signUpPage .content p {
+    font-size: 1rem;
+  }
+}

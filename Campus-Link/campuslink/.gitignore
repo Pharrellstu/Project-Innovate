@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+#Ignore pubsec.lock file
+pubspec.lock
+
+#Ignore generated plugins
+*.cc
+*.h
+*.cmake
+*swift

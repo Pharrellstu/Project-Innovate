@@ -4,7 +4,7 @@ import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  const ChatPage({super.key, required int chatId});
 
   @override
   _ChatPageState createState() => _ChatPageState();
@@ -128,17 +128,17 @@ class _ChatBubble extends StatelessWidget {
 
     final borderRadius = isMe
         ? BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(0),
-            bottomLeft: Radius.circular(16),
-            bottomRight: Radius.circular(16),
-          )
+      topLeft: Radius.circular(16),
+      topRight: Radius.circular(0),
+      bottomLeft: Radius.circular(16),
+      bottomRight: Radius.circular(16),
+    )
         : BorderRadius.only(
-            topLeft: Radius.circular(0),
-            topRight: Radius.circular(16),
-            bottomLeft: Radius.circular(16),
-            bottomRight: Radius.circular(16),
-          );
+      topLeft: Radius.circular(0),
+      topRight: Radius.circular(16),
+      bottomLeft: Radius.circular(16),
+      bottomRight: Radius.circular(16),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
