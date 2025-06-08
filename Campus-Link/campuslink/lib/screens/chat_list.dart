@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:campuslink/services/db_handler.dart';
+import 'package:campuslink/services/db_handler.dart' hide ChatSummary;
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/chat_page.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
+import 'package:campuslink/services/chatlist.dart';
 
 class ChatList extends StatefulWidget {
   const ChatList({Key? key}) : super(key: key);

@@ -2,49 +2,7 @@ import 'dart:developer';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/services/user.dart';
-
-/// Model for chat summary (chat list)
-class ChatSummary {
-  final int chatId;
-  final int eventId;
-  final String title;
-
-  ChatSummary({
-    required this.chatId,
-    required this.eventId,
-    required this.title,
-  });
-}
-
-/// Model for individual chat messages
-class ChatMessage {
-  final int messageId;
-  final int chatId;
-  final int enrolledPersona;
-  final String content;
-  final DateTime createdAt;
-  final int? attachmentId;
-
-  ChatMessage({
-    required this.messageId,
-    required this.chatId,
-    required this.enrolledPersona,
-    required this.content,
-    required this.createdAt,
-    this.attachmentId,
-  });
-
-  factory ChatMessage.fromMap(Map<String, dynamic> map) {
-    return ChatMessage(
-      messageId: map['message_id'] as int,
-      chatId: map['chat_id'] as int,
-      enrolledPersona: map['enrolledpersona'] as int,
-      content: map['messagecontent'] as String,
-      createdAt: DateTime.parse(map['createdat'] as String),
-      attachmentId: map['attachment_id'] as int?,
-    );
-  }
-}
+import 'package:campuslink/services/chatlist.dart'; // <-- Import ChatSummary, ChatMessage
 
 class DbHandler {
   static SupabaseClient supabase = Supabase.instance.client;
@@ -53,7 +11,7 @@ class DbHandler {
     try {
       await supabase.from('account').insert({
         'auth_user_id': userId,
-        'username': email.split('@')[0], // TEMP: Use email prefix as username
+        'username': email.split('@')[0],
         'email': email,
       });
     } catch (e) {
@@ -61,7 +19,6 @@ class DbHandler {
     }
   }
 
-  // Function to update user profile
   static Future<void> updateUserData(String column, dynamic newData) async {
     final userId = AuthGate.getCurrentUserId();
     if (userId == null) {
@@ -78,7 +35,6 @@ class DbHandler {
     }
   }
 
-  // Function to get current user data
   static Future<UserObject> getCurrentUser() async {
     final userId = AuthGate.getCurrentUserId();
     if (userId == null) {
@@ -110,7 +66,7 @@ class DbHandler {
     }
   }
 
-  /// Fetch all chat summaries, including event title via nested select
+  /// ✅ Moved ChatSummary model out and kept function
   static Future<List<ChatSummary>> fetchChats() async {
     try {
       final response = await supabase
@@ -134,7 +90,6 @@ class DbHandler {
     }
   }
 
-  /// Insert a chat for a given eventId, returns new chatId
   static Future<int?> insertChatForEvent(int eventId) async {
     try {
       final response = await supabase
@@ -150,7 +105,6 @@ class DbHandler {
     }
   }
 
-  /// Fetch all messages for a chat, ordered by creation time
   static Future<List<ChatMessage>> fetchMessages(int chatId) async {
     try {
       final response = await supabase
@@ -169,13 +123,12 @@ class DbHandler {
     }
   }
 
-  /// Insert a new message into a chat
   static Future<void> insertMessage(
       int chatId,
       String content,
-      int enrolledPersona,
-      {int? attachmentId}
-      ) async {
+      int enrolledPersona, {
+        int? attachmentId,
+      }) async {
     try {
       final insertRow = {
         'chat_id': chatId,
