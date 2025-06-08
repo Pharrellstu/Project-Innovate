@@ -5,7 +5,7 @@ import AboutPage from "./pages/AboutPage";
 import DownloadPage from "./pages/DownloadPage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
-import ScrollToTop from "./components/ScrollToTop";
+import ScrollToTop from "./components/ui/ScrollToTop";
 
 function App() {
   return (

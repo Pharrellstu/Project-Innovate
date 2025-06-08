@@ -1,8 +1,8 @@
-import Navigation from "../components/Navigation";
-import HeroSection from "../components/HeroSection";
-import AboutSection from "../components/AboutSection";
-import FeaturesSection from "../components/FeaturesSection";
-import Footer from "../components/Footer";
+import Navigation from "../components/layout/Navigation";
+import HeroSection from "../components/homepage/HeroSection";
+import AboutSection from "../components/about/AboutSection";
+import FeaturesSection from "../components/homepage/FeaturesSection";
+import Footer from "../components/layout/Footer";
 
 function HomePage() {
   return (

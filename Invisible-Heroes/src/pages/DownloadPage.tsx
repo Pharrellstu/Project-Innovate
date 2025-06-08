@@ -1,6 +1,6 @@
-import Navigation from "../components/Navigation";
-import FooterSimple from "../components/FooterSimple";
-import Button from "../components/Button";
+import Navigation from "../components/layout/Navigation";
+import FooterSimple from "../components/layout/FooterSimple";
+import Button from "../components/ui/Button";
 import "./css/DownloadPage.css";
 
 function DownloadPage() {

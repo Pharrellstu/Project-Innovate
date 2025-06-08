@@ -1,5 +1,5 @@
-import "./css/HeroSection.css";
-import Button from "./Button";
+import "./HeroSection.css";
+import Button from "../ui/Button";
 
 const HeroSection = () => (
   <section className="hero-section">

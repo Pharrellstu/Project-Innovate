@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import "./css/AboutSection.css";
-import Button from "./Button";
+import "./AboutSection.css";
+import Button from "../ui/Button";
 
 function AboutSection() {
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);

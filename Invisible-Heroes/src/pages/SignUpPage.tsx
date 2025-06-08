@@ -1,5 +1,5 @@
-import Navigation from "../components/Navigation";
-import FooterSimple from "../components/FooterSimple";
+import Navigation from "../components/layout/Navigation";
+import FooterSimple from "../components/layout/FooterSimple";
 import "./css/SignUpPage.css";
 
 function SignUpPage() {
