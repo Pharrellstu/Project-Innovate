@@ -1,0 +1,42 @@
+/* SignInPage.css */
+
+.signInPage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.signInPage .content {
+  flex: 1;
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.signInPage .content h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.signInPage .content p {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .signInPage .content {
+    padding: 3rem 1rem;
+  }
+  
+  .signInPage .content h1 {
+    font-size: 2rem;
+  }
+  
+  .signInPage .content p {
+    font-size: 1rem;
+  }
+}
