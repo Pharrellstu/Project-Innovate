@@ -220,9 +220,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
               return FlutterMap(
                 options: MapOptions(
-                  center: snapshot.data!,
-                  zoom: 13.0,
-                ),
+                center: snapshot.data!,
+                zoom: 13.0,
+                minZoom: 3,
+                maxZoom: 18,
+                interactiveFlags: InteractiveFlag.all, // Enables pan, pinch zoom, double tap zoom, etc.
+              ),
                 children: [
                   TileLayer(
                     urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
