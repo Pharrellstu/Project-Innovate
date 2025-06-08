@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/services/user.dart';
+import 'package:campuslink/services/chatlist.dart'; // <-- Import ChatSummary, ChatMessage
 
 class DbHandler {
   static SupabaseClient supabase = Supabase.instance.client;
@@ -10,7 +11,7 @@ class DbHandler {
     try {
       await supabase.from('account').insert({
         'auth_user_id': userId,
-        'username': email.split('@')[0], // TEMP: Use email prefix as username
+        'username': email.split('@')[0],
         'email': email,
       });
     } catch (e) {
@@ -18,43 +19,35 @@ class DbHandler {
     }
   }
 
-  // Function to update user profile
-  static Future<void> updateUserData(String column, var newData) async
-  {
+  static Future<void> updateUserData(String column, dynamic newData) async {
     final userId = AuthGate.getCurrentUserId();
-      
     if (userId == null) {
       throw Exception('No user is logged in');
     }
 
     try {
-      await supabase.from('account').update({
-        column: newData,
-      }).eq('auth_user_id', userId);
+      await supabase
+          .from('account')
+          .update({column: newData})
+          .eq('auth_user_id', userId);
     } catch (e) {
       log('Error updating user profile: $e');
     }
   }
 
-  // Function to get current user data
   static Future<UserObject> getCurrentUser() async {
     final userId = AuthGate.getCurrentUserId();
-    final UserObject selectedUser;
-    final Map<String, dynamic> response;
-
     if (userId == null) {
-      return UserObject.emptyUser; // No user is logged in
+      return UserObject.emptyUser;
     }
-
     try {
-      response =
-          await supabase
-              .from('account')
-              .select()
-              .eq('auth_user_id', userId)
-              .single();
+      final response = await supabase
+          .from('account')
+          .select()
+          .eq('auth_user_id', userId)
+          .single();
 
-      selectedUser = UserObject(
+      return UserObject(
         accountId: response['accountid'],
         username: response['username'],
         email: response['email'],
@@ -67,8 +60,6 @@ class DbHandler {
         badgeCount: response['badgecount'],
         authUserId: response['auth_user_id'],
       );
-      
-      return selectedUser;
     } catch (e) {
       log('Error fetching user data: $e');
       return UserObject.emptyUser;

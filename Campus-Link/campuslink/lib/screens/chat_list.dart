@@ -1,127 +1,76 @@
-import 'package:campuslink/screens/create_event_page.dart';
-import 'package:campuslink/screens/chat_page.dart';    // ← import the ChatPage
 import 'package:flutter/material.dart';
+import 'package:campuslink/services/db_handler.dart' ;
+import 'package:campuslink/services/auth_gate.dart';
+import 'package:campuslink/screens/chat_page.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
+import 'package:campuslink/services/chatlist.dart';
+import 'package:campuslink/services/chatlist_service.dart';
 
 class ChatList extends StatefulWidget {
-  const ChatList({super.key});
+  const ChatList({Key? key}) : super(key: key);
 
   @override
   _ChatListState createState() => _ChatListState();
 }
 
 class _ChatListState extends State<ChatList> {
-  final List<_MessageItem> _messages = List.generate(
-    4,
-    (i) => _MessageItem(
-      title: 'Pub Quiz',
-      subtitle: 'this is a sample text',
-      isUnread: i == 0,
-      time: '10:03 AM',
-      unreadCount: 2,
-      avatarColor: Colors.blue,
-    ),
-  );
+  late Future<List<ChatSummary>> _futureChats;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureChats = chat_service.fetchChats();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopBar(
-        title: 'CampusLink',
-      ),
-
-      body: ListView.builder(
-        itemCount: _messages.length,
-        itemBuilder: (context, index) {
-          final item = _messages[index];
-          return _buildMessageTile(context, item);
+      appBar: TopBar(title: 'CampusLink'),
+      body: FutureBuilder<List<ChatSummary>>(
+        future: _futureChats,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: \${snapshot.error}'));
+          }
+          final chats = snapshot.data ?? [];
+          if (chats.isEmpty) {
+            return const Center(child: Text('No chats available'));
+          }
+          return ListView.separated(
+            itemCount: chats.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final chat = chats[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  child: Text(chat.title.isNotEmpty ? chat.title[0] : '?'),
+                ),
+                title: Text(chat.title),
+                subtitle: Text('Event ID: ${chat.eventId}'),
+                onTap: () {
+                  final userId = AuthGate.getCurrentUserId();
+                  if (userId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please log in to join chats')),
+                    );
+                    return;
+                  }
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ChatPage(chatId: chat.chatId),
+                    ),
+                  );
+                },
+              );
+            },
+          );
         },
       ),
-
       bottomNavigationBar: const NavBar(),
     );
   }
-
-  Widget _buildMessageTile(BuildContext context, _MessageItem item) {
-    return InkWell(
-      onTap: () {
-        // Navigate to ChatPage when tapped
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ChatPage()),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: item.avatarColor,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.subtitle,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  item.time,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.green[700],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.green[700],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${item.unreadCount}',
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MessageItem {
-  final String title;
-  final String subtitle;
-  final String time;
-  final bool isUnread;
-  final int unreadCount;
-  final Color avatarColor;
-
-  _MessageItem({
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    required this.unreadCount,
-    required this.avatarColor,
-    this.isUnread = false,
-  });
 }
