@@ -1,5 +1,3 @@
-// map_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -23,6 +21,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   late Future<List<EventModel>> _eventsFuture;
 
+  LatLng? _currentLocation;
+
   String _dateFilter = 'All';
   String _categoryFilter = 'All';
   String _timeFilter = 'All';
@@ -31,6 +31,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _eventsFuture = EventService.fetchEvents();
+
+    _getCurrentLocation().then((loc) {
+      setState(() {
+        _currentLocation = loc;
+      });
+    });
   }
 
   Future<LatLng> _getCurrentLocation() async {
@@ -40,8 +46,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
         return LatLng(52.785805, 6.897585);
       }
     }
@@ -172,33 +177,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     }).toList();
   }
 
-  Widget buildEventRow(String imagePath, String text) {
-    return Row(
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          margin: const EdgeInsets.only(right: 10),
-          decoration: const BoxDecoration(
-            color: Color(0xFFE0E0E0),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Image.asset(
-              imagePath,
-              width: 16,
-              height: 16,
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(text, style: const TextStyle(fontSize: 14)),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -227,41 +205,63 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       ),
       body: Stack(
         children: [
-          FutureBuilder<LatLng>(
-            future: _getCurrentLocation(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-              return FlutterMap(
-                options: MapOptions(
-                  center: snapshot.data!,
-                  zoom: 13.0,
+          FlutterMap(
+            options: MapOptions(
+              center: _currentLocation ?? LatLng(52.785805, 6.897585),
+              zoom: 13.0,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                subdomains: ['a', 'b', 'c'],
+              ),
+              if (_currentLocation != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _currentLocation!,
+                      width: 40,
+                      height: 40,
+                      child: const Icon(Icons.my_location, color: Colors.blue, size: 32),
+                    ),
+                  ],
                 ),
-                children: [
-                  TileLayer(
-                    urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                    subdomains: ['a', 'b', 'c'],
-                  ),
-                  FutureBuilder<List<EventModel>>(
-                    future: _eventsFuture,
-                    builder: (context, eventSnapshot) {
-                      if (!eventSnapshot.hasData) return const SizedBox();
-                      final filteredEvents = _applyFilters(eventSnapshot.data!);
-                      return MarkerLayer(
-                        markers: filteredEvents
-                            .where((event) => event.locationLat != null && event.locationLng != null)
-                            .map((event) => Marker(
-                                  point: LatLng(event.locationLat!, event.locationLng!),
-                                  width: 36,
-                                  height: 36,
-                                  child: const Icon(Icons.location_pin, color: Colors.red, size: 36),
-                                ))
-                            .toList(),
-                      );
-                    },
-                  ),
-                ],
-              );
-            },
+              FutureBuilder<List<EventModel>>(
+                future: _eventsFuture,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const SizedBox();
+                  final filteredEvents = _applyFilters(snapshot.data!);
+                  return MarkerLayer(
+                    markers: filteredEvents
+                        .where((event) => event.locationLat != null && event.locationLng != null)
+                        .map((event) => Marker(
+                              point: LatLng(event.locationLat!, event.locationLng!),
+                              width: 36,
+                              height: 36,
+                              child: const Icon(Icons.location_pin, color: Colors.red, size: 36),
+                            ))
+                        .toList(),
+                  );
+                },
+              ),
+            ],
+          ),
+
+          // Center-on-location button
+          Positioned(
+            top: 100,
+            right: 16,
+            child: FloatingActionButton(
+              mini: true,
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.my_location, color: Colors.blue),
+              onPressed: () async {
+                final loc = await _getCurrentLocation();
+                setState(() {
+                  _currentLocation = loc;
+                });
+              },
+            ),
           ),
 
           // Search bar
@@ -338,7 +338,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Large light gray circle on the left
                                   Container(
                                     width: 50,
                                     height: 50,
@@ -348,8 +347,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                       shape: BoxShape.circle,
                                     ),
                                   ),
-
-                                  // 2x2 grid of icon + text
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,7 +448,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
           ),
 
-          // Bottom Nav Bar
           const Positioned(
             left: 0,
             right: 0,
