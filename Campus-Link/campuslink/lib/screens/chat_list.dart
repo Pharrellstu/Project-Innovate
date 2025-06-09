@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:campuslink/services/db_handler.dart' ;
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/chat_page.dart';
 import 'package:campuslink/widgets/top_bar.dart';
@@ -20,6 +19,7 @@ class _ChatListState extends State<ChatList> {
   @override
   void initState() {
     super.initState();
+    // Kick off the fetch from Supabase
     _futureChats = chat_service.fetchChats();
   }
 
@@ -30,16 +30,20 @@ class _ChatListState extends State<ChatList> {
       body: FutureBuilder<List<ChatSummary>>(
         future: _futureChats,
         builder: (context, snapshot) {
+          // 1) Loading state
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
+          // 2) Error state
           if (snapshot.hasError) {
-            return Center(child: Text('Error: \${snapshot.error}'));
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
           final chats = snapshot.data ?? [];
+          // 3) Empty state
           if (chats.isEmpty) {
             return const Center(child: Text('No chats available'));
           }
+          // 4) Data state
           return ListView.separated(
             itemCount: chats.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
@@ -59,9 +63,13 @@ class _ChatListState extends State<ChatList> {
                     );
                     return;
                   }
+                  // Navigate into the real ChatPage, passing both chatId & title
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => ChatPage(chatId: chat.chatId),
+                      builder: (context) => ChatPage(
+                        chatId: chat.chatId,
+                        title: chat.title,
+                      ),
                     ),
                   );
                 },
