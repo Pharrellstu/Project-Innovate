@@ -4,7 +4,7 @@ import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/chat_page.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
-import 'package:campuslink/services/chatlist.dart';
+import 'package:campuslink/models/chatlist.dart';
 import 'package:campuslink/services/chatlist_service.dart';
 
 class ChatList extends StatefulWidget {

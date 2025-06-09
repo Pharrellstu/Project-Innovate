@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/create_event_page.dart';
-import 'package:campuslink/services/event.dart';
+import 'package:campuslink/models/event.dart';
 
 class EventService {
   static final SupabaseClient _supabase = Supabase.instance.client;

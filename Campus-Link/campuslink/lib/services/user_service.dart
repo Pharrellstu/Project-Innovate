@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'package:campuslink/services/supabase_client.dart';
-import 'package:campuslink/services/user.dart';
+import 'package:campuslink/models/user.dart';
 import 'package:campuslink/services/auth_gate.dart';
 
 class UserService {
