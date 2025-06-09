@@ -61,4 +61,32 @@ class UserService {
       return UserObject.emptyUser;
     }
   }
+
+  Future<List<UserObject>> getAllUsers() async {
+    try {
+      final response = await supabase
+          .from('account')
+          .select(); // Fetches all columns for every user
+
+      // Convert each Map in the List to a UserObject
+      return response
+          .map((userData) => UserObject(
+        accountId: userData['accountid'],
+        username: userData['username'],
+        email: userData['email'],
+        studentCardId: userData['studentcardid'],
+        isAdmin: userData['isadmin'],
+        profilePictureUrl: userData['profilepictureurl'],
+        bio: userData['bio'],
+        isVerified: userData['isverified'],
+        followingCount: userData['followingcount'],
+        badgeCount: userData['badgecount'],
+        authUserId: userData['auth_user_id'],
+      ))
+          .toList();
+    } catch (e) {
+      log('Error fetching all users: $e');
+      return []; // Return empty list on error
+    }
+  }
 }
