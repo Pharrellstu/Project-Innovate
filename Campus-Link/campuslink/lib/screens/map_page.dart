@@ -1,8 +1,12 @@
+// map_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
+import 'package:campuslink/services/event.dart';
+import 'package:campuslink/services/event_service.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -13,11 +17,11 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
-  double _panelHeightFraction = 0.05;
+  double _panelHeightFraction = 0.1;
   late double _dragStartY;
   late double _startHeightFraction;
 
-  late List<Map<String, dynamic>> _mockEvents;
+  late Future<List<EventModel>> _eventsFuture;
 
   String _dateFilter = 'All';
   String _categoryFilter = 'All';
@@ -26,27 +30,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _mockEvents = List.generate(10, (index) {
-      return {
-        'title': 'Event ${index + 1}',
-        'date': DateTime.now().add(Duration(days: index * 3)),
-        'category': index % 3 == 0
-            ? 'Music'
-            : index % 3 == 1
-                ? 'Sports'
-                : 'Food',
-        'timeOfDay': index % 3 == 0
-            ? 'Morning'
-            : index % 3 == 1
-                ? 'Afternoon'
-                : 'Evening',
-      };
-    });
+    _eventsFuture = EventService.fetchEvents();
   }
 
   Future<LatLng> _getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return LatLng(52.785805, 6.897585); // fallback
+    if (!serviceEnabled) return LatLng(52.785805, 6.897585);
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -148,13 +137,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     );
   }
 
-  List<Map<String, dynamic>> get _filteredEvents {
+  List<EventModel> _applyFilters(List<EventModel> events) {
     DateTime now = DateTime.now();
 
-    return _mockEvents.where((event) {
-      // Date filter
-      if (_dateFilter != 'All') {
-        final diff = event['date'].difference(now).inDays;
+    return events.where((event) {
+      if (_dateFilter != 'All' && event.eventDate != null) {
+        final diff = event.eventDate!.difference(now).inDays;
         switch (_dateFilter) {
           case '1 Week':
             if (diff > 7) return false;
@@ -168,18 +156,47 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
         }
       }
 
-      // Category filter
-      if (_categoryFilter != 'All' && event['category'] != _categoryFilter) {
+      if (_categoryFilter != 'All' && event.category != _categoryFilter) {
         return false;
       }
 
-      // Time of day filter
-      if (_timeFilter != 'All' && event['timeOfDay'] != _timeFilter) {
-        return false;
+      if (_timeFilter != 'All' && event.eventTime != null) {
+        final time = DateTime.tryParse(event.eventTime!);
+        if (time == null) return false;
+        if (_timeFilter == 'Morning' && time.hour >= 12) return false;
+        if (_timeFilter == 'Afternoon' && (time.hour < 12 || time.hour >= 18)) return false;
+        if (_timeFilter == 'Evening' && time.hour < 18) return false;
       }
 
       return true;
     }).toList();
+  }
+
+  Widget buildEventRow(String imagePath, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          margin: const EdgeInsets.only(right: 10),
+          decoration: const BoxDecoration(
+            color: Color(0xFFE0E0E0),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Image.asset(
+              imagePath,
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(text, style: const TextStyle(fontSize: 14)),
+        ),
+      ],
+    );
   }
 
   @override
@@ -193,11 +210,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
         elevation: 0,
         title: const Text(
           'Map View',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black),
         ),
         actions: [
           IconButton(
@@ -220,16 +233,31 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
               return FlutterMap(
                 options: MapOptions(
-                center: snapshot.data!,
-                zoom: 13.0,
-                minZoom: 3,
-                maxZoom: 18,
-                interactiveFlags: InteractiveFlag.all, // Enables pan, pinch zoom, double tap zoom, etc.
-              ),
+                  center: snapshot.data!,
+                  zoom: 13.0,
+                ),
                 children: [
                   TileLayer(
                     urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                     subdomains: ['a', 'b', 'c'],
+                  ),
+                  FutureBuilder<List<EventModel>>(
+                    future: _eventsFuture,
+                    builder: (context, eventSnapshot) {
+                      if (!eventSnapshot.hasData) return const SizedBox();
+                      final filteredEvents = _applyFilters(eventSnapshot.data!);
+                      return MarkerLayer(
+                        markers: filteredEvents
+                            .where((event) => event.locationLat != null && event.locationLng != null)
+                            .map((event) => Marker(
+                                  point: LatLng(event.locationLat!, event.locationLng!),
+                                  width: 36,
+                                  height: 36,
+                                  child: const Icon(Icons.location_pin, color: Colors.red, size: 36),
+                                ))
+                            .toList(),
+                      );
+                    },
                   ),
                 ],
               );
@@ -245,9 +273,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
-                ],
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))],
               ),
               child: TextField(
                 decoration: const InputDecoration(
@@ -256,14 +282,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
-                onChanged: (value) {
-                  // Implement search filtering if needed
-                },
               ),
             ),
           ),
 
-          // Draggable bottom panel
+          // Bottom sliding panel
           Positioned(
             left: 0,
             right: 0,
@@ -273,7 +296,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, -2))],
               ),
               child: Column(
                 children: [
@@ -286,98 +308,140 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     onVerticalDragUpdate: (details) {
                       double dragDelta = _dragStartY - details.globalPosition.dy;
                       double newHeight = _startHeightFraction + dragDelta / screenHeight;
+                      newHeight = newHeight.clamp(0.05, 0.9);
                       setState(() {
-                        _panelHeightFraction = newHeight.clamp(0.2, 0.85);
+                        _panelHeightFraction = newHeight;
                       });
                     },
                     child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.only(top: 12, bottom: 4),
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 60,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[400],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      width: 40,
+                      height: 6,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(3)),
                     ),
                   ),
-
-                  // Events list
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: _filteredEvents.length,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemBuilder: (context, index) {
-                        final event = _filteredEvents[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 50,
-                                height: 50,
-                                margin: const EdgeInsets.only(right: 20),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  shape: BoxShape.circle,
-                                ),
+                    child: FutureBuilder<List<EventModel>>(
+                      future: _eventsFuture,
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                        final filteredEvents = _applyFilters(snapshot.data!);
+                        if (filteredEvents.isEmpty) return const Center(child: Text('No events found.'));
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: filteredEvents.length,
+                          itemBuilder: (context, index) {
+                            final event = filteredEvents[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Large light gray circle on the left
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    margin: const EdgeInsets.only(right: 16, top: 4),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFE0E0E0),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+
+                                  // 2x2 grid of icon + text
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Image.asset(
+                                                    'resources/icons/event_list_1.png',
+                                                    width: 16,
+                                                    height: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      event.eventName ?? '',
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Image.asset(
+                                                    'resources/icons/event_list_2.png',
+                                                    width: 16,
+                                                    height: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      event.category ?? '',
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Image.asset(
+                                                    'resources/icons/event_list_3.png',
+                                                    width: 16,
+                                                    height: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      event.eventDate?.toLocal().toString().split(' ')[0] ?? '',
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Image.asset(
+                                                    'resources/icons/event_list_4.png',
+                                                    width: 16,
+                                                    height: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      event.locationName ?? '',
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: _iconText(
-                                            'resources/icons/lightbulb.png',
-                                            event['title'],
-                                            iconColor: Colors.blue,
-                                            textColor: Colors.black,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: _iconText(
-                                            'resources/icons/person.png',
-                                            event['category'],
-                                            iconColor: Colors.blue,
-                                            textColor: Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: _iconText(
-                                            'resources/icons/agenda.png',
-                                            '${event['date'].day}/${event['date'].month}/${event['date'].year}',
-                                            iconColor: Colors.blue,
-                                            textColor: Colors.grey,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: _iconText(
-                                            'resources/icons/pin.png',
-                                            event['timeOfDay'],
-                                            iconColor: Colors.blue,
-                                            textColor: Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -386,20 +450,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               ),
             ),
           ),
+
+          // Bottom Nav Bar
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: NavBar(),
+          ),
         ],
       ),
-      bottomNavigationBar: NavBar(),
-    );
-  }
-
-  Widget _iconText(String assetPath, String text,
-      {Color iconColor = Colors.black, Color textColor = Colors.black}) {
-    return Row(
-      children: [
-        Image.asset(assetPath, width: 16, height: 16, color: iconColor),
-        const SizedBox(width: 6),
-        Flexible(child: Text(text, style: TextStyle(fontSize: 14, color: textColor))),
-      ],
     );
   }
 }
