@@ -1,140 +1,198 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:campuslink/widgets/nav_bar.dart';
+import 'package:campuslink/services/chatpage_service.dart';
+import 'package:campuslink/models/message.dart';
+import 'package:campuslink/services/auth_gate.dart';
+import 'package:campuslink/services/user_service.dart';
+import 'package:campuslink/models/user.dart';
 import 'package:campuslink/widgets/top_bar.dart';
+import 'package:campuslink/widgets/nav_bar.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key, required int chatId});
+  final int chatId;
+  final String title;
+
+  const ChatPage({
+    Key? key,
+    required this.chatId,
+    required this.title,
+  }) : super(key: key);
 
   @override
   _ChatPageState createState() => _ChatPageState();
 }
 
 class _ChatPageState extends State<ChatPage> {
-  final String title = "Pub Quiz";
-
-  // In‐memory list of messages
-  final List<_Message> _messages = [
-    _Message(text: 'Hey I would be 5 min late', time: '8:11 PM', isMe: false),
-    _Message(text: 'No problem', time: '8:11 PM', isMe: true),
-  ];
-
-  // Controller for the text input
   final TextEditingController _controller = TextEditingController();
-  // ImagePicker instance to open camera
   final ImagePicker _picker = ImagePicker();
+  final UserService _userService = UserService();
 
-  // Sends a text message
-  void _sendMessage() {
+  late Future<List<MessageModel>> _futureMessages;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages();
+  }
+
+  void _loadMessages() {
+    _futureMessages = ChatPageService.fetchMessages(widget.chatId);
+  }
+
+  Future<void> _sendText() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    final now = TimeOfDay.now();
-    final formattedTime = now.format(context);
-
-    setState(() {
-      _messages.add(
-        _Message(text: text, time: formattedTime, isMe: true),
+    final uid = AuthGate.getCurrentUserId();
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to send messages')),
       );
-    });
+      return;
+    }
+
+    final user = await _userService.getCurrentUser();
+    final personaId = user.accountId;
+    if (personaId == null || personaId == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to identify current user')),
+      );
+      return;
+    }
+
+    await ChatPageService.insertMessage(
+      chatId: widget.chatId,
+      enrolledPersonaId: personaId,
+      messageContent: text,
+      attachmentId: null,
+    );
 
     _controller.clear();
+    setState(_loadMessages);
   }
 
-  // Opens the camera, captures an image, and adds a placeholder message
-  void _openCamera() async {
-    final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
-    if (photo != null) {
-      final now = TimeOfDay.now();
-      final formattedTime = now.format(context);
+  Future<void> _sendImage() async {
+    final photo = await _picker.pickImage(source: ImageSource.camera);
+    if (photo == null) return;
 
-      setState(() {
-        // For now, we add a placeholder text indicating an image was captured.
-        // You can later replace this with an Image widget in the chat bubble.
-        _messages.add(
-          _Message(
-            text: "[Image captured: ${photo.name}]",
-            time: formattedTime,
-            isMe: true,
-          ),
-        );
-      });
+    final uid = AuthGate.getCurrentUserId();
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to send images')),
+      );
+      return;
     }
+
+    final user = await _userService.getCurrentUser();
+    final personaId = user.accountId;
+    if (personaId == null || personaId == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to identify current user')),
+      );
+      return;
+    }
+
+    // TODO: if you implement attachments, upload to storage here and set attachmentId
+    final int? attachmentId = null;
+
+    await ChatPageService.insertMessage(
+      chatId: widget.chatId,
+      enrolledPersonaId: personaId,
+      messageContent: '[Image: ${photo.name}]',
+      attachmentId: attachmentId,
+    );
+
+    setState(_loadMessages);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopBar(title: title),
+      appBar: TopBar(title: widget.title),
       body: Column(
         children: [
-          // List of chat bubbles
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                return _ChatBubble(
-                  text: msg.text,
-                  time: msg.time,
-                  isMe: msg.isMe,
+            child: FutureBuilder<List<MessageModel>>(
+              future: _futureMessages,
+              builder: (context, msgSnap) {
+                if (msgSnap.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (msgSnap.hasError) {
+                  return Center(child: Text('Error: ${msgSnap.error}'));
+                }
+                final messages = msgSnap.data ?? [];
+
+                // We also need the current user's ID for alignment
+                return FutureBuilder<UserObject>(
+                  future: _userService.getCurrentUser(),
+                  builder: (context, userSnap) {
+                    final currentId = userSnap.data?.accountId;
+
+                    if (userSnap.connectionState != ConnectionState.done) {
+                      // Still loading user → just render messages as “other”
+                      return _buildMessageList(messages, null);
+                    }
+                    return _buildMessageList(messages, currentId);
+                  },
                 );
               },
             ),
           ),
-
-          // Input bar with send & camera functionality
           _MessageInputBar(
             controller: _controller,
-            onSend: _sendMessage,
-            onCameraTap: _openCamera,
+            onSend: _sendText,
+            onCameraTap: _sendImage,
           ),
         ],
       ),
-      bottomNavigationBar: NavBar(),
+      bottomNavigationBar: const NavBar(),
+    );
+  }
+
+  Widget _buildMessageList(List<MessageModel> messages, int? currentId) {
+    if (messages.isEmpty) {
+      return const Center(child: Text('No messages yet'));
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      itemCount: messages.length,
+      itemBuilder: (context, i) {
+        final msg = messages[i];
+        final isMe = (currentId != null) && (msg.enrolledPersonaId == currentId);
+        final time = msg.createdAt != null
+            ? TimeOfDay.fromDateTime(msg.createdAt!).format(context)
+            : '';
+        return _ChatBubble(text: msg.messageContent ?? '', time: time, isMe: isMe);
+      },
     );
   }
 }
 
-/// Simple message model
-class _Message {
-  final String text;
-  final String time;
-  final bool isMe;
-
-  _Message({required this.text, required this.time, required this.isMe});
-}
-
-/// A single chat bubble. If [isMe] is true, it’s right-aligned and blue; otherwise left-aligned and gray.
 class _ChatBubble extends StatelessWidget {
   final String text;
   final String time;
   final bool isMe;
 
   const _ChatBubble({
+    Key? key,
     required this.text,
     required this.time,
     required this.isMe,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final bubbleColor = isMe ? Colors.blue[400] : Colors.grey[300];
     final textColor = isMe ? Colors.white : Colors.black87;
-
-    final rowAlignment = isMe ? MainAxisAlignment.end : MainAxisAlignment.start;
-    final columnAlignment = isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-
-    final borderRadius = isMe
-        ? BorderRadius.only(
+    final alignment = isMe ? MainAxisAlignment.end : MainAxisAlignment.start;
+    final radius = isMe
+        ? const BorderRadius.only(
       topLeft: Radius.circular(16),
-      topRight: Radius.circular(0),
       bottomLeft: Radius.circular(16),
       bottomRight: Radius.circular(16),
     )
-        : BorderRadius.only(
-      topLeft: Radius.circular(0),
+        : const BorderRadius.only(
       topRight: Radius.circular(16),
       bottomLeft: Radius.circular(16),
       bottomRight: Radius.circular(16),
@@ -143,89 +201,63 @@ class _ChatBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        mainAxisAlignment: rowAlignment,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: alignment,
         children: [
-          // If it’s someone else’s message, show an avatar
-          if (!isMe) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.grey[400],
-              child: Icon(Icons.person, color: Colors.white, size: 20),
+          if (!isMe) const SizedBox(width: 40),
+          Flexible(
+            child: Column(
+              crossAxisAlignment:
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Container(
+                  constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.7),
+                  padding:
+                  const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: bubbleColor,
+                    borderRadius: radius,
+                  ),
+                  child: Text(text, style: TextStyle(color: textColor)),
+                ),
+                const SizedBox(height: 4),
+                Text(time, style: TextStyle(color: Colors.black54, fontSize: 12)),
+              ],
             ),
-            const SizedBox(width: 8),
-          ],
-
-          Column(
-            crossAxisAlignment: columnAlignment,
-            children: [
-              Container(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.7,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: bubbleColor,
-                  borderRadius: borderRadius,
-                ),
-                child: Text(
-                  text,
-                  style: TextStyle(color: textColor, fontSize: 16),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Padding(
-                padding: EdgeInsets.only(
-                  left: isMe ? 0 : 44, // shift right if there was an avatar
-                  right: isMe ? 8 : 0,
-                ),
-                child: Text(
-                  time,
-                  style: TextStyle(color: Colors.black54, fontSize: 12),
-                ),
-              ),
-            ],
           ),
-
-          // If it’s “my” message, leave empty space where avatar would be
-          if (isMe) SizedBox(width: 40),
+          if (isMe) const SizedBox(width: 40),
         ],
       ),
     );
   }
 }
 
-/// The bottom input bar with emoji, text field, attach, camera, mic icons.
 class _MessageInputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
-  final VoidCallback? onCameraTap;
+  final VoidCallback onCameraTap;
 
   const _MessageInputBar({
+    Key? key,
     required this.controller,
     required this.onSend,
-    this.onCameraTap,
-  });
+    required this.onCameraTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        border: Border(
-          top: BorderSide(color: Colors.grey.shade300),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey.shade300)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Row(
         children: [
-          // Emoji button (no action yet)
           IconButton(
             icon: Icon(Icons.emoji_emotions_outlined, color: Colors.grey[700]),
             onPressed: () {},
           ),
-
-          // Text input with send icon
           Expanded(
             child: Container(
               height: 40,
@@ -240,7 +272,7 @@ class _MessageInputBar extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: controller,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Message',
                         border: InputBorder.none,
                         isDense: true,
@@ -250,28 +282,20 @@ class _MessageInputBar extends StatelessWidget {
                   ),
                   GestureDetector(
                     onTap: onSend,
-                    child: Icon(Icons.send, color: Colors.blueAccent),
+                    child: const Icon(Icons.send, color: Colors.blueAccent),
                   ),
                 ],
               ),
             ),
           ),
-
-          const SizedBox(width: 8),
-
-          // Attach/file button (no action yet)
           IconButton(
             icon: Icon(Icons.attach_file, color: Colors.grey[700]),
             onPressed: () {},
           ),
-
-          // Camera button
           IconButton(
             icon: Icon(Icons.camera_alt_outlined, color: Colors.grey[700]),
             onPressed: onCameraTap,
           ),
-
-          // Mic (voice) button (no action yet)
           IconButton(
             icon: Icon(Icons.mic_none_outlined, color: Colors.grey[700]),
             onPressed: () {},
