@@ -1,7 +1,12 @@
+// map_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
+import 'package:campuslink/services/event.dart';
+import 'package:campuslink/services/event_service.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -12,11 +17,187 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
-  double _panelHeightFraction = 0.4;
+  double _panelHeightFraction = 0.1;
   late double _dragStartY;
   late double _startHeightFraction;
 
-  final List<Map<String, dynamic>> _mockEvents = List.generate(10, (_) => {}); // Filler items
+  late Future<List<EventModel>> _eventsFuture;
+
+  String _dateFilter = 'All';
+  String _categoryFilter = 'All';
+  String _timeFilter = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    _eventsFuture = EventService.fetchEvents();
+  }
+
+  Future<LatLng> _getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return LatLng(52.785805, 6.897585);
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return LatLng(52.785805, 6.897585);
+      }
+    }
+
+    Position position = await Geolocator.getCurrentPosition();
+    return LatLng(position.latitude, position.longitude);
+  }
+
+  void _showFilterDialog() {
+    String tempDateFilter = _dateFilter;
+    String tempCategoryFilter = _categoryFilter;
+    String tempTimeFilter = _timeFilter;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Filter Events'),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return SizedBox(
+                height: 280,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Date Range'),
+                      ...['All', '1 Week', '2 Weeks', '1 Month'].map((value) {
+                        return RadioListTile<String>(
+                          title: Text(value),
+                          value: value,
+                          groupValue: tempDateFilter,
+                          onChanged: (val) {
+                            setState(() {
+                              tempDateFilter = val!;
+                            });
+                          },
+                        );
+                      }),
+                      const SizedBox(height: 8),
+                      const Text('Category'),
+                      ...['All', 'Music', 'Sports', 'Food'].map((value) {
+                        return RadioListTile<String>(
+                          title: Text(value),
+                          value: value,
+                          groupValue: tempCategoryFilter,
+                          onChanged: (val) {
+                            setState(() {
+                              tempCategoryFilter = val!;
+                            });
+                          },
+                        );
+                      }),
+                      const SizedBox(height: 8),
+                      const Text('Time of Day'),
+                      ...['All', 'Morning', 'Afternoon', 'Evening'].map((value) {
+                        return RadioListTile<String>(
+                          title: Text(value),
+                          value: value,
+                          groupValue: tempTimeFilter,
+                          onChanged: (val) {
+                            setState(() {
+                              tempTimeFilter = val!;
+                            });
+                          },
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _dateFilter = tempDateFilter;
+                  _categoryFilter = tempCategoryFilter;
+                  _timeFilter = tempTimeFilter;
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Apply'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<EventModel> _applyFilters(List<EventModel> events) {
+    DateTime now = DateTime.now();
+
+    return events.where((event) {
+      if (_dateFilter != 'All' && event.eventDate != null) {
+        final diff = event.eventDate!.difference(now).inDays;
+        switch (_dateFilter) {
+          case '1 Week':
+            if (diff > 7) return false;
+            break;
+          case '2 Weeks':
+            if (diff > 14) return false;
+            break;
+          case '1 Month':
+            if (diff > 30) return false;
+            break;
+        }
+      }
+
+      if (_categoryFilter != 'All' && event.category != _categoryFilter) {
+        return false;
+      }
+
+      if (_timeFilter != 'All' && event.eventTime != null) {
+        final time = DateTime.tryParse(event.eventTime!);
+        if (time == null) return false;
+        if (_timeFilter == 'Morning' && time.hour >= 12) return false;
+        if (_timeFilter == 'Afternoon' && (time.hour < 12 || time.hour >= 18)) return false;
+        if (_timeFilter == 'Evening' && time.hour < 18) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
+  Widget buildEventRow(String imagePath, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          margin: const EdgeInsets.only(right: 10),
+          decoration: const BoxDecoration(
+            color: Color(0xFFE0E0E0),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Image.asset(
+              imagePath,
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(text, style: const TextStyle(fontSize: 14)),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,78 +210,61 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
         elevation: 0,
         title: const Text(
           'Map View',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black),
         ),
         actions: [
           IconButton(
             icon: Image.asset("resources/icons/filter.png", width: 24, height: 24),
-            onPressed: () {
-              // TODO: filter logic
-            },
+            onPressed: _showFilterDialog,
           ),
           IconButton(
             icon: Image.asset("resources/icons/newPostBtn.png"),
             onPressed: () {
-              // TODO: navigate to create post
+              Navigator.pushNamed(context, '/create_event_page');
             },
           ),
         ],
       ),
       body: Stack(
         children: [
-          // Map background
-          FlutterMap(
-            options: MapOptions(
-              initialCenter: LatLng(52.78763152831689, 6.890577720352046),
-              initialZoom: 13.0,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                subdomains: ['a', 'b', 'c'],
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    //width: 80.0,
-                    //height: 80.0,
-                    point: LatLng(52.78763152831689, 6.890577720352046),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      width: 10.0,
-                      height: 10.0,
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-
-                    ),
+          FutureBuilder<LatLng>(
+            future: _getCurrentLocation(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              return FlutterMap(
+                options: MapOptions(
+                  center: snapshot.data!,
+                  zoom: 13.0,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    subdomains: ['a', 'b', 'c'],
                   ),
-                  Marker(
-                    //width: 80.0,
-                    //height: 80.0,
-                    point: LatLng(52.7925561, 6.9384339),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      width: 10.0,
-                      height: 10.0,
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-
-                    ),
+                  FutureBuilder<List<EventModel>>(
+                    future: _eventsFuture,
+                    builder: (context, eventSnapshot) {
+                      if (!eventSnapshot.hasData) return const SizedBox();
+                      final filteredEvents = _applyFilters(eventSnapshot.data!);
+                      return MarkerLayer(
+                        markers: filteredEvents
+                            .where((event) => event.locationLat != null && event.locationLng != null)
+                            .map((event) => Marker(
+                                  point: LatLng(event.locationLat!, event.locationLng!),
+                                  width: 36,
+                                  height: 36,
+                                  child: const Icon(Icons.location_pin, color: Colors.red, size: 36),
+                                ))
+                            .toList(),
+                      );
+                    },
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
 
-          // Search bar above draggable panel
+          // Search bar
           Positioned(
             left: 12,
             right: 12,
@@ -109,13 +273,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))],
               ),
               child: TextField(
                 decoration: const InputDecoration(
@@ -124,14 +282,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
-                onChanged: (value) {
-                  // Search logic placeholder
-                },
               ),
             ),
           ),
 
-          // Draggable panel
+          // Bottom sliding panel
           Positioned(
             left: 0,
             right: 0,
@@ -141,17 +296,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, -2),
-                  ),
-                ],
               ),
               child: Column(
                 children: [
-                  // Drag handle
                   GestureDetector(
                     behavior: HitTestBehavior.translucent,
                     onVerticalDragStart: (details) {
@@ -161,103 +308,140 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     onVerticalDragUpdate: (details) {
                       double dragDelta = _dragStartY - details.globalPosition.dy;
                       double newHeight = _startHeightFraction + dragDelta / screenHeight;
-                      newHeight = newHeight.clamp(0.2, 0.85);
-
+                      newHeight = newHeight.clamp(0.05, 0.9);
                       setState(() {
                         _panelHeightFraction = newHeight;
                       });
                     },
                     child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.only(top: 12, bottom: 4),
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 60,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[400],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      width: 40,
+                      height: 6,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(3)),
                     ),
                   ),
-
-                  // Event list
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: _mockEvents.length,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Circle avatar placeholder
-                              Container(
-                                width: 50,
-                                height: 50,
-                                margin: const EdgeInsets.only(right: 20), // more spacing
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  shape: BoxShape.circle,
-                                ),
+                    child: FutureBuilder<List<EventModel>>(
+                      future: _eventsFuture,
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                        final filteredEvents = _applyFilters(snapshot.data!);
+                        if (filteredEvents.isEmpty) return const Center(child: Text('No events found.'));
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: filteredEvents.length,
+                          itemBuilder: (context, index) {
+                            final event = filteredEvents[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Large light gray circle on the left
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    margin: const EdgeInsets.only(right: 16, top: 4),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFE0E0E0),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+
+                                  // 2x2 grid of icon + text
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Image.asset(
+                                                    'resources/icons/event_list_1.png',
+                                                    width: 16,
+                                                    height: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      event.eventName ?? '',
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Image.asset(
+                                                    'resources/icons/event_list_2.png',
+                                                    width: 16,
+                                                    height: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      event.category ?? '',
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Image.asset(
+                                                    'resources/icons/event_list_3.png',
+                                                    width: 16,
+                                                    height: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      event.eventDate?.toLocal().toString().split(' ')[0] ?? '',
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Image.asset(
+                                                    'resources/icons/event_list_4.png',
+                                                    width: 16,
+                                                    height: 16,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      event.locationName ?? '',
+                                                      style: const TextStyle(fontSize: 14),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              // Details (2x2 grid with aligned icons)
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Top row
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _iconText(
-                                            'resources/icons/lightbulb.png',
-                                            'Pub Quiz',
-                                            iconColor: Colors.blue,
-                                            textColor: Colors.black,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: _iconText(
-                                            'resources/icons/person.png',
-                                            'Think Wireless',
-                                            iconColor: Colors.blue,
-                                            textColor: Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    // Bottom row
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _iconText(
-                                            'resources/icons/agenda.png',
-                                            '14/5/2024',
-                                            iconColor: Colors.blue,
-                                            textColor: Colors.grey,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: _iconText(
-                                            'resources/icons/pin.png',
-                                            'Bar Hop',
-                                            iconColor: Colors.blue,
-                                            textColor: Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -266,21 +450,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               ),
             ),
           ),
+
+          // Bottom Nav Bar
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: NavBar(),
+          ),
         ],
       ),
-      bottomNavigationBar: NavBar(),
-    );
-  }
-
-  /// Helper widget to combine icon and label with separate icon/text colors
-  Widget _iconText(String assetPath, String text,
-      {Color iconColor = Colors.black, Color textColor = Colors.black}) {
-    return Row(
-      children: [
-        Image.asset(assetPath, width: 16, height: 16, color: iconColor),
-        const SizedBox(width: 6),
-        Text(text, style: TextStyle(fontSize: 14, color: textColor)),
-      ],
     );
   }
 }
