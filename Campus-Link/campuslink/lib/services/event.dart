@@ -13,7 +13,7 @@ class EventModel {
   final bool isPublic;
   final int? maxAttendees;
   final DateTime? signUpDeadline;
-  final bool offerBadge;
+  //final bool offerBadge;
   final String creatorUserId;
 
   EventModel({
@@ -31,11 +31,19 @@ class EventModel {
     required this.isPublic,
     this.maxAttendees,
     this.signUpDeadline,
-    required this.offerBadge,
+    //required this.offerBadge,
     required this.creatorUserId,
   });
 
   factory EventModel.fromMap(Map<String, dynamic> map) {
+
+    double? _parse(String? loc, bool getLat) {
+      if (loc == null) return null;
+      final parts = loc.split(',');
+      if (parts.length != 2) return null;
+      return double.tryParse(getLat ? parts[0] : parts[1]);
+    }
+
     return EventModel(
       id: map['id'] as String,
       eventName: map['event_name'] as String,
@@ -48,14 +56,14 @@ class EventModel {
       eventTime: map['event_time'] as String?,
       eventDuration: map['event_duration'] as int?,
       locationName: map['location_name'] as String?,
-      locationLat: (map['location_lat'] as num?)?.toDouble(),
-      locationLng: (map['location_lng'] as num?)?.toDouble(),
+      locationLat:   _parse(map['locationLatLng'] as String?, true),
+      locationLng:   _parse(map['locationLatLng'] as String?, false),
       isPublic: map['is_public'] as bool,
       maxAttendees: map['max_attendees'] as int?,
       signUpDeadline: map['sign_up_deadline'] != null
           ? DateTime.parse(map['sign_up_deadline'] as String)
           : null,
-      offerBadge: map['offer_badge'] as bool,
+      //offerBadge: map['offer_badge'] as bool,
       creatorUserId: map['creator_user_id'] as String,
     );
   }

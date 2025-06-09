@@ -308,4 +308,35 @@ class EventData {
   DateTime? signUpDeadline;
   bool offerBadge = true;
   List<String> invitedUserIds = [];
+
+  Map<String, dynamic> toMap(String creatorId) {
+    // 1) Format Date part
+    String? formattedDate = eventDate
+        ?.toIso8601String()
+        .split('T')
+        .first; // yyyy-MM-dd
+
+    // 2) Format Time part
+    String? formattedTime;
+    if (eventTime != null) {
+      final twoDigit = (int v) => v.toString().padLeft(2, '0');
+      formattedTime =
+      '${twoDigit(eventTime!.hour)}:${twoDigit(eventTime!.minute)}:00';
+    }
+
+    return {
+      'eventname'           : eventName,
+      'eventdescription'    : description,
+      'isPhysical'          : !isOnline,      // your original used isOnline→field “isPhysical”
+      'startdate'           : formattedDate,
+      'eventTime'           : formattedTime,
+      'locationName'        : locationName,
+      'locationLatLng'      : location,
+      'eventcategory'       : category,
+      'maxnumberofpeople'   : maxAttendees,
+      //'offer_badge'         : offerBadge,
+      'eventcreatorid_uuid' : creatorId,
+      // add any other DB columns here…
+    };
+  }
 }
