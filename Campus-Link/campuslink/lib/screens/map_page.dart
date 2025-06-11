@@ -3,8 +3,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
-import 'package:campuslink/models/event.dart';
 import 'package:campuslink/services/event_service.dart';
+import 'package:campuslink/models/event.dart';
+import 'package:intl/intl.dart'; // Import for parsing time strings
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -23,6 +24,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   LatLng? _currentLocation;
 
+  // Initialize filters to 'All' to ensure nothing is filtered by default
   String _dateFilter = 'All';
   String _categoryFilter = 'All';
   String _timeFilter = 'All';
@@ -41,21 +43,37 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   Future<LatLng> _getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return LatLng(52.785805, 6.897585);
+    if (!serviceEnabled) {
+      print('Location services are disabled.');
+      // Fallback to a default location if services are disabled
+      return LatLng(52.785805, 6.897585);
+    }
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        print('Location permissions are denied or permanently denied.');
+        // Fallback to a default location if permissions are denied
         return LatLng(52.785805, 6.897585);
       }
     }
 
-    Position position = await Geolocator.getCurrentPosition();
-    return LatLng(position.latitude, position.longitude);
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high, // Increased accuracy
+        timeLimit: const Duration(seconds: 10), // Add a time limit
+      );
+      return LatLng(position.latitude, position.longitude);
+    } catch (e) {
+      print('Error getting current location: $e');
+      // Fallback to a default location on error
+      return LatLng(52.785805, 6.897585);
+    }
   }
 
   void _showFilterDialog() {
+    // Use temporary variables for dialog selection to avoid updating state until 'Apply' is pressed
     String tempDateFilter = _dateFilter;
     String tempCategoryFilter = _categoryFilter;
     String tempTimeFilter = _timeFilter;
@@ -65,10 +83,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       builder: (context) {
         return AlertDialog(
           title: const Text('Filter Events'),
-          content: StatefulBuilder(
+          content: StatefulBuilder( // Use StatefulBuilder to update dialog content
             builder: (context, setState) {
               return SizedBox(
-                height: 280,
+                height: 280, // Adjust height as needed
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,7 +106,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       }),
                       const SizedBox(height: 8),
                       const Text('Category'),
-                      ...['All', 'Music', 'Sports', 'Food'].map((value) {
+                      // Add your actual categories here. Example:
+                      ...['All', 'Music', 'Sports', 'Food', 'Academics', 'Social', 'Workshop', 'Conference'].map((value) {
                         return RadioListTile<String>(
                           title: Text(value),
                           value: value,
@@ -127,7 +146,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
             TextButton(
               onPressed: () {
-                setState(() {
+                setState(() { // Update the main page's state
                   _dateFilter = tempDateFilter;
                   _categoryFilter = tempCategoryFilter;
                   _timeFilter = tempTimeFilter;
@@ -143,37 +162,67 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   }
 
   List<EventModel> _applyFilters(List<EventModel> events) {
-    DateTime now = DateTime.now();
+    final now = DateTime.now();
 
     return events.where((event) {
-      if (_dateFilter != 'All' && event.eventDate != null) {
-        final diff = event.eventDate!.difference(now).inDays;
-        switch (_dateFilter) {
-          case '1 Week':
-            if (diff > 7) return false;
-            break;
-          case '2 Weeks':
-            if (diff > 14) return false;
-            break;
-          case '1 Month':
-            if (diff > 30) return false;
-            break;
+      final eventDate = event.eventDate;
+      final eventTimeString = event.eventTime;
+      final category = event.category;
+
+      bool keepEvent = true; // Assume we keep it unless a filter condition makes it false
+
+      // --- Date Filter ---
+      if (_dateFilter != 'All') {
+        if (eventDate == null) {
+          // If a date filter is active but event has no date, exclude it
+          print('Filtering out event "${event.eventName}" by Date: eventDate is null but filter is $_dateFilter');
+          keepEvent = false;
+        } else {
+          final diff = eventDate.difference(now).inDays;
+          if ((_dateFilter == '1 Week' && (diff < 0 || diff > 7)) ||
+              (_dateFilter == '2 Weeks' && (diff < 0 || diff > 14)) ||
+              (_dateFilter == '1 Month' && (diff < 0 || diff > 30))) {
+            print('Filtering out event "${event.eventName}" by Date: $eventDate (diff=$diff, filter: $_dateFilter)');
+            keepEvent = false;
+          }
         }
       }
 
-      if (_categoryFilter != 'All' && event.category != _categoryFilter) {
-        return false;
+      // --- Category Filter ---
+      if (keepEvent && _categoryFilter != 'All') { // Only apply if not already filtered
+        if (category == null || category != _categoryFilter) {
+          print('Filtering out event "${event.eventName}" by Category: $category (filter: $_categoryFilter)');
+          keepEvent = false;
+        }
       }
 
-      if (_timeFilter != 'All' && event.eventTime != null) {
-        final time = DateTime.tryParse(event.eventTime!);
-        if (time == null) return false;
-        if (_timeFilter == 'Morning' && time.hour >= 12) return false;
-        if (_timeFilter == 'Afternoon' && (time.hour < 12 || time.hour >= 18)) return false;
-        if (_timeFilter == 'Evening' && time.hour < 18) return false;
+      // --- Time Filter ---
+      if (keepEvent && _timeFilter != 'All') { // Only apply if not already filtered
+        if (eventTimeString == null) {
+          // If a time filter is active but event has no time, exclude it
+          print('Filtering out event "${event.eventName}" by Time: eventTime is null but filter is $_timeFilter');
+          keepEvent = false;
+        } else {
+          try {
+            final parsedTime = DateFormat('HH:mm').parse(eventTimeString);
+            final hour = parsedTime.hour;
+            if ((_timeFilter == 'Morning' && (hour < 6 || hour >= 12)) ||
+                (_timeFilter == 'Afternoon' && (hour < 12 || hour >= 18)) ||
+                (_timeFilter == 'Evening' && (hour < 18 || hour >= 24))) {
+              print('Filtering out event "${event.eventName}" by Time: $eventTimeString (hour=$hour, filter: $_timeFilter)');
+              keepEvent = false;
+            }
+          } catch (e) {
+            print('Error parsing event time for "${event.eventName}": $eventTimeString - $e');
+            keepEvent = false; // Exclude events with unparsable time
+          }
+        }
       }
 
-      return true;
+      if (!keepEvent) {
+        return false; // This event was filtered out by one of the conditions
+      }
+      return true; // This event passed all active filters
     }).toList();
   }
 
@@ -197,9 +246,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           ),
           IconButton(
             icon: Image.asset("resources/icons/newPostBtn.png"),
-            onPressed: () {
-              Navigator.pushNamed(context, '/create_event_page');
-            },
+            onPressed: () => Navigator.pushNamed(context, '/create_event_page'),
           ),
         ],
       ),
@@ -207,15 +254,15 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
         children: [
           FlutterMap(
             options: MapOptions(
-              center: _currentLocation ?? LatLng(52.785805, 6.897585),
+              center: _currentLocation ?? LatLng(52.785805, 6.897585), // Default to a central location if _currentLocation is null
               zoom: 13.0,
             ),
             children: [
               TileLayer(
                 urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                subdomains: ['a', 'b', 'c'],
+                subdomains: const ['a', 'b', 'c'],
               ),
-              if (_currentLocation != null)
+              if (_currentLocation != null) // Only show current location marker if available
                 MarkerLayer(
                   markers: [
                     Marker(
@@ -229,17 +276,36 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               FutureBuilder<List<EventModel>>(
                 future: _eventsFuture,
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) return const SizedBox();
-                  final filteredEvents = _applyFilters(snapshot.data!);
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator(); // Show loading indicator
+                  }
+                  if (snapshot.hasError) {
+                    print('Error fetching events: ${snapshot.error}'); // Log error
+                    return Center(child: Text('Error loading events: ${snapshot.error}'));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const SizedBox(); // No data for map markers
+                  }
+
+                  // Print before and after filtering to debug list emptiness
+                  print('Total events fetched for map: ${snapshot.data!.length}');
+                  final filteredEventsForMap = _applyFilters(snapshot.data!); // Apply filters for map markers too
+                  print('Events after filtering for map: ${filteredEventsForMap.length}');
+
                   return MarkerLayer(
-                    markers: filteredEvents
-                        .where((event) => event.locationLat != null && event.locationLng != null)
-                        .map((event) => Marker(
-                              point: LatLng(event.locationLat!, event.locationLng!),
-                              width: 36,
-                              height: 36,
-                              child: const Icon(Icons.location_pin, color: Colors.red, size: 36),
-                            ))
+                    markers: filteredEventsForMap
+                        .map((event) {
+                          final lat = event.locationLat;
+                          final lng = event.locationLng;
+                          if (lat == null || lng == null) return null; // Only show marker if location is valid
+                          return Marker(
+                            point: LatLng(lat, lng),
+                            width: 36,
+                            height: 36,
+                            child: const Icon(Icons.location_pin, color: Colors.red, size: 36),
+                          );
+                        })
+                        .whereType<Marker>() // Remove any null markers
                         .toList(),
                   );
                 },
@@ -247,7 +313,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ],
           ),
 
-          // Center-on-location button
           Positioned(
             top: 100,
             right: 16,
@@ -264,19 +329,19 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
           ),
 
-          // Search bar
           Positioned(
             left: 12,
             right: 12,
-            bottom: _panelHeightFraction * screenHeight + 12,
+            // Adjust position based on panel height, leaving some padding at the bottom
+            bottom: (_panelHeightFraction * screenHeight) + 12,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))],
               ),
-              child: TextField(
-                decoration: const InputDecoration(
+              child: const TextField(
+                decoration: InputDecoration(
                   hintText: 'Search...',
                   suffixIcon: Icon(Icons.search),
                   border: InputBorder.none,
@@ -286,7 +351,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
           ),
 
-          // Bottom sliding panel
           Positioned(
             left: 0,
             right: 0,
@@ -300,7 +364,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               child: Column(
                 children: [
                   GestureDetector(
-                    behavior: HitTestBehavior.translucent,
+                    behavior: HitTestBehavior.translucent, // Allows drag on transparent parts
                     onVerticalDragStart: (details) {
                       _dragStartY = details.globalPosition.dy;
                       _startHeightFraction = _panelHeightFraction;
@@ -308,7 +372,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     onVerticalDragUpdate: (details) {
                       double dragDelta = _dragStartY - details.globalPosition.dy;
                       double newHeight = _startHeightFraction + dragDelta / screenHeight;
-                      newHeight = newHeight.clamp(0.05, 0.9);
+                      newHeight = newHeight.clamp(0.05, 0.9); // Clamp height between 5% and 90%
                       setState(() {
                         _panelHeightFraction = newHeight;
                       });
@@ -324,9 +388,27 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     child: FutureBuilder<List<EventModel>>(
                       future: _eventsFuture,
                       builder: (context, snapshot) {
-                        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError) {
+                          print('Error loading events for list: ${snapshot.error}'); // Log error
+                          return Center(child: Text('Error loading events: ${snapshot.error}'));
+                        }
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(child: Text('No events found.'));
+                        }
+
+                        // Apply filters to the list of events
+                        print('Current Filters in List View: Date=$_dateFilter, Category=$_categoryFilter, Time=$_timeFilter');
+                        print('Total events fetched for list: ${snapshot.data!.length}');
                         final filteredEvents = _applyFilters(snapshot.data!);
-                        if (filteredEvents.isEmpty) return const Center(child: Text('No events found.'));
+                        print('Events after filtering for list: ${filteredEvents.length}');
+
+
+                        if (filteredEvents.isEmpty) {
+                          return const Center(child: Text('No events found matching current filters.'));
+                        }
 
                         return ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -343,29 +425,28 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     height: 50,
                                     margin: const EdgeInsets.only(right: 16, top: 4),
                                     decoration: const BoxDecoration(
-                                      color: Color(0xFFE0E0E0),
+                                      color: Color(0xFFE0E0E0), // Placeholder for event image
                                       shape: BoxShape.circle,
                                     ),
+                                    child: const Icon(Icons.event, color: Colors.grey), // Example icon
                                   ),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
+                                        // Row 1: Event Name & Category
                                         Row(
                                           children: [
                                             Expanded(
                                               child: Row(
                                                 children: [
-                                                  Image.asset(
-                                                    'resources/icons/event_list_1.png',
-                                                    width: 16,
-                                                    height: 16,
-                                                  ),
+                                                  Image.asset('resources/icons/event_list_1.png', width: 16, height: 16),
                                                   const SizedBox(width: 6),
                                                   Expanded(
                                                     child: Text(
-                                                      event.eventName ?? '',
+                                                      event.eventName.isNotEmpty ? event.eventName : 'Unnamed Event', // Ensure non-empty display
                                                       style: const TextStyle(fontSize: 14),
+                                                      overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                 ],
@@ -374,16 +455,13 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                             Expanded(
                                               child: Row(
                                                 children: [
-                                                  Image.asset(
-                                                    'resources/icons/event_list_2.png',
-                                                    width: 16,
-                                                    height: 16,
-                                                  ),
+                                                  Image.asset('resources/icons/event_list_2.png', width: 16, height: 16),
                                                   const SizedBox(width: 6),
                                                   Expanded(
                                                     child: Text(
-                                                      event.category ?? '',
+                                                      event.category ?? 'No Category', // Default for nullable category
                                                       style: const TextStyle(fontSize: 14),
+                                                      overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                 ],
@@ -392,21 +470,21 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                           ],
                                         ),
                                         const SizedBox(height: 8),
+                                        // Row 2: Event Date & Location Name
                                         Row(
                                           children: [
                                             Expanded(
                                               child: Row(
                                                 children: [
-                                                  Image.asset(
-                                                    'resources/icons/event_list_3.png',
-                                                    width: 16,
-                                                    height: 16,
-                                                  ),
+                                                  Image.asset('resources/icons/event_list_3.png', width: 16, height: 16),
                                                   const SizedBox(width: 6),
                                                   Expanded(
                                                     child: Text(
-                                                      event.eventDate?.toLocal().toString().split(' ')[0] ?? '',
+                                                      event.eventDate != null
+                                                          ? DateFormat('MMM d, yyyy').format(event.eventDate!) // Format date nicely
+                                                          : 'No Date', // Default for nullable eventDate
                                                       style: const TextStyle(fontSize: 14),
+                                                      overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                 ],
@@ -415,16 +493,13 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                             Expanded(
                                               child: Row(
                                                 children: [
-                                                  Image.asset(
-                                                    'resources/icons/event_list_4.png',
-                                                    width: 16,
-                                                    height: 16,
-                                                  ),
+                                                  Image.asset('resources/icons/event_list_4.png', width: 16, height: 16),
                                                   const SizedBox(width: 6),
                                                   Expanded(
                                                     child: Text(
-                                                      event.locationName ?? '',
+                                                      event.locationName ?? 'Unknown Location', // Default for nullable locationName
                                                       style: const TextStyle(fontSize: 14),
+                                                      overflow: TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                 ],
@@ -432,6 +507,22 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                             ),
                                           ],
                                         ),
+                                        // Optional: Add Event Time row if needed
+                                        if (event.eventTime != null && event.eventTime!.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 8.0),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.access_time, size: 16), // Example icon for time
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  event.eventTime!,
+                                                  style: const TextStyle(fontSize: 14),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -448,6 +539,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
           ),
 
+          // Navbar (position based on current context)
           const Positioned(
             left: 0,
             right: 0,

@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart'; // Keep if you use other Flutter specific imports here, otherwise remove
+import 'package:intl/intl.dart';
+
 class EventModel {
   final String id;
   final String eventName;
@@ -36,35 +39,44 @@ class EventModel {
   });
 
   factory EventModel.fromMap(Map<String, dynamic> map) {
-
     double? _parse(String? loc, bool getLat) {
       if (loc == null) return null;
       final parts = loc.split(',');
       if (parts.length != 2) return null;
-      return double.tryParse(getLat ? parts[0] : parts[1]);
+      return double.tryParse(getLat ? parts[0].trim() : parts[1].trim());
     }
 
+    // You can keep the print statements for your own debugging if you wish
+    // print('--- Event Raw Map Data ---');
+    // print('id: ${map['id']}');
+    // print('eventname: ${map['eventname']}'); // Corrected key
+    // print('eventcategory: ${map['eventcategory']}'); // Corrected key
+    // print('startdate: ${map['startdate']}'); // Corrected key
+    // print('locationName: ${map['locationName']}'); // Corrected key
+    // // ... print other fields
+    // print('--------------------------');
+
+
     return EventModel(
-      id: map['id'] as String,
-      eventName: map['event_name'] as String,
-      category: map['category'] as String?,
-      description: map['description'] as String,
-      isOnline: map['is_online'] as bool,
-      eventDate: map['event_date'] != null
-          ? DateTime.parse(map['event_date'] as String)
+      id: (map['id'] as String?) ?? '',
+      eventName: (map['eventname'] as String?) ?? 'Unnamed Event', // CORRECTED: 'event_name' -> 'eventname'
+      category: (map['eventcategory'] as String?) ?? 'No Category', // CORRECTED: 'category' -> 'eventcategory'
+      description: (map['description'] as String?) ?? 'No description provided.',
+      isOnline: (map['is_online'] as bool?) ?? false,
+      eventDate: map['startdate'] != null // CORRECTED: 'event_date' -> 'startdate'
+          ? DateTime.tryParse(map['startdate'] as String)
           : null,
       eventTime: map['event_time'] as String?,
       eventDuration: map['event_duration'] as int?,
-      locationName: map['location_name'] as String?,
-      locationLat:   _parse(map['locationLatLng'] as String?, true),
-      locationLng:   _parse(map['locationLatLng'] as String?, false),
-      isPublic: map['is_public'] as bool,
+      locationName: (map['locationName'] as String?) ?? 'Unknown Location', // CORRECTED: 'location_name' -> 'locationName'
+      locationLat: _parse(map['locationLatLng'] as String?, true),
+      locationLng: _parse(map['locationLatLng'] as String?, false),
+      isPublic: (map['is_public'] as bool?) ?? true,
       maxAttendees: map['max_attendees'] as int?,
       signUpDeadline: map['sign_up_deadline'] != null
-          ? DateTime.parse(map['sign_up_deadline'] as String)
+          ? DateTime.tryParse(map['sign_up_deadline'] as String)
           : null,
-      //offerBadge: map['offer_badge'] as bool,
-      creatorUserId: map['creator_user_id'] as String,
+      creatorUserId: (map['creator_user_id'] as String?) ?? '',
     );
   }
 }
