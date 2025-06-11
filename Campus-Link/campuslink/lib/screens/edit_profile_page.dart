@@ -112,7 +112,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               ? FileImage(_newImageFile!)
                               : (_currentImageUrl != null && _currentImageUrl!.isNotEmpty
                                   ? NetworkImage(_currentImageUrl!)
-                                  : const AssetImage('assets/default_profile.png'))
+                                  : const AssetImage('resources/img/manny-cat-takes-selfies-dogs-gopro-9.webp'))
                                   as ImageProvider,
                         ),
                         const SizedBox(height: 8),
