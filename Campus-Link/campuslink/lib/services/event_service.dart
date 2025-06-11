@@ -2,16 +2,22 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/create_event_page.dart';
 import 'package:campuslink/models/event.dart';
+import 'package:campuslink/services/user_service.dart';
 
 class EventService {
   static final SupabaseClient _supabase = Supabase.instance.client;
 
-  static Future<bool> createEvent(EventData data) async {
+  static Future<int?> createEvent(EventData data) async {
     final creatorId = AuthGate.getCurrentUserId();
-    if (creatorId == null) throw Exception('No user is logged in');
+    final accountId = await UserService().getAccountIdByAuthUserId(creatorId!);
+    //if (creatorId == null) throw Exception('No user is logged in');
+    final payload = data.toMap(creatorId);
 
     try {
-      final payload = data.toMap(creatorId);
+
+
+      // Remove invitation data not needed for event table
+      payload.remove('invited_user_ids');
 
       final eventResponse = await _supabase
           .from('event')
@@ -19,18 +25,11 @@ class EventService {
           .select('event_id')
           .single();
 
-      final int newEventId = eventResponse['event_id'];
-
-      await _supabase
-          .from('chat')
-          .insert({'event_id': newEventId})
-          .select('chat_id')
-          .single();
-
-      return true;
+      return eventResponse['event_id'] as int?;
     } catch (e) {
-      print('Error creating event or chat: $e');
-      return false;
+      print('EVENT CREATION ERROR: ${e.toString()}');
+      print('PAYLOAD: $payload');
+      rethrow;
     }
   }
 

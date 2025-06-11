@@ -9,6 +9,9 @@ import 'create_event_screens/time_and_location_screen.dart';
 import 'create_event_screens/privacy_and_security_screen.dart';
 import 'create_event_screens/overview.dart';
 import 'package:campuslink/services/event_service.dart';
+import 'package:campuslink/models/eventinvitation.dart';
+import 'package:campuslink/services/event_invitation_service.dart';
+import 'package:campuslink/services/auth_gate.dart';
 
 class CreateEventPage extends StatelessWidget {
   const CreateEventPage({super.key});
@@ -42,31 +45,9 @@ class _createEventPageState extends State<createEventPage> {
   bool isPrivacyValid = false;
   final EventData _eventData = EventData();
 
-  /*void updateBasicInfoValidity(bool isValid) {
-    setState(() {
-      isBasicInfoValid = isValid;
-    });
-  }
-
-  void updateLocationValidity(bool isValid) {
-    setState(() {
-      isLocationValid = isValid;
-    });
-  }
-
-  void updatePrivacyValidity(bool isValid) {
-    setState(() {
-      isPrivacyValid = isValid;
-    });
-  }
-
-
-  List<Widget> get steps => [
-    basicInputInfo(onValidityChanged: updateBasicInfoValidity, eventData: _eventData),
-    timeAndLocation(onValidityChanged: updateLocationValidity, eventData: _eventData),
-    eventFormPage(onValidityChanged: updatePrivacyValidity, eventData: _eventData,),
-    OverviewPage(eventData: _eventData),
-  ];*/
+  final EventService _eventService = EventService();
+  final EventInvitationService _invitationService = EventInvitationService();
+  final AuthGate _authService = AuthGate();
 
   List<Widget> get steps => [
     basicInputInfo(
@@ -97,13 +78,61 @@ class _createEventPageState extends State<createEventPage> {
     }
   }
 
+  Future<void> _createEventAndInvitations() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // 1. Create the event
+      final eventId = await EventService.createEvent(_eventData);
+      if (eventId == null) throw Exception('Failed to create event');
+
+      // 2. Get current user's account ID
+      final currentUserId = AuthGate.getCurrentUserId();
+      if (currentUserId == null) throw Exception('User not authenticated');
+
+      final currentAccountId = await userService.getAccountIdByAuthUserId(currentUserId);
+      if (currentAccountId == null) throw Exception('Account not found');
+
+      // 3. Create invitations
+      if (_eventData.invitedUsers.isNotEmpty) {
+        final invitations = _eventData.invitedUsers.map((user) {
+          return EventInvitationModel(
+            eventId: eventId,
+            receiverAccountId: user.accountId!,
+            eventInvitationCreaterId: currentAccountId,
+          );
+        }).toList();
+
+        await _invitationService.createInvitations(invitations);
+      }
+
+      // Close loading and show success
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Event created successfully!')),
+      );
+
+      // Close the create event flow
+      Navigator.of(context).pop();
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create event: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       body: Container(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(0.0),
         child: Column(
           children: [
             Container(
@@ -156,8 +185,8 @@ class _createEventPageState extends State<createEventPage> {
 
                             if (isLastStep) {
                               // Attempt to create the event in Supabase
-                              final success = await EventService.createEvent(_eventData);
-                              if (success) {
+                              //final success = await EventService.createEvent(_eventData);
+                              /*if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Event created successfully!')),
                                 );
@@ -166,7 +195,9 @@ class _createEventPageState extends State<createEventPage> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Failed to create event.')),
                                 );
-                              }
+                              }*/
+
+                              await _createEventAndInvitations();
                             } else {
                               nextStep();
                             }
@@ -324,43 +355,32 @@ class EventData {
     return '${names.take(3).join(', ')} +${names.length - 3} more';
   }
 
-  Map<String, dynamic> toMap(String creatorId) {
-    // 1) Format Date part
-    String? formattedDate = eventDate
-        ?.toIso8601String()
-        .split('T')
-        .first; // yyyy-MM-dd
 
-    // 2) Format Time part
-    String? formattedTime;
-    if (eventTime != null) {
-      final twoDigit = (int v) => v.toString().padLeft(2, '0');
-      formattedTime =
-      '${twoDigit(eventTime!.hour)}:${twoDigit(eventTime!.minute)}:00';
-    }
+    Map<String, dynamic> toMap(String creatorAccountId) {
+      // 1) Format Date part
+      String? formattedDate = eventDate
+          ?.toIso8601String()
+          .split('T')
+          .first; // yyyy-MM-dd
 
-    Map<String, dynamic> toMap(String creatorId) {
+      // 2) Format Time part
+      String? formattedTime;
+      if (eventTime != null) {
+        final twoDigit = (int v) => v.toString().padLeft(2, '0');
+        formattedTime =
+        '${twoDigit(eventTime!.hour)}:${twoDigit(eventTime!.minute)}:00';
+      }
       return {
-        // ... other fields ...
-        'invited_user_ids': invitedUsers.map((u) => u.accountId).toList(),
+        'eventname'           : eventName,
+        'eventdescription'    : description,
+        'isPhysical'          : !isOnline,
+        'startdate'           : formattedDate,
+        'eventTime'           : formattedTime,
+        'locationName'        : locationName,
+        'locationLatLng'      : location,
+        'eventcategory'       : category,
+        'maxnumberofpeople'   : maxAttendees,
+        'eventcreatorid_uuid' : creatorAccountId,
       };
     }
-
-
-
-    return {
-      'eventname'           : eventName,
-      'eventdescription'    : description,
-      'isPhysical'          : !isOnline,      // your original used isOnline→field “isPhysical”
-      'startdate'           : formattedDate,
-      'eventTime'           : formattedTime,
-      'locationName'        : locationName,
-      'locationLatLng'      : location,
-      'eventcategory'       : category,
-      'maxnumberofpeople'   : maxAttendees,
-      //'offer_badge'         : offerBadge,
-      'eventcreatorid_uuid' : creatorId,
-      // add any other DB columns here…
-    };
-  }
 }

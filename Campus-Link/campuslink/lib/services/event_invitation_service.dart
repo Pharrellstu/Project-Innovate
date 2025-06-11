@@ -5,8 +5,26 @@ class EventInvitationService {
   static final _supabase = Supabase.instance.client;
   static const _table = 'eventinvitation';
 
+  Future<void> createInvitations(List<EventInvitationModel> invitations) async {
+    try {
+      final invitationMaps = invitations.map((inv) => inv.toMap()).toList();
+      await _supabase.from('eventinvitation').insert(invitationMaps);
+    } catch (e) {
+      print('Error creating invitations: $e');
+      final postgrestError = e as PostgrestException?;
+      print('''
+        Error creating invitations: 
+        Code: ${postgrestError?.code}
+        Message: ${postgrestError?.message}
+        Details: ${postgrestError?.details}
+        Hint: ${postgrestError?.hint}
+      ''');
+      rethrow;
+    }
+  }
+
   /// Create a new invitation
-  static Future<EventInvitationModel> create({
+  /*static Future<EventInvitationModel> create({
     required int eventId,
     required int receiverAccountId,
     required int eventInvitationCreaterId,
@@ -24,7 +42,7 @@ class EventInvitationService {
         .single();
 
     return EventInvitationModel.fromMap(resp as Map<String, dynamic>);
-  }
+  }*/
 
   /// Fetch all invitations
   static Future<List<EventInvitationModel>> fetchAll() async {

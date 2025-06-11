@@ -62,6 +62,21 @@ class UserService {
     }
   }
 
+  Future<int?> getAccountIdByAuthUserId(String authUserId) async {
+    try {
+      final response = await supabase
+          .from('account')
+          .select('accountid')
+          .eq('auth_user_id', authUserId)
+          .single();
+
+      return response['accountid'] as int?;
+    } catch (e) {
+      print('Error getting account ID: $e');
+      return null;
+    }
+  }
+
   Future<List<UserObject>> getAllUsers() async {
     try {
       final response = await supabase
