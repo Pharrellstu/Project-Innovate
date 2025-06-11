@@ -1,8 +1,4 @@
 import 'dart:io';
-<<<<<<< Updated upstream
-import 'package:campuslink/models/user.dart';
-=======
->>>>>>> Stashed changes
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
