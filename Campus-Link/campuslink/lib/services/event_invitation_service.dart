@@ -23,6 +23,37 @@ class EventInvitationService {
     }
   }
 
+  // Add to EventInvitationService class
+
+  Future<List<EventInvitationModel>> fetchInvitationsForUser(int accountId) async {
+    try {
+      final rows = await _supabase
+          .from(_table)
+          .select()
+          .eq('receiveraccount_id', accountId)
+          .eq('status', 'pending'); // Only fetch pending invitations
+
+      return (rows as List)
+          .map((r) => EventInvitationModel.fromMap(r as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching invitations: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateInvitationStatus(int invitationId, String status) async {
+    try {
+      await _supabase
+          .from(_table)
+          .update({'status': status})
+          .eq('eventinvitation_id', invitationId);
+    } catch (e) {
+      print('Error updating invitation status: $e');
+      rethrow;
+    }
+  }
+
   /// Create a new invitation
   /*static Future<EventInvitationModel> create({
     required int eventId,

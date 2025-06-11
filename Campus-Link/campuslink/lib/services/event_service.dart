@@ -44,4 +44,21 @@ class EventService {
            .map((r) => EventModel.fromMap(r as Map<String, dynamic>))
            .toList();
   }
+
+  // Add to EventService class
+
+  static Future<EventModel?> getEventById(int eventId) async {
+    try {
+      final response = await _supabase
+          .from('event')
+          .select()
+          .eq('event_id', eventId)
+          .single();
+
+      return EventModel.fromMap(response as Map<String, dynamic>);
+    } catch (e) {
+      print('Error fetching event: $e');
+      return null;
+    }
+  }
 }

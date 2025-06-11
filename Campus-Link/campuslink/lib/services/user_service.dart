@@ -104,4 +104,33 @@ class UserService {
       return []; // Return empty list on error
     }
   }
+
+  // Add to UserService class
+
+  Future<UserObject?> getUserByAccountId(int accountId) async {
+    try {
+      final response = await supabase
+          .from('account')
+          .select()
+          .eq('accountid', accountId)
+          .single();
+
+      return UserObject(
+        accountId: response['accountid'],
+        username: response['username'],
+        email: response['email'],
+        studentCardId: response['studentcardid'],
+        isAdmin: response['isadmin'],
+        profilePictureUrl: response['profilepictureurl'],
+        bio: response['bio'],
+        isVerified: response['isverified'],
+        followingCount: response['followingcount'],
+        badgeCount: response['badgecount'],
+        authUserId: response['auth_user_id'],
+      );
+    } catch (e) {
+      print('Error fetching user by account ID: $e');
+      return null;
+    }
+  }
 }
