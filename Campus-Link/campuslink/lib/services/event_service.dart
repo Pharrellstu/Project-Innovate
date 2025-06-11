@@ -14,9 +14,6 @@ class EventService {
     final payload = data.toMap(creatorId);
 
     try {
-
-
-      // Remove invitation data not needed for event table
       payload.remove('invited_user_ids');
 
       final eventResponse = await _supabase
@@ -24,6 +21,14 @@ class EventService {
           .insert(payload)
           .select('event_id')
           .single();
+
+      //final int newEventId = eventResponse['event_id'];
+
+      /*//await _supabase
+          .from('chat')
+          .insert({'event_id': newEventId})
+          .select('chat_id')
+          .single();*/
 
       return eventResponse['event_id'] as int?;
     } catch (e) {
