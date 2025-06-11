@@ -3,6 +3,7 @@ import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
+import '../models/user.dart';
 import 'create_event_screens/basic_info_screen.dart';
 import 'create_event_screens/time_and_location_screen.dart';
 import 'create_event_screens/privacy_and_security_screen.dart';
@@ -308,6 +309,20 @@ class EventData {
   DateTime? signUpDeadline;
   bool offerBadge = true;
   List<String> invitedUserIds = [];
+  List<UserObject> invitedUsers = [];
+
+  // Add this to EventData class
+  String get invitedUsersDisplay {
+    if (invitedUsers.isEmpty) return 'No invited users';
+
+    final names = invitedUsers.map((u) => u.username).toList();
+
+    if (names.length <= 3) {
+      return names.join(', ');
+    }
+
+    return '${names.take(3).join(', ')} +${names.length - 3} more';
+  }
 
   Map<String, dynamic> toMap(String creatorId) {
     // 1) Format Date part
@@ -323,6 +338,15 @@ class EventData {
       formattedTime =
       '${twoDigit(eventTime!.hour)}:${twoDigit(eventTime!.minute)}:00';
     }
+
+    Map<String, dynamic> toMap(String creatorId) {
+      return {
+        // ... other fields ...
+        'invited_user_ids': invitedUsers.map((u) => u.accountId).toList(),
+      };
+    }
+
+
 
     return {
       'eventname'           : eventName,
