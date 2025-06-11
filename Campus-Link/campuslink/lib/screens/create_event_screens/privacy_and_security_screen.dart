@@ -73,22 +73,22 @@ class _eventFormPageState extends State<eventFormPage> {
   }
 
   void _showUserSelectionDialog() async {
-    final List<UserObject> tempSelected = List.from(_selectedUsers);
-
-    final result = await showDialog(
+    final result = await showDialog<List<UserObject>>(
       context: context,
-      builder: (context) => UserSelectionDialog(
+      builder: (_) => UserSelectionDialog(
         allUsers: _allUsers,
-        selectedUsers: tempSelected,
+        selectedUsers: _selectedUsers,       // ← pass the “live” list
       ),
     );
 
-    if (result != null && result is List<UserObject>) {
+    if (result != null) {
       setState(() {
-        _selectedUsers = result;
-        // Update eventData with selected user IDs
-        widget.eventData.invitedUserIds =
-            result.map((user) => user.accountId.toString()).toList();
+        _selectedUsers = result;            // ← update what your UI shows
+        // ALSO sync into your eventData so when you persist the form it's correct:
+        widget.eventData.invitedUsers = result;
+        widget.eventData.invitedUserIds = result
+            .map((u) => u.accountId.toString())
+            .toList();
       });
     }
   }
@@ -313,10 +313,10 @@ class _eventFormPageState extends State<eventFormPage> {
       scrollDirection: Axis.horizontal,
       itemCount: _selectedUsers.length + 1,
       itemBuilder: (context, index) {
-        if (index == _selectedUsers.length) {
-          // Add button at the end
+        // index 0: add button
+        if (index == 0) {
           return Padding(
-            padding: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
               onTap: _showUserSelectionDialog,
               child: Container(
@@ -333,11 +333,12 @@ class _eventFormPageState extends State<eventFormPage> {
           );
         }
 
-        final user = _selectedUsers[index];
+        // avatar slots start at index 1 → map to _selectedUsers[index-1]
+        final user = _selectedUsers[index - 1];
         return Padding(
-          padding: EdgeInsets.only(left: index == 0 ? 0 : 8),
+          padding: const EdgeInsets.only(right: 8),
           child: GestureDetector(
-            onTap: () => _showUserSelectionDialog(),
+            onTap: _showUserSelectionDialog,
             child: Tooltip(
               message: user.username,
               child: Container(
@@ -351,8 +352,8 @@ class _eventFormPageState extends State<eventFormPage> {
                   ),
                 ),
                 child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    // User avatar
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.blue[100],
@@ -367,30 +368,29 @@ class _eventFormPageState extends State<eventFormPage> {
                         ),
                       ),
                     ),
-
-                    // Remove button
-                    /*Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
+                    Positioned(
+                          top: 30,
+                          right: 0,
+                          child: Container(
+                            width: 25,
+                            decoration: BoxDecoration(
+                              color: Colors.red[400],
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.close, size: 12, color: Colors.white),
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                setState(() {
+                                  _selectedUsers.removeAt(index);
+                                  widget.eventData.invitedUserIds
+                                      .remove(user.accountId.toString());
+                                });
+                              },
+                            ),
+                          ),
                         ),
-                        child: IconButton(
-                          icon: Icon(Icons.close, size: 12, color: Colors.white),
-                          padding: EdgeInsets.zero,
-                          onPressed: () {
-                            setState(() {
-                              _selectedUsers.removeAt(index);
-                              widget.eventData.invitedUserIds
-                                  .remove(user.accountId.toString());
-                            });
-                          },
-                        ),
-                      ),
-                    ),*/
-                  ],
+                  ]
                 ),
               ),
             ),
@@ -417,11 +417,37 @@ class UserSelectionDialog extends StatefulWidget {
 
 class _UserSelectionDialogState extends State<UserSelectionDialog> {
   late List<UserObject> _tempSelected;
+  late List<UserObject> _displayedUsers = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _tempSelected = List.from(widget.selectedUsers);
+    _displayedUsers = List.from(widget.allUsers);
+
+    // Add listener to search controller
+    _searchController.addListener(_filterUsers);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterUsers() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _displayedUsers = List.from(widget.allUsers);
+      } else {
+        _displayedUsers = widget.allUsers.where((user) {
+          return (user.username?.toLowerCase().contains(query) ?? false) ||
+              (user.email?.toLowerCase().contains(query) ?? false);
+        }).toList();
+      }
+    });
   }
 
   @override
@@ -429,8 +455,8 @@ class _UserSelectionDialogState extends State<UserSelectionDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          Text('Select Users'),
-          Spacer(),
+          const Text('Select Users'),
+          const Spacer(),
           Text(
             '${_tempSelected.length} selected',
             style: TextStyle(
@@ -448,28 +474,43 @@ class _UserSelectionDialogState extends State<UserSelectionDialog> {
           children: [
             // Search bar
             TextField(
+              controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search users...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    _filterUsers();
+                  },
+                )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
               ),
-              onChanged: (value) {
-                // Implement search if needed
-              },
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // User list
             Flexible(
-              child: ListView.builder(
+              child: _displayedUsers.isEmpty
+                  ? const Center(
+                child: Text(
+                  'No users found',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              )
+                  : ListView.builder(
                 shrinkWrap: true,
-                itemCount: widget.allUsers.length,
+                itemCount: _displayedUsers.length,
                 itemBuilder: (context, index) {
-                  final user = widget.allUsers[index];
-                  final isSelected = _tempSelected.any((u) => u.accountId == user.accountId);
+                  final user = _displayedUsers[index];
+                  final isSelected = _tempSelected.any(
+                          (u) => u.accountId == user.accountId);
 
                   return CheckboxListTile(
                     value: isSelected,
@@ -478,16 +519,17 @@ class _UserSelectionDialogState extends State<UserSelectionDialog> {
                         if (value == true) {
                           _tempSelected.add(user);
                         } else {
-                          _tempSelected.removeWhere((u) => u.accountId == user.accountId);
+                          _tempSelected.removeWhere(
+                                  (u) => u.accountId == user.accountId);
                         }
                       });
                     },
-                    title: Text(user.username!),
-                    subtitle: Text(user.email!),
+                    title: Text(user.username ?? 'Unknown'),
+                    subtitle: Text(user.email ?? 'No email'),
                     secondary: CircleAvatar(
                       backgroundColor: Colors.blue[100],
                       child: Text(
-                        user.username!.isNotEmpty
+                        user.username?.isNotEmpty == true
                             ? user.username![0].toUpperCase()
                             : '?',
                         style: TextStyle(color: Colors.blue[800]),
@@ -504,11 +546,11 @@ class _UserSelectionDialogState extends State<UserSelectionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(context, _tempSelected),
-          child: Text('Confirm'),
+          child: const Text('Confirm'),
         ),
       ],
     );
