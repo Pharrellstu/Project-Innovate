@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'package:campuslink/models/user.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:campuslink/services/db_handler.dart';
+import 'package:campuslink/services/profile_service.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -14,123 +15,142 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  late UserObject currentUser;
-  late TextEditingController nameController;
-  late TextEditingController bioController;
-  File? selectedImage;
+  final supabase = Supabase.instance.client;
+
+  final _nameController = TextEditingController();
+  final _nationalityController = TextEditingController();
+  final _bioController = TextEditingController();
+
+  File? _newImageFile;
+  String? _currentImageUrl;
+  int? _accountId;
+
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    initializeUser();
+    _loadUserProfile();
   }
 
-  Future<void> initializeUser() async {
-    final user = await DbHandler.getCurrentUser();
+  Future<void> _loadUserProfile() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final account = await ProfileService.getProfileByUserId(user.id);
+    if (account == null) return;
+
     setState(() {
-      currentUser = user;
-      nameController = TextEditingController(text: currentUser.username);
-      bioController = TextEditingController(text: currentUser.bio);
+      _accountId = account['accountid'];
+      _nameController.text = account['username'] ?? '';
+      _nationalityController.text = account['nationality'] ?? '';
+      _bioController.text = account['bio'] ?? '';
+      _currentImageUrl = account['profilepictureurl'];
       isLoading = false;
     });
   }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
       setState(() {
-        selectedImage = File(pickedFile.path);
+        _newImageFile = File(picked.path);
+      });
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    if (_accountId == null) return;
+
+    String? uploadedUrl = _currentImageUrl;
+
+    if (_newImageFile != null) {
+      uploadedUrl = await ProfileService.uploadProfileImage(_newImageFile!);
+    }
+
+    final updates = {
+      'username': _nameController.text,
+      'nationality': _nationalityController.text,
+      'bio': _bioController.text,
+      'profilepictureurl': uploadedUrl,
+    };
+
+    final success = await ProfileService.updateProfile(_accountId!, updates);
+
+    if (success && mounted) {
+      Navigator.pop(context, {
+        'name': _nameController.text,
+        'nationality': _nationalityController.text,
+        'bio': _bioController.text,
+        'profilePictureUrl': uploadedUrl,
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     return Scaffold(
-      appBar: const TopBar(title: "Edit Profile"),
+      appBar: const PreferredSize(
+        preferredSize: Size.fromHeight(60),
+        child: TopBar(title: 'Edit Profile'),
+      ),
       bottomNavigationBar: const NavBar(),
-      
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Profile Picture Section
-            GestureDetector(
-              onTap: _pickImage,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 45,
-                    backgroundImage:
-                        selectedImage != null
-                            ? FileImage(selectedImage!)
-                            : const AssetImage('resources/img/pfp.jpg') // TODO: use DB image
-                                as ImageProvider,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Change profile picture',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 45,
+                          backgroundImage: _newImageFile != null
+                              ? FileImage(_newImageFile!)
+                              : (_currentImageUrl != null && _currentImageUrl!.isNotEmpty
+                                  ? NetworkImage(_currentImageUrl!)
+                                  : const AssetImage('assets/default_profile.png'))
+                                  as ImageProvider,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Change profile picture',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  _buildField(label: 'Name', controller: _nameController),
+                  const SizedBox(height: 16),
+                  _buildField(label: 'Nationality', controller: _nationalityController),
+                  const SizedBox(height: 16),
+                  _buildField(label: 'Bio', controller: _bioController, maxLines: 4),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _saveChanges,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    ),
+                    child: const Text('Save Changes'),
+                  )
                 ],
               ),
             ),
-            
-            const SizedBox(height: 24),
-
-            // Name input field
-            _buildTextField(label: 'Name', controller: nameController),
-            
-            const SizedBox(height: 28),
-
-            // Bio input field
-            _buildTextField(
-              label: 'Bio',
-              controller: bioController,
-              maxLines: 4,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Save Changes button
-            ElevatedButton(
-              onPressed: () {
-                DbHandler.updateUserData("username", nameController.text);
-                DbHandler.updateUserData("bio", bioController.text);
-
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              child: const Text('Save Changes'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildField({
     required String label,
     required TextEditingController controller,
     int maxLines = 1,
@@ -148,6 +168,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             label,
             style: const TextStyle(
               color: Colors.lightBlue,
+              fontWeight: FontWeight.bold,
             ),
           ),
           TextField(
