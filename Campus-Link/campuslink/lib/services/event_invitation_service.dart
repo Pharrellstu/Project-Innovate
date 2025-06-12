@@ -5,8 +5,68 @@ class EventInvitationService {
   static final _supabase = Supabase.instance.client;
   static const _table = 'eventinvitation';
 
+  Future<void> createInvitations(List<EventInvitationModel> invitations) async {
+    try {
+      final invitationMaps = invitations.map((inv) => inv.toMap()).toList();
+      await _supabase.from('eventinvitation').insert(invitationMaps);
+    } catch (e) {
+      print('Error creating invitations: $e');
+      final postgrestError = e as PostgrestException?;
+      print('''
+        Error creating invitations: 
+        Code: ${postgrestError?.code}
+        Message: ${postgrestError?.message}
+        Details: ${postgrestError?.details}
+        Hint: ${postgrestError?.hint}
+      ''');
+      rethrow;
+    }
+  }
+
+  /*Future<List<EventInvitationModel>> fetchInvitationsByReceiver(int receiverAccountId) async {
+    final response = await _supabase
+        .from(_table)
+        .select('*')
+        .eq('receiveraccount_id', receiverAccountId);
+
+    return (response as List)
+        .map((map) => EventInvitationModel.fromMap(map))
+        .toList();
+  }*/
+
+  // Add to EventInvitationService class
+
+// Replace fetchInvitationsForUser method with this:
+  Future<List<EventInvitationModel>> fetchInvitationsForUser(int accountId) async {
+    try {
+      final rows = await _supabase
+          .from(_table)
+          .select()
+          .eq('receiveraccount_id', accountId); // Remove status filter
+
+      return (rows as List)
+          .map((r) => EventInvitationModel.fromMap(r as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching invitations: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateInvitationStatus(int invitationId, String status) async {
+    try {
+      await _supabase
+          .from(_table)
+          .update({'status': status})
+          .eq('eventinvitation_id', invitationId);
+    } catch (e) {
+      print('Error updating invitation status: $e');
+      rethrow;
+    }
+  }
+
   /// Create a new invitation
-  static Future<EventInvitationModel> create({
+  /*static Future<EventInvitationModel> create({
     required int eventId,
     required int receiverAccountId,
     required int eventInvitationCreaterId,
@@ -24,7 +84,7 @@ class EventInvitationService {
         .single();
 
     return EventInvitationModel.fromMap(resp as Map<String, dynamic>);
-  }
+  }*/
 
   /// Fetch all invitations
   static Future<List<EventInvitationModel>> fetchAll() async {
