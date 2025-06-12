@@ -22,13 +22,22 @@ class EventService {
           .select('event_id')
           .single();
 
-      //final int newEventId = eventResponse['event_id'];
 
-      /*//await _supabase
+
+      final int newEventId = eventResponse['event_id'];
+
+      await _supabase
+          .from('eventenrollment')
+          .insert({
+        'eventid':  newEventId,
+        'accountid': accountId,
+      });
+
+      await _supabase
           .from('chat')
           .insert({'event_id': newEventId})
           .select('chat_id')
-          .single();*/
+          .single();
 
       return eventResponse['event_id'] as int?;
     } catch (e) {
