@@ -23,15 +23,26 @@ class EventInvitationService {
     }
   }
 
+  /*Future<List<EventInvitationModel>> fetchInvitationsByReceiver(int receiverAccountId) async {
+    final response = await _supabase
+        .from(_table)
+        .select('*')
+        .eq('receiveraccount_id', receiverAccountId);
+
+    return (response as List)
+        .map((map) => EventInvitationModel.fromMap(map))
+        .toList();
+  }*/
+
   // Add to EventInvitationService class
 
+// Replace fetchInvitationsForUser method with this:
   Future<List<EventInvitationModel>> fetchInvitationsForUser(int accountId) async {
     try {
       final rows = await _supabase
           .from(_table)
           .select()
-          .eq('receiveraccount_id', accountId)
-          .eq('status', 'pending'); // Only fetch pending invitations
+          .eq('receiveraccount_id', accountId); // Remove status filter
 
       return (rows as List)
           .map((r) => EventInvitationModel.fromMap(r as Map<String, dynamic>))
