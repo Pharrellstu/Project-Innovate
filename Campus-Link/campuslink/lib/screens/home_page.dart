@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:campuslink/widgets/feed.dart';
-//import 'package:campuslink/widgets/explore.dart'; // Create this later
+import 'package:campuslink/widgets/explore.dart'; // Create this later
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-  final String title = "HomePage";
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -31,7 +30,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: TopBar(title: widget.title),
+        title: TopBar(title: 'HomePage', isCreateBtnVisible: true, isLogoutBtnVisible: false),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -47,7 +46,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       body: TabBarView(
         controller: _tabController,
         children: const [
-          //ExploreScreen(), // Create this widget
+          ExploreScreen(),
           Feed(),
         ],
       ),

@@ -14,10 +14,11 @@ class EventModel {
   final double? locationLat;
   final double? locationLng;
   final bool isPublic;
-  final int? maxAttendees;
+  final int? maxnumberofpeople;
   final DateTime? signUpDeadline;
   //final bool offerBadge;
   final String creatorUserId;
+  final String? eventimageurl;
 
   EventModel({
     required this.id,
@@ -32,8 +33,9 @@ class EventModel {
     this.locationLat,
     this.locationLng,
     required this.isPublic,
-    this.maxAttendees,
+    this.maxnumberofpeople,
     this.signUpDeadline,
+    this.eventimageurl,
     //required this.offerBadge,
     required this.creatorUserId,
   });
@@ -72,11 +74,12 @@ class EventModel {
       locationLat: _parse(map['locationLatLng'] as String?, true),
       locationLng: _parse(map['locationLatLng'] as String?, false),
       isPublic: (map['is_public'] as bool?) ?? true,
-      maxAttendees: map['max_attendees'] as int?,
+      maxnumberofpeople: map['maxnumberofpeople'] as int?,
       signUpDeadline: map['sign_up_deadline'] != null
           ? DateTime.tryParse(map['sign_up_deadline'] as String)
           : null,
       creatorUserId: (map['creator_user_id'] as String?) ?? '',
+      eventimageurl: (map['eventimageurl'] as String?) ?? 'No Url.',
     );
   }
 }

@@ -47,11 +47,27 @@ class EventService {
     }
   }
 
-  static Future<List<EventModel>> fetchEvents() async {
-      final rows = await _supabase.from('event').select();
-       return (rows as List<dynamic>)
-           .map((r) => EventModel.fromMap(r as Map<String, dynamic>))
-           .toList();
+  static Future<List<EventModel>> fetchEvents({
+    int page = 1,
+    int perPage = 10
+  }) async {
+    final from = (page - 1) * perPage;
+    final to = from + perPage - 1;
+
+    try {
+      final response = await _supabase
+          .from('event')
+          .select()
+          .order('startdate', ascending: true)
+          .range(from, to); // Add range filter here
+
+      return (response as List<dynamic>)
+          .map((r) => EventModel.fromMap(r as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching events: $e');
+      return [];
+    }
   }
 
   // Add to EventService class
