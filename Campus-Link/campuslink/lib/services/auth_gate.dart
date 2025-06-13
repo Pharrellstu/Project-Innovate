@@ -82,4 +82,5 @@ class AuthGate extends StatelessWidget {
       (route) => false,
     );
   }
+
 }
