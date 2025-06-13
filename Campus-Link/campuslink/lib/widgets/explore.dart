@@ -248,6 +248,7 @@ class EventCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  if(event.maxnumberofpeople != null)
                   Row(
                     children: [
                       const Icon(Icons.people, size: 14, color: Colors.grey),

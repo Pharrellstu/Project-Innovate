@@ -323,7 +323,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text("Repeat Event?", style: TextStyle(fontWeight: FontWeight.bold)),
+        Text("Repeat Event? (Feature coming soon)", style: TextStyle(fontWeight: FontWeight.bold)),
         Switch(
           value: widget.eventData.repeatEvent,
           onChanged: (val) => setState(() => widget.eventData.repeatEvent = val),
