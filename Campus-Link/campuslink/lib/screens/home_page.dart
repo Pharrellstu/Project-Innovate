@@ -1,3 +1,4 @@
+import 'package:campuslink/widgets/interestingPeople.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
@@ -47,7 +48,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         controller: _tabController,
         children: const [
           ExploreScreen(),
-          Feed(),
+          InterestingPeople(),
         ],
       ),
     );

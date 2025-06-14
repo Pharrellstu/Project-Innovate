@@ -53,12 +53,21 @@ class _InterestingPeopleState extends State<InterestingPeople> {
         'accountCountry': 'Germany',
         'favouriteActivities': 'Photography, Cycling',
       },
+
       {
         'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-        'accountName': 'Peter V.',
-        'accountCountry': 'Canada',
-        'favouriteActivities': 'Snowboarding, Reading',
+        'accountName': 'Anna P.',
+        'accountCountry': 'Germany',
+        'favouriteActivities': 'Photography, Cycling',
       },
+
+      {
+        'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
+        'accountName': 'Anna P.',
+        'accountCountry': 'Germany',
+        'favouriteActivities': 'Photography, Cycling',
+      },
+
     ];
     // Update the state with the fetched posts
     // Uncomment the above line and comment the below line when using Supabase
@@ -78,11 +87,12 @@ class _InterestingPeopleState extends State<InterestingPeople> {
     return RefreshIndicator(
       onRefresh: fetchAccounts, // ⬅️ Called when user pulls down
       child: Scaffold(
-        body: GridView.builder(
-
+        body: Padding(
+        padding: const EdgeInsets.only(top: 20.0),
+        child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            mainAxisSpacing: 45,
+            mainAxisSpacing: 20,
             crossAxisSpacing: 10,
             mainAxisExtent: 240.0,
 
@@ -99,6 +109,7 @@ class _InterestingPeopleState extends State<InterestingPeople> {
           },
         ),
       ),
+      )
     );
   }
 }
