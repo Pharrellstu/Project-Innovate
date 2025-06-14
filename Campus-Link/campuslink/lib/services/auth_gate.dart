@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/login_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:campuslink/services/db_handler.dart';
+import 'package:campuslink/services/user_service.dart';
 // import 'package:campuslink/screens/edit_profile_page.dart'; //TODO: Uncomment when EditProfilePage is implemented
+final userService = UserService();
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -54,7 +55,7 @@ class AuthGate extends StatelessWidget {
     }
 
     // If the user is created successfully, insert into aditional values in the 'account' table
-    await DbHandler().insertUser(userId, email);
+    await userService.insertUser(userId, email);
 
     login(email, password); // Automatically log in after registration
 
@@ -81,4 +82,5 @@ class AuthGate extends StatelessWidget {
       (route) => false,
     );
   }
+
 }

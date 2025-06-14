@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'edit_profile_page.dart';
+import 'even_invitations_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -224,6 +225,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     );
                   }).toList(),
+            ),
+            ElevatedButton(onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => EventInvitationsPage()),
+              );
+            },
+              child: Text(
+                  'Invitations'
+              ),
             ),
           ],
         ),
