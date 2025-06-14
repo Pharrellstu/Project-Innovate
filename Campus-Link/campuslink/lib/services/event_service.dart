@@ -2,16 +2,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/create_event_page.dart';
 import 'package:campuslink/models/event.dart';
+import 'package:campuslink/services/user_service.dart';
 
 class EventService {
   static final SupabaseClient _supabase = Supabase.instance.client;
 
-  static Future<bool> createEvent(EventData data) async {
+  static Future<int?> createEvent(EventData data) async {
     final creatorId = AuthGate.getCurrentUserId();
-    if (creatorId == null) throw Exception('No user is logged in');
+    final accountId = await UserService().getAccountIdByAuthUserId(creatorId!);
+    //if (creatorId == null) throw Exception('No user is logged in');
+    final payload = data.toMap(creatorId);
 
     try {
-      final payload = data.toMap(creatorId);
+      payload.remove('invited_user_ids');
 
       final eventResponse = await _supabase
           .from('event')
@@ -19,7 +22,16 @@ class EventService {
           .select('event_id')
           .single();
 
+
+
       final int newEventId = eventResponse['event_id'];
+
+      await _supabase
+          .from('eventenrollment')
+          .insert({
+        'eventid':  newEventId,
+        'accountid': accountId,
+      });
 
       await _supabase
           .from('chat')
@@ -27,17 +39,51 @@ class EventService {
           .select('chat_id')
           .single();
 
-      return true;
+      return eventResponse['event_id'] as int?;
     } catch (e) {
-      print('Error creating event or chat: $e');
-      return false;
+      print('EVENT CREATION ERROR: ${e.toString()}');
+      print('PAYLOAD: $payload');
+      rethrow;
     }
   }
 
-  static Future<List<EventModel>> fetchEvents() async {
-      final rows = await _supabase.from('event').select();
-       return (rows as List<dynamic>)
-           .map((r) => EventModel.fromMap(r as Map<String, dynamic>))
-           .toList();
+  static Future<List<EventModel>> fetchEvents({
+    int page = 1,
+    int perPage = 10
+  }) async {
+    final from = (page - 1) * perPage;
+    final to = from + perPage - 1;
+
+    try {
+      final response = await _supabase
+          .from('event')
+          .select()
+          .order('startdate', ascending: true)
+          .range(from, to); // Add range filter here
+
+      return (response as List<dynamic>)
+          .map((r) => EventModel.fromMap(r as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching events: $e');
+      return [];
+    }
+  }
+
+  // Add to EventService class
+
+  static Future<EventModel?> getEventById(int eventId) async {
+    try {
+      final response = await _supabase
+          .from('event')
+          .select()
+          .eq('event_id', eventId)
+          .single();
+
+      return EventModel.fromMap(response as Map<String, dynamic>);
+    } catch (e) {
+      print('Error fetching event: $e');
+      return null;
+    }
   }
 }

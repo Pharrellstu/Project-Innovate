@@ -1,29 +1,31 @@
 class EventInvitationModel {
   final int eventInvitationId;
-  final int? eventId;
-  final int? receiverAccountId;
-  final int? eventInvitationCreaterId;
+  final int eventId;
+  final int receiverAccountId;
+  final int eventInvitationCreaterId;
+  final String status;
 
   EventInvitationModel({
-    required this.eventInvitationId,
-    this.eventId,
-    this.receiverAccountId,
-    this.eventInvitationCreaterId,
+    this.eventInvitationId = 0, // Default to 0 for new records
+    required this.eventId,
+    required this.receiverAccountId,
+    required this.eventInvitationCreaterId,
+    this.status = 'pending',
   });
 
   factory EventInvitationModel.fromMap(Map<String, dynamic> m) {
     return EventInvitationModel(
-      eventInvitationId:       m['eventinvitation_id']           as int,
-      eventId:                 m['event_id']                     as int?,
-      receiverAccountId:       m['receiveraccount_id']           as int?,
-      eventInvitationCreaterId: m['eventinvitationcreater_id']   as int?,
+      eventInvitationId:       m['eventinvitation_id'] as int,
+      eventId:                 m['event_id'] as int,
+      receiverAccountId:       m['receiveraccount_id'] as int,
+      eventInvitationCreaterId: m['eventinvitationcreater_id'] as int,
+      status:                  m['status'] as String,
     );
   }
 
-  /// Use for insert/update payloads.
   Map<String, dynamic> toMap() {
     return {
-      // omit the PK to let the DB generate it on insert:
+      // Only include ID for updates, not for inserts
       if (eventInvitationId != 0) 'eventinvitation_id': eventInvitationId,
       'event_id':                 eventId,
       'receiveraccount_id':       receiverAccountId,
@@ -31,3 +33,26 @@ class EventInvitationModel {
     };
   }
 }
+
+// 1. Add this extension to your EventInvitationModel
+extension EventInvitationModelCopyWith on EventInvitationModel {
+  EventInvitationModel copyWith({
+    int? eventInvitationId,
+    int? eventId,
+    int? eventInvitationCreaterId,
+    int? eventInvitationReceiverId,
+    String? status,
+    // Add other properties as needed
+  }) {
+    return EventInvitationModel(
+      eventInvitationId: eventInvitationId ?? this.eventInvitationId,
+      eventId: eventId ?? this.eventId,
+      eventInvitationCreaterId: eventInvitationCreaterId ?? this.eventInvitationCreaterId,
+      receiverAccountId: eventInvitationReceiverId ?? this.receiverAccountId,
+      status: status ?? this.status,
+      // Copy other properties
+    );
+  }
+}
+
+// 2. Modify your _respondToInvitation method
