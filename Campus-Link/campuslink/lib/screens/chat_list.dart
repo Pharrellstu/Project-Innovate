@@ -8,7 +8,6 @@ import 'package:campuslink/services/chatlist_service.dart';
 
 class ChatList extends StatefulWidget {
   const ChatList({Key? key}) : super(key: key);
-
   @override
   _ChatListState createState() => _ChatListState();
 }
