@@ -8,12 +8,16 @@ class ProfileData {
   final String name;
   final String bio;
   final String profilePictureUrl;
+  final String? nationality; // Added
+  final int? age;             // Added
 
   ProfileData({
     required this.id,
     required this.name,
     required this.bio,
     required this.profilePictureUrl,
+    this.nationality, // Added
+    this.age,         // Added
   });
 
   factory ProfileData.fromMap(Map<String, dynamic> map) {
@@ -22,6 +26,8 @@ class ProfileData {
       name: map['username'] as String? ?? '',
       bio: map['bio'] as String? ?? '',
       profilePictureUrl: map['profilepictureurl'] as String? ?? '',
+      nationality: map['nationality'] as String?, // Added
+      age: map['age'] as int?,                   // Added
     );
   }
 }
@@ -61,7 +67,7 @@ class ProfileService {
     try {
       final data = await _supabase
           .from(_accountTable)
-          .select('accountid, username, bio, profilepictureurl')
+          .select('accountid, username, bio, profilepictureurl, nationality, age') // Added nationality, age
           .eq('accountid', accountId)
           .maybeSingle();
       if (data == null) return null;
@@ -82,7 +88,7 @@ class ProfileService {
     try {
       final data = await _supabase
           .from(_accountTable)
-          .select('accountid, username, bio, profilepictureurl')
+          .select('accountid, username, bio, profilepictureurl, nationality, age') // Added nationality, age
           .eq('auth_user_id', authUserId)
           .maybeSingle();
       if (data == null) return null;
@@ -98,6 +104,8 @@ class ProfileService {
     required String name,
     required String bio,
     String? profilePictureUrl,
+    String? nationality, // Added
+    int? age,             // Added
   }) async {
     try {
       final updates = <String, dynamic>{
@@ -106,6 +114,12 @@ class ProfileService {
       };
       if (profilePictureUrl != null && profilePictureUrl.isNotEmpty) {
         updates['profilepictureurl'] = profilePictureUrl;
+      }
+      if (nationality != null) { // Added
+        updates['nationality'] = nationality;
+      }
+      if (age != null) { // Added
+        updates['age'] = age;
       }
       await _supabase.from(_accountTable).update(updates).eq('accountid', accountId);
       return true;

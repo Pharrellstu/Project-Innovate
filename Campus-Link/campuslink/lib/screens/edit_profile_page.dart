@@ -14,7 +14,33 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _nameController = TextEditingController();
-  final _bioController = TextEditingController(); // Includes nationality
+  final _bioController = TextEditingController();
+  String? _selectedNationality;
+  final _ageController = TextEditingController();
+
+  final List<String> _nationalities = [
+    'Afghan', 'Albanian', 'Algerian', 'American', 'Andorran', 'Angolan', 'Argentine', 'Armenian', 'Australian', 'Austrian',
+    'Azerbaijani', 'Bahamian', 'Bahraini', 'Bangladeshi', 'Barbadian', 'Belarusian', 'Belgian', 'Belizean', 'Beninese', 'Bhutanese',
+    'Bolivian', 'Bosnian', 'Botswanan', 'Brazilian', 'British', 'Bruneian', 'Bulgarian', 'Burkinabe', 'Burmese', 'Burundian',
+    'Cambodian', 'Cameroonian', 'Canadian', 'Cape Verdean', 'Central African', 'Chadian', 'Chilean', 'Chinese', 'Colombian',
+    'Comoran', 'Congolese (Congo-Brazzaville)', 'Congolese (Congo-Kinshasa)', 'Costa Rican', 'Croatian', 'Cuban', 'Cypriot', 'Czech',
+    'Danish', 'Djiboutian', 'Dominican', 'Dutch', 'East Timorese', 'Ecuadorean', 'Egyptian', 'Emirati', 'Equatorial Guinean',
+    'Eritrean', 'Estonian', 'Ethiopian', 'Fijian', 'Filipino', 'Finnish', 'French', 'Gabonese', 'Gambian', 'Georgian',
+    'German', 'Ghanaian', 'Greek', 'Grenadian', 'Guatemalan', 'Guinean', 'Guinean-Bissauan', 'Guyanese', 'Haitian', 'Honduran',
+    'Hungarian', 'Icelander', 'Indian', 'Indonesian', 'Iranian', 'Iraqi', 'Irish', 'Israeli', 'Italian', 'Ivorian',
+    'Jamaican', 'Japanese', 'Jordanian', 'Kazakhstani', 'Kenyan', 'Kiribatian', 'Kuwaiti', 'Kyrgyz', 'Laotian', 'Latvian',
+    'Lebanese', 'Liberian', 'Libyan', 'Liechtensteiner', 'Lithuanian', 'Luxembourger', 'Macedonian', 'Malagasy', 'Malawian',
+    'Malaysian', 'Maldivan', 'Malian', 'Maltese', 'Marshallese', 'Mauritanian', 'Mauritian', 'Mexican', 'Micronesian', 'Moldovan',
+    'Monacan', 'Mongolian', 'Montenegrin', 'Moroccan', 'Mosotho', 'Mozambican', 'Namibian', 'Nauruan', 'Nepalese', 'New Zealander',
+    'Nicaraguan', 'Nigerian', 'Nigerien', 'North Korean', 'Norwegian', 'Omani', 'Pakistani', 'Palauan', 'Panamanian',
+    'Papua New Guinean', 'Paraguayan', 'Peruvian', 'Polish', 'Portuguese', 'Qatari', 'Romanian', 'Russian', 'Rwandan',
+    'Saint Lucian', 'Salvadoran', 'Samoan', 'San Marinese', 'Sao Tomean', 'Saudi', 'Senegalese', 'Serbian', 'Seychellois',
+    'Sierra Leonean', 'Singaporean', 'Slovakian', 'Slovenian', 'Solomon Islander', 'Somali', 'South African', 'South Korean',
+    'South Sudanese', 'Spanish', 'Sri Lankan', 'Sudanese', 'Surinamer', 'Swazi', 'Swedish', 'Swiss', 'Syrian',
+    'Taiwanese', 'Tajik', 'Tanzanian', 'Thai', 'Togolese', 'Tongan', 'Trinidadian or Tobagonian', 'Tunisian', 'Turkish',
+    'Turkmen', 'Tuvaluan', 'Ugandan', 'Ukrainian', 'Uruguayan', 'Uzbekistani', 'Venezuelan', 'Vietnamese', 'Yemenite',
+    'Zambian', 'Zimbabwean'
+  ];
   
   File? _newImageFile;
   String? _currentImageUrl;
@@ -34,13 +60,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() {
         _accountId = profileData.id;
         _nameController.text = profileData.name;
-        _bioController.text = profileData.bio; // Bio now includes nationality
+        _bioController.text = profileData.bio; 
         _currentImageUrl = profileData.profilePictureUrl;
+        _selectedNationality = profileData.nationality;
+        if (_selectedNationality != null && !_nationalities.contains(_selectedNationality)) {
+          _nationalities.add(_selectedNationality!);
+          _nationalities.sort();
+        }
+        _ageController.text = profileData.age?.toString() ?? '';
         _isLoading = false;
       });
     } else if (mounted) {
       setState(() => _isLoading = false);
-      // Handle error or if profile is null
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not load profile data.')),
       );
@@ -69,7 +100,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     String? uploadedImageUrl = _currentImageUrl;
 
     if (_newImageFile != null) {
-      // Upload new image if one was picked
       uploadedImageUrl = await ProfileService.uploadProfileImage(_newImageFile!, _accountId!);
       if (uploadedImageUrl == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -83,8 +113,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final success = await ProfileService.updateProfileData(
       _accountId!,
       name: _nameController.text,
-      bio: _bioController.text, // Bio includes nationality
-      profilePictureUrl: (_newImageFile != null) ? uploadedImageUrl : null, // Only pass URL if new image was processed
+      bio: _bioController.text, 
+      profilePictureUrl: (_newImageFile != null) ? uploadedImageUrl : null, 
+      nationality: _selectedNationality,
+      age: _ageController.text.isNotEmpty ? int.tryParse(_ageController.text) : null,
     );
 
     if (mounted) {
@@ -93,8 +125,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully!')),
         );
-        // Pass back the updated data if needed, or just pop
-        Navigator.pop(context, true); // Indicate success
+        Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update profile.')),
@@ -146,9 +177,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   const SizedBox(height: 24),
                   _buildTextField(
-                    label: 'Bio (including Nationality)',
+                    label: 'Bio',
                     controller: _bioController,
-                    maxLines: 5,
+                    maxLines: 3, // Adjusted maxLines for bio
+                  ),
+                  const SizedBox(height: 24),
+                  _buildNationalityDropdown(),
+                  const SizedBox(height: 24),
+                  _buildTextField( // Added Age field
+                    label: 'Age',
+                    controller: _ageController,
+                    keyboardType: TextInputType.number, // For age input
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton(
@@ -172,6 +211,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required String label,
     required TextEditingController controller,
     int maxLines = 1,
+    TextInputType? keyboardType, // Added keyboardType
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,6 +224,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         TextField(
           controller: controller,
           maxLines: maxLines,
+          keyboardType: keyboardType, // Added keyboardType
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -197,6 +238,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
             fillColor: Colors.grey.shade50,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNationalityDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Nationality',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black54),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.blue.shade300, width: 2),
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          value: _selectedNationality,
+          hint: const Text('Select Nationality'),
+          isExpanded: true,
+          items: _nationalities.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedNationality = newValue;
+            });
+          },
         ),
       ],
     );

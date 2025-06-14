@@ -3,6 +3,7 @@ import 'package:campuslink/services/profile_service.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'edit_profile_page.dart';
+import 'even_invitations_page.dart'; // Assuming this is the correct path
 import 'dart:developer'; // For log messages
 
 class ProfilePage extends StatefulWidget {
@@ -125,7 +126,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildProfileContent() {
     // Default image if URL is empty or null
-    ImageProvider profileImage = const AssetImage('resources/img/default_profile.png'); // Ensure this asset exists
+    ImageProvider profileImage = const AssetImage('resources/img/profile-icon-9.png'); // Ensure this asset exists
     if (_profileData!.profilePictureUrl.isNotEmpty) {
       // Try to load network image, fall back to default on error
       profileImage = NetworkImage(_profileData!.profilePictureUrl);
@@ -139,20 +140,6 @@ class _ProfilePageState extends State<ProfilePage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundImage: profileImage,
-                // Add error builder for the main profile picture
-                onBackgroundImageError: _profileData!.profilePictureUrl.isNotEmpty ? (exception, stackTrace) {
-                  log('Error loading profile image: ${_profileData!.profilePictureUrl}, $exception');
-                  // Optionally, update the state to show a placeholder or default image
-                  // For now, it will use the default AssetImage if NetworkImage fails.
-                } : null,
-                child: _profileData!.profilePictureUrl.isEmpty 
-                  ? const Icon(Icons.person, size: 40) // Show icon if URL is empty
-                  : null, 
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,33 +148,91 @@ class _ProfilePageState extends State<ProfilePage> {
                       _profileData!.name,
                       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
-                    // Age is not in ProfileData, can be added if available or removed
-                    // const Text('Age: 20'), 
+                    const SizedBox(height: 4),
+                    if (_profileData!.nationality != null && _profileData!.nationality!.isNotEmpty) ...[
+                      Text(
+                        'Nationality: ${_profileData!.nationality!}',
+                        style: const TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    if (_profileData!.age != null) ...[
+                      Text(
+                        'Age: ${_profileData!.age}',
+                        style: const TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                    ],
                   ],
+                ),
+              ),
+              const SizedBox(width: 8), // Reduced from 16
+              ClipRRect( // Changed from CircleAvatar to ClipRRect
+                borderRadius: BorderRadius.circular(12.0), // Adjust radius for less roundness
+                child: Image(
+                  image: profileImage, 
+                  width: 68, // Reduced from 80
+                  height: 68, // Reduced from 80
+                  fit: BoxFit.cover,
+                  errorBuilder: (_profileData!.profilePictureUrl.isNotEmpty && profileImage is NetworkImage) 
+                    ? (context, error, stackTrace) {
+                        log('Error loading profile image: ${_profileData!.profilePictureUrl}, $error');
+                        // Fallback to default asset if network image fails
+                        return Image.asset('resources/img/profile-icon-9.png', width: 68, height: 68, fit: BoxFit.cover); // Adjusted size
+                      }
+                    : null,
+                  // If profilePictureUrl is empty, show default icon within ClipRRect
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (wasSynchronouslyLoaded) return child;
+                    return AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(seconds: 1),
+                      curve: Curves.easeOut,
+                      child: child,
+                    );
+                  },
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Bio (includes Nationality)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black54),
-          ),
-          const SizedBox(height: 4),
           Text(_profileData!.bio.isNotEmpty ? _profileData!.bio : 'No bio available.'),
           const SizedBox(height: 24),
           if (_isOwnProfile)
-            ElevatedButton.icon(
-              icon: const Icon(Icons.edit),
-              label: const Text('Edit Profile'),
-              onPressed: _navigateToEditProfile,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 45),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Edit Profile'),
+                    onPressed: _navigateToEditProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 45),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10), // Spacing between buttons
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.mail_outline),
+                    label: const Text('Event Invitations'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const EventInvitationsPage()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue, 
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 45),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
             )
           else if (_loggedInAccountId != null) // Show follow/unfollow only if a user is logged in
             ElevatedButton.icon(
@@ -202,10 +247,10 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           const SizedBox(height: 24),
-          _buildSectionTitle('Following (${_followingImages.length})'),
+          _buildSectionTitle('Following'), // Removed count from here
           _buildImageGrid(_followingImages),
           const SizedBox(height: 24),
-          _buildSectionTitle('Badges (${_badgeImages.length})'),
+          _buildSectionTitle('Badges'), // Removed count from here
           _buildImageGrid(_badgeImages, isCircle: true),
         ],
       ),
