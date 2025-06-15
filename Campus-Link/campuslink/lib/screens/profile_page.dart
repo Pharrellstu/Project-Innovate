@@ -1,244 +1,321 @@
-import 'package:campuslink/services/auth_gate.dart';
 import 'package:flutter/material.dart';
+import 'package:campuslink/services/profile_service.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'edit_profile_page.dart';
-import 'even_invitations_page.dart';
+import 'even_invitations_page.dart'; // Assuming this is the correct path
+import 'dart:developer'; // For log messages
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final int? viewedAccountId; // If null, shows current logged-in user's profile
+
+  const ProfilePage({super.key, this.viewedAccountId});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String name = 'Peter Kapsiar';
-  String nationality = 'Slovakia';
-  String bio =
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed rutrum '
-      'laoreet massa, nec fringilla massa. Vivamus molestie odio eget diam dictum feugiat.';
+  ProfileData? _profileData;
+  List<String> _followingImages = [];
+  List<String> _badgeImages = [];
+  
+  bool _isLoading = true;
+  bool _isOwnProfile = false;
+  int? _loggedInAccountId;
+  bool _isCurrentlyFollowing = false;
 
-  final List<String> followingImages = List.generate(
-    5,
-    (_) => 'resources/img/manny-cat-takes-selfies-dogs-gopro-9.webp',
-  );
+  @override
+  void initState() {
+    super.initState();
+    _initializeProfilePage();
+  }
 
-  final List<String> badgeImages = List.generate(
-    5,
-    (_) => 'resources/img/manny-cat-takes-selfies-dogs-gopro-9.webp',
-  );
+  Future<void> _initializeProfilePage() async {
+    setState(() => _isLoading = true);
+    _loggedInAccountId = await ProfileService.getCurrentAccountId();
+
+    final accountIdToFetch = widget.viewedAccountId ?? _loggedInAccountId;
+
+    if (accountIdToFetch == null) {
+      log('ProfilePage: Could not determine account ID to fetch.');
+      if (mounted) setState(() => _isLoading = false);
+      // Optionally show an error message to the user
+      return;
+    }
+
+    _isOwnProfile = _loggedInAccountId == accountIdToFetch;
+
+    // Fetch profile data
+    if (_isOwnProfile && widget.viewedAccountId == null) {
+      _profileData = await ProfileService.fetchCurrentLoggedInUserProfile();
+    } else {
+      _profileData = await ProfileService.fetchProfileByAccountId(accountIdToFetch);
+    }
+
+    if (_profileData != null) {
+      // Fetch related data only if profile was loaded successfully
+      _followingImages = await ProfileService.fetchFollowingProfilePictures(accountIdToFetch);
+      _badgeImages = await ProfileService.fetchBadgeImageUrls(accountIdToFetch);
+
+      if (!_isOwnProfile && _loggedInAccountId != null) {
+        _isCurrentlyFollowing = await ProfileService.isFollowing(_loggedInAccountId!, accountIdToFetch);
+      }
+    } else {
+      log('ProfilePage: Failed to load profile data for account ID $accountIdToFetch');
+      // Optionally show an error message to the user
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleFollowToggle() async {
+    if (_loggedInAccountId == null || _profileData == null || _isOwnProfile) return;
+
+    setState(() => _isLoading = true); // Show loading for follow action
+    bool success;
+    if (_isCurrentlyFollowing) {
+      success = await ProfileService.unfollowUser(_loggedInAccountId!, _profileData!.id);
+    } else {
+      success = await ProfileService.followUser(_loggedInAccountId!, _profileData!.id);
+    }
+
+    if (success) {
+      setState(() {
+        _isCurrentlyFollowing = !_isCurrentlyFollowing;
+      });
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update follow status.')),
+        );
+      }
+    }
+    if (mounted) {
+       setState(() => _isLoading = false);
+    }
+  }
+
+  void _navigateToEditProfile() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const EditProfilePage()),
+    );
+    if (result == true && mounted) { // Check if update was successful
+      _initializeProfilePage(); // Refresh profile data
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopBar(title: 'Profile view', isCreateBtnVisible: false, isLogoutBtnVisible: true),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: TopBar(title: _isOwnProfile ? 'My Profile' : (_profileData?.name ?? 'Profile')),
+      ),
       bottomNavigationBar: const NavBar(),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _profileData == null
+              ? const Center(child: Text('Could not load profile. Please try again.'))
+              : _buildProfileContent(),
+    );
+  }
+
+  Widget _buildProfileContent() {
+    // Default image if URL is empty or null
+    ImageProvider profileImage = const AssetImage('resources/img/profile-icon-9.png'); // Ensure this asset exists
+    if (_profileData!.profilePictureUrl.isNotEmpty) {
+      // Try to load network image, fall back to default on error
+      profileImage = NetworkImage(_profileData!.profilePictureUrl);
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _profileData!.name,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    if (_profileData!.nationality != null && _profileData!.nationality!.isNotEmpty) ...[
                       Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 22,
-                        ),
+                        'Nationality: ${_profileData!.nationality!}',
+                        style: const TextStyle(fontSize: 16, color: Colors.black54),
                       ),
                       const SizedBox(height: 4),
-                      Text('Nationality: $nationality'),
-                      const Text('Age: 20'),
                     ],
-                  ),
+                    if (_profileData!.age != null) ...[
+                      Text(
+                        'Age: ${_profileData!.age}',
+                        style: const TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                    ],
+                  ],
                 ),
-                const ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(30)),
-                  child: Image(
-                    image: AssetImage(
-                      'resources/img/manny-cat-takes-selfies-dogs-gopro-9.webp',
-                    ),
-                    width: 80,
-                    height: 80,
-                  ),
+              ),
+              const SizedBox(width: 8), // Reduced from 16
+              ClipRRect( // Changed from CircleAvatar to ClipRRect
+                borderRadius: BorderRadius.circular(12.0), // Adjust radius for less roundness
+                child: Image(
+                  image: profileImage, 
+                  width: 68, // Reduced from 80
+                  height: 68, // Reduced from 80
+                  fit: BoxFit.cover,
+                  errorBuilder: (_profileData!.profilePictureUrl.isNotEmpty && profileImage is NetworkImage) 
+                    ? (context, error, stackTrace) {
+                        log('Error loading profile image: ${_profileData!.profilePictureUrl}, $error');
+                        // Fallback to default asset if network image fails
+                        return Image.asset('resources/img/profile-icon-9.png', width: 68, height: 68, fit: BoxFit.cover); // Adjusted size
+                      }
+                    : null,
+                  // If profilePictureUrl is empty, show default icon within ClipRRect
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (wasSynchronouslyLoaded) return child;
+                    return AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(seconds: 1),
+                      curve: Curves.easeOut,
+                      child: child,
+                    );
+                  },
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(bio),
-            const SizedBox(height: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(_profileData!.bio.isNotEmpty ? _profileData!.bio : 'No bio available.'),
+          const SizedBox(height: 24),
+          if (_isOwnProfile)
             Row(
               children: [
-                // TEMP LOGOUT BUTTON
-                ElevatedButton(
-                  onPressed: () {
-                    AuthGate.logout(context);
-                  },
-                  child: const Text('Logout'),
-                ),
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {},
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Edit Profile'),
+                    onPressed: _navigateToEditProfile,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE6F2FB),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text('Follow'),
-                        Icon(Icons.person_add_alt_1),
-                      ],
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 45),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 10), // Spacing between buttons
                 Expanded(
-                  child: TextButton(
-                    onPressed: () async {
-                      final result = await Navigator.push(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.mail_outline),
+                    label: const Text('Event Invitations'),
+                    onPressed: () {
+                      Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => EditProfilePage(),
-                        ),
+                        MaterialPageRoute(builder: (context) => const EventInvitationsPage()),
                       );
-
-                      if (result != null && mounted) {
-                        setState(() {
-                          name = result['name'];
-                          nationality = result['nationality'];
-                          bio = result['bio'];
-                        });
-                      }
                     },
-                    style: TextButton.styleFrom(
-                      backgroundColor: const Color(0xFFE6F2FB),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'Edit profile',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Icon(Icons.edit, color: Colors.black),
-                      ],
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue, 
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 45),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Following',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children:
-                  followingImages
-                      .map(
-                        (img) => Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.black, width: 1),
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(15),
-                            child: Image.asset(
-                              img,
-                              width: 70,
-                              height: 70,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Earned badges:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children:
-                  badgeImages.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    String img = entry.value;
-
-                    final List<List<Color>> gradients = [
-                      [Colors.orangeAccent, Colors.white],
-                      [Colors.lightBlueAccent, Colors.white],
-                      [Colors.purpleAccent, Colors.white],
-                      [Colors.blueAccent, Colors.white],
-                      [Colors.redAccent, Colors.white],
-                    ];
-
-                    return Container(
-                      padding: const EdgeInsets.all(2.5),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: gradients[index % gradients.length],
-                        ),
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          img,
-                          width: 75,
-                          height: 75,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-            ),
-            ElevatedButton(onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => EventInvitationsPage()),
-              );
-            },
-              child: Text(
-                  'Invitations'
+            )
+          else if (_loggedInAccountId != null) // Show follow/unfollow only if a user is logged in
+            ElevatedButton.icon(
+              icon: Icon(_isCurrentlyFollowing ? Icons.person_remove : Icons.person_add),
+              label: Text(_isCurrentlyFollowing ? 'Unfollow' : 'Follow'),
+              onPressed: _handleFollowToggle,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isCurrentlyFollowing ? Colors.grey : Colors.green,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 45),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-          ],
-        ),
+          const SizedBox(height: 24),
+          _buildSectionTitle('Following'), // Removed count from here
+          _buildImageGrid(_followingImages),
+          const SizedBox(height: 24),
+          _buildSectionTitle('Badges'), // Removed count from here
+          _buildImageGrid(_badgeImages, isCircle: true),
+        ],
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _buildImageGrid(List<String> imageUrls, {bool isCircle = false}) {
+    if (imageUrls.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.0),
+        child: Text('Nothing to show here yet.'),
+      );
+    }
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: imageUrls.length,
+      itemBuilder: (context, index) {
+        final imageUrl = imageUrls[index];
+        Widget imageDisplayWidget;
+
+        if (imageUrl.isEmpty) {
+          imageDisplayWidget = const Icon(Icons.person, size: 40); // Default for empty URL
+        } else {
+          imageDisplayWidget = Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              log('Error loading image in grid: $imageUrl, $error');
+              return const Icon(Icons.broken_image, size: 40); // Placeholder for failed image
+            },
+          );
+        }
+
+        if (isCircle) {
+          // For badges, use CircleAvatar with error handling for NetworkImage
+          return CircleAvatar(
+            radius: 35,
+            backgroundColor: Colors.grey[300], // Background for error/loading
+            backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+            onBackgroundImageError: imageUrl.isNotEmpty ? (exception, stackTrace) {
+              log('Error loading badge image: $imageUrl, $exception');
+              // The CircleAvatar will show its child or background color on error
+            } : null,
+            child: imageUrl.isEmpty ? const Icon(Icons.shield, size: 30) : null, // Default icon if URL is empty
+          );
+        } else {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: imageDisplayWidget,
+          );
+        }
+      },
     );
   }
 }

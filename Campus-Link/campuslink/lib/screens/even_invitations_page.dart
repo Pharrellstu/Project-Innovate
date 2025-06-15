@@ -168,15 +168,6 @@ class _EventInvitationsPageState extends State<EventInvitationsPage>
             centerTitle: true,
             backgroundColor: Colors.white,
             elevation: 1,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => HomePage()
-                )
-              ),
-            ),
             bottom: TabBar(
               controller: _tabController,
               tabs: const [

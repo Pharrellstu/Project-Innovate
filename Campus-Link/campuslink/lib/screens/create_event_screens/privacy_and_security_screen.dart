@@ -3,6 +3,8 @@ import 'package:campuslink/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../create_event_page.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class eventFormPage extends StatefulWidget {
   final EventData eventData;
@@ -89,6 +91,20 @@ class _eventFormPageState extends State<eventFormPage> {
         widget.eventData.invitedUserIds = result
             .map((u) => u.accountId.toString())
             .toList();
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1200,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        widget.eventData.eventImageFile = File(pickedFile.path);
       });
     }
   }
@@ -302,9 +318,106 @@ class _eventFormPageState extends State<eventFormPage> {
                   ? Center(child: CircularProgressIndicator())
                   : _buildInvitedUsersList(),
             ),
+            _buildImageSection(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 24),
+        Text(
+          'Event Image (optional)',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        AspectRatio(
+          aspectRatio: 16/5, // Maintain aspect ratio (16:9 is common for event images)
+          child: GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.grey.shade400,
+                  width: 1.5,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias, // Ensure image doesn't overflow
+              child: widget.eventData.eventImageFile != null
+                  ? Stack(
+                children: [
+                  // Image with center crop
+                  Center(
+                    child: Image.file(
+                      widget.eventData.eventImageFile!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
+                  ),
+                  // Semi-transparent overlay for better text visibility
+                  Container(
+                    color: Colors.black.withOpacity(0.3),
+                  ),
+                ],
+              )
+                  : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_a_photo,
+                      size: 40,
+                      color: Colors.grey.shade500),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Tap to add an image',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (widget.eventData.eventImageFile != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: TextButton(
+              onPressed: () {
+                setState(() {
+                  widget.eventData.eventImageFile = null;
+                });
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.delete,
+                      size: 20,
+                      color: Colors.red.shade700),
+                  const SizedBox(width: 8),
+                  Text(
+                      'Remove image',
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontWeight: FontWeight.bold,
+                      )
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 

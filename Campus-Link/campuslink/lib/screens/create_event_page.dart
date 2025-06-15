@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
@@ -78,6 +80,7 @@ class _createEventPageState extends State<createEventPage> {
     }
   }
 
+// In create_event_page.dart
   Future<void> _createEventAndInvitations() async {
     showDialog(
       context: context,
@@ -86,18 +89,15 @@ class _createEventPageState extends State<createEventPage> {
     );
 
     try {
-      // 1. Create the event
       final eventId = await EventService.createEvent(_eventData);
       if (eventId == null) throw Exception('Failed to create event');
 
-      // 2. Get current user's account ID
       final currentUserId = AuthGate.getCurrentUserId();
       if (currentUserId == null) throw Exception('User not authenticated');
 
       final currentAccountId = await userService.getAccountIdByAuthUserId(currentUserId);
       if (currentAccountId == null) throw Exception('Account not found');
 
-      // 3. Create invitations
       if (_eventData.invitedUsers.isNotEmpty) {
         final invitations = _eventData.invitedUsers.map((user) {
           return EventInvitationModel(
@@ -110,16 +110,13 @@ class _createEventPageState extends State<createEventPage> {
         await _invitationService.createInvitations(invitations);
       }
 
-      // Close loading and show success
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Event created successfully!')),
       );
-
-      // Close the create event flow
       Navigator.of(context).pop();
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to create event: $e')),
       );
@@ -342,6 +339,10 @@ class EventData {
   List<String> invitedUserIds = [];
   List<UserObject> invitedUsers = [];
 
+  File? eventImageFile;
+  String? eventImageUrl;
+  String? get imagePath => eventImageFile?.path;
+
   // Add this to EventData class
   String get invitedUsersDisplay {
     if (invitedUsers.isEmpty) return 'No invited users';
@@ -381,6 +382,7 @@ class EventData {
         'eventcategory'       : category,
         'maxnumberofpeople'   : maxAttendees,
         'eventcreatorid_uuid' : creatorAccountId,
+        'eventimageurl': eventImageUrl,
       };
     }
 }

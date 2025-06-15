@@ -14,10 +14,11 @@ class EventModel {
   final double? locationLat;
   final double? locationLng;
   final bool isPublic;
-  final int? maxAttendees;
+  final int? maxnumberofpeople;
   final DateTime? signUpDeadline;
   //final bool offerBadge;
   final String creatorUserId;
+  final String? eventImageUrl;
 
   EventModel({
     required this.id,
@@ -32,8 +33,9 @@ class EventModel {
     this.locationLat,
     this.locationLng,
     required this.isPublic,
-    this.maxAttendees,
+    this.maxnumberofpeople,
     this.signUpDeadline,
+    this.eventImageUrl,
     //required this.offerBadge,
     required this.creatorUserId,
   });
@@ -59,24 +61,25 @@ class EventModel {
 
     return EventModel(
       id: (map['id'] as String?) ?? '',
-      eventName: (map['eventname'] as String?) ?? 'Unnamed Event', // CORRECTED: 'event_name' -> 'eventname'
-      category: (map['eventcategory'] as String?) ?? 'No Category', // CORRECTED: 'category' -> 'eventcategory'
+      eventName: (map['eventname'] as String?) ?? 'Unnamed Event',
+      category: (map['eventcategory'] as String?) ?? 'No Category',
       description: (map['description'] as String?) ?? 'No description provided.',
       isOnline: (map['is_online'] as bool?) ?? false,
-      eventDate: map['startdate'] != null // CORRECTED: 'event_date' -> 'startdate'
+      eventDate: map['startdate'] != null
           ? DateTime.tryParse(map['startdate'] as String)
           : null,
       eventTime: map['event_time'] as String?,
       eventDuration: map['event_duration'] as int?,
-      locationName: (map['locationName'] as String?) ?? 'Unknown Location', // CORRECTED: 'location_name' -> 'locationName'
+      locationName: (map['locationName'] as String?) ?? 'Online',
       locationLat: _parse(map['locationLatLng'] as String?, true),
       locationLng: _parse(map['locationLatLng'] as String?, false),
       isPublic: (map['is_public'] as bool?) ?? true,
-      maxAttendees: map['max_attendees'] as int?,
+      maxnumberofpeople: map['maxnumberofpeople'] as int?,
       signUpDeadline: map['sign_up_deadline'] != null
           ? DateTime.tryParse(map['sign_up_deadline'] as String)
           : null,
       creatorUserId: (map['creator_user_id'] as String?) ?? '',
+      eventImageUrl: map['eventimageurl'] as String?,
     );
   }
 }
