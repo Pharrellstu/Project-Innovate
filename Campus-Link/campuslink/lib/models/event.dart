@@ -20,7 +20,7 @@ class EventModel {
   final String? eventImageUrl;
 
   EventModel({
-    required this.id,
+    required this.eventId,
     required this.eventName,
     this.category,
     required this.description,
@@ -60,7 +60,7 @@ class EventModel {
 
       eventName: (map['eventname'] as String?) ?? 'Unnamed Event',
       category: (map['eventcategory'] as String?) ?? 'No Category',
-      description: (map['description'] as String?) ?? 'No description provided.',
+      description: (map['eventdescription'] as String?) ?? 'No description provided.',
       isOnline: (map['is_online'] as bool?) ?? false,
       eventDate: map['startdate'] != null
           ? DateTime.tryParse(map['startdate'] as String)
