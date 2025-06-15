@@ -23,12 +23,50 @@ class _EventPageState extends State<EventPage> {
   bool _isLoading = true;
   EventModel? event;
   int? _currentUserAccountId;
+  final ScrollController _locationController = ScrollController();
+  final ScrollController _creatorController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _eventFuture = _fetchEvent();
     _getCurrentUserAccountId();
+
+    // Start auto-scrolling for location and creator name
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoScroll(_locationController);
+      _startAutoScroll(_creatorController);
+    });
+  }
+
+  void _startAutoScroll(ScrollController controller) {
+    if (controller.hasClients) {
+      // Only scroll if content overflows
+      if (controller.position.maxScrollExtent > 0) {
+        Future.delayed(const Duration(seconds: 2), () {
+          controller.animateTo(
+            controller.position.maxScrollExtent,
+            duration: Duration(seconds: controller.position.maxScrollExtent ~/ 20),
+            curve: Curves.linear,
+          ).then((_) {
+            Future.delayed(const Duration(seconds: 1), () {
+              controller.animateTo(
+                0,
+                duration: Duration(seconds: controller.position.maxScrollExtent ~/ 20),
+                curve: Curves.linear,
+              ).then((_) => _startAutoScroll(controller));
+            });
+          });
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _locationController.dispose();
+    _creatorController.dispose();
+    super.dispose();
   }
 
   Future<EventModel?> _fetchEvent() async {
@@ -90,7 +128,6 @@ class _EventPageState extends State<EventPage> {
     if (_currentUserAccountId == null) {
       return ElevatedButton(
         onPressed: () {
-          // Navigate to login if not authenticated
           Navigator.pushReplacementNamed(context, '/login');
         },
         style: ElevatedButton.styleFrom(
@@ -122,6 +159,38 @@ class _EventPageState extends State<EventPage> {
     );
   }
 
+  Widget _buildAutoScrollingText(String text, ScrollController controller) {
+    return SingleChildScrollView(
+      controller: controller,
+      scrollDirection: Axis.horizontal,
+      physics: const NeverScrollableScrollPhysics(),
+      child: Row(
+        children: [
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.visible,
+          ),
+          // Add extra space for looping effect
+          if (controller.hasClients && controller.position.maxScrollExtent > 0)
+            Text(
+              "  •••  $text",
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.visible,
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -146,16 +215,12 @@ class _EventPageState extends State<EventPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Event header with creator info
+          // Creator info with profile picture and name
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundImage: event?.eventImageUrl != null
-                    ? NetworkImage(event!.eventImageUrl!)
-                    : const AssetImage('resources/icons/profile_placeholder.png')
-                as ImageProvider,
+                backgroundImage: AssetImage('resources/icons/profile_placeholder.png'),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -168,73 +233,101 @@ class _EventPageState extends State<EventPage> {
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
                     Text(
                       'Created ${DateFormat('MMM dd').format(event!.eventDate!)}',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Event image with overlay text
+          Stack(
+            children: [
+              // Event image
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: event?.eventImageUrl != null && event!.eventImageUrl!.isNotEmpty
+                    ? Image.network(
+                  event!.eventImageUrl!,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildImagePlaceholder(),
+                )
+                    : _buildImagePlaceholder(),
+              ),
+
+              // Dark overlay for text readability
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                height: 200,
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.7),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
-                child: const Text('Event', style: TextStyle(color: Colors.blue)),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
 
-          // Event image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: event?.eventImageUrl != null && event!.eventImageUrl!.isNotEmpty
-                ? Image.network(
-              event!.eventImageUrl!,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  _buildImagePlaceholder(),
-            )
-                : _buildImagePlaceholder(),
-          ),
-          const SizedBox(height: 20),
+              // Event details overlay
+              Positioned(
+                left: 16,
+                bottom: 16,
+                right: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Event date - top line
+                    Text(
+                      DateFormat('EEEE, MMM d').format(event!.eventDate!).toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
 
-          // Event title and date
-          Text(
-            event!.eventName,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-              const SizedBox(width: 8),
-              Text(
-                DateFormat('EEE, MMM d • h:mm a').format(event!.eventDate!),
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+                    // Event title - large and bold
+                    Text(
+                      event!.eventName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
 
-          // Location info
-          Row(
-            children: [
-              const Icon(Icons.location_on, size: 16, color: Colors.grey),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  event!.locationName ?? 'Online Event',
-                  style: const TextStyle(fontSize: 16),
+                    // Location - auto-scrolling
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 16, color: Colors.white70),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: _buildAutoScrollingText(
+                            event!.locationName ?? 'Online Event',
+                            _locationController,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -254,6 +347,19 @@ class _EventPageState extends State<EventPage> {
           Text(
             event!.description,
             style: const TextStyle(fontSize: 16, height: 1.5),
+          ),
+          const SizedBox(height: 24),
+
+          // Event metadata row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildMetadataItem(Icons.category, event?.category ?? 'No Category'),
+              _buildMetadataItem(Icons.person, event?.creatorUserId ?? 'Unknown'),
+              _buildMetadataItem(Icons.calendar_today,
+                  DateFormat('MM/dd').format(event!.eventDate!)),
+              _buildMetadataItem(Icons.location_on, event?.locationName ?? 'Online'),
+            ],
           ),
           const SizedBox(height: 32),
 
@@ -290,13 +396,32 @@ class _EventPageState extends State<EventPage> {
                       children: enrollments
                           .map((e) => CircleAvatar(
                         radius: 24,
-                        child: Text(e.accountId.toString()),
+                        backgroundImage: AssetImage('resources/icons/profile_placeholder.png'),
+                        child: Text(e.accountId.toString(), style: const TextStyle(color: Colors.white)),
                       ))
                           .toList(),
                     ),
                 ],
               );
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetadataItem(IconData icon, String text) {
+    return SizedBox(
+      width: 80,
+      child: Column(
+        children: [
+          Icon(icon, size: 28, color: Theme.of(context).primaryColor),
+          const SizedBox(height: 8),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

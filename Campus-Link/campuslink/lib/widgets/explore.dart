@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
 
+import '../screens/event_page.dart';
+
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
 
@@ -148,7 +150,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 childAspectRatio: 0.75,
               ),
               delegate: SliverChildBuilderDelegate(
-                    (context, index) => EventCard(event: _events[index]),
+                    (context, index) => EventCard(
+                  event: _events[index],
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EventPage(eventId: _events[index].eventId),
+                      ),
+                    );
+                  },
+                ),
                 childCount: _events.length,
               ),
             ),
@@ -173,10 +185,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 }
 
+
 class EventCard extends StatelessWidget {
   final EventModel event;
+  final VoidCallback onTap;
 
-  const EventCard({super.key, required this.event});
+  const EventCard({
+    super.key,
+    required this.event,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -187,9 +205,7 @@ class EventCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          // Navigate to event details
-        },
+        onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -116,7 +116,7 @@ class EventService {
           .eq('event_id', eventId)
           .single();
 
-      return EventModel.fromMap(response as Map<String, dynamic>);
+      return EventModel.fromMap(response);
     } catch (e) {
       print('Error fetching event: $e');
       return null;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart'; // Keep if you use other Flutter specifi
 import 'package:intl/intl.dart';
 
 class EventModel {
-  final String id;
+  final int eventId;
   final String eventName;
   final String? category;
   final String description;
@@ -21,7 +21,7 @@ class EventModel {
   final String? eventImageUrl;
 
   EventModel({
-    required this.id,
+    required this.eventId,
     required this.eventName,
     this.category,
     required this.description,
@@ -60,7 +60,7 @@ class EventModel {
 
 
     return EventModel(
-      id: (map['id'] as String?) ?? '',
+      eventId: (map['event_id'] as int?) ?? 0,
       eventName: (map['eventname'] as String?) ?? 'Unnamed Event',
       category: (map['eventcategory'] as String?) ?? 'No Category',
       description: (map['description'] as String?) ?? 'No description provided.',
