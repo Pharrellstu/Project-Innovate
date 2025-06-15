@@ -193,12 +193,12 @@ class EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Event image
+            // Event image - FIXED HERE
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: event.eventimageurl!.isNotEmpty
-                  ? Image.asset(
-                'resources/img/PubQuiz.png',
+              child: event.eventImageUrl != null && event.eventImageUrl!.isNotEmpty
+                  ? Image.network(
+                event.eventImageUrl!,
                 height: 150,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -249,16 +249,16 @@ class EventCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   if(event.maxnumberofpeople != null)
-                  Row(
-                    children: [
-                      const Icon(Icons.people, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${event.maxnumberofpeople} spots',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
+                    Row(
+                      children: [
+                        const Icon(Icons.people, size: 14, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${event.maxnumberofpeople} spots',
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),

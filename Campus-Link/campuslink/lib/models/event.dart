@@ -18,7 +18,7 @@ class EventModel {
   final DateTime? signUpDeadline;
   //final bool offerBadge;
   final String creatorUserId;
-  final String? eventimageurl;
+  final String? eventImageUrl;
 
   EventModel({
     required this.id,
@@ -35,7 +35,7 @@ class EventModel {
     required this.isPublic,
     this.maxnumberofpeople,
     this.signUpDeadline,
-    this.eventimageurl,
+    this.eventImageUrl,
     //required this.offerBadge,
     required this.creatorUserId,
   });
@@ -79,7 +79,7 @@ class EventModel {
           ? DateTime.tryParse(map['sign_up_deadline'] as String)
           : null,
       creatorUserId: (map['creator_user_id'] as String?) ?? '',
-      eventimageurl: (map['eventimageurl'] as String?) ?? 'No Url.',
+      eventImageUrl: map['eventimageurl'] as String?,
     );
   }
 }

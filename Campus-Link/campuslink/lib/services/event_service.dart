@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:path/path.dart' as path;
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/create_event_page.dart';
@@ -7,10 +10,19 @@ import 'package:campuslink/services/user_service.dart';
 class EventService {
   static final SupabaseClient _supabase = Supabase.instance.client;
 
+// In event_service.dart
   static Future<int?> createEvent(EventData data) async {
     final creatorId = AuthGate.getCurrentUserId();
     final accountId = await UserService().getAccountIdByAuthUserId(creatorId!);
-    //if (creatorId == null) throw Exception('No user is logged in');
+
+    // Upload image if exists and not already uploaded
+    if (data.eventImageFile != null && data.eventImageUrl == null) {
+      final imageUrl = await uploadEventImage(data.eventImageFile!);
+      if (imageUrl != null) {
+        data.eventImageUrl = imageUrl;
+      }
+    }
+
     final payload = data.toMap(creatorId);
 
     try {
@@ -21,8 +33,6 @@ class EventService {
           .insert(payload)
           .select('event_id')
           .single();
-
-
 
       final int newEventId = eventResponse['event_id'];
 
@@ -67,6 +77,32 @@ class EventService {
     } catch (e) {
       print('Error fetching events: $e');
       return [];
+    }
+  }
+
+// In event_service.dart
+  static Future<String?> uploadEventImage(File imageFile) async {
+    try {
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}${path.extension(imageFile.path)}';
+      final bytes = await imageFile.readAsBytes();
+
+      // Use uploadBinary instead of upload
+      await _supabase.storage
+          .from('eventimage')
+          .uploadBinary(fileName, bytes);
+
+      // If we get here, upload was successful
+      final publicUrl = _supabase.storage
+          .from('eventimage')
+          .getPublicUrl(fileName);
+
+      return publicUrl;
+    } on StorageException catch (e) {
+      print('Storage error: ${e.message}');
+      return null;
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
     }
   }
 
