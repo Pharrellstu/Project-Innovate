@@ -2,7 +2,7 @@ import 'package:flutter/material.dart'; // Keep if you use other Flutter specifi
 import 'package:intl/intl.dart';
 
 class EventModel {
-  final String id;
+  final String id; // This must be unique!
   final String eventName;
   final String? category;
   final String description;
@@ -16,7 +16,6 @@ class EventModel {
   final bool isPublic;
   final int? maxnumberofpeople;
   final DateTime? signUpDeadline;
-  //final bool offerBadge;
   final String creatorUserId;
   final String? eventImageUrl;
 
@@ -36,7 +35,6 @@ class EventModel {
     this.maxnumberofpeople,
     this.signUpDeadline,
     this.eventImageUrl,
-    //required this.offerBadge,
     required this.creatorUserId,
   });
 
@@ -48,19 +46,18 @@ class EventModel {
       return double.tryParse(getLat ? parts[0].trim() : parts[1].trim());
     }
 
-    // You can keep the print statements for your own debugging if you wish
-    // print('--- Event Raw Map Data ---');
-    // print('id: ${map['id']}');
-    // print('eventname: ${map['eventname']}'); // Corrected key
-    // print('eventcategory: ${map['eventcategory']}'); // Corrected key
-    // print('startdate: ${map['startdate']}'); // Corrected key
-    // print('locationName: ${map['locationName']}'); // Corrected key
-    // // ... print other fields
-    // print('--------------------------');
+    // You can uncomment these print statements for your own debugging if you wish
+    // print('--- Event Raw Map Data in fromMap ---');
+    // map.forEach((key, value) => print('$key: $value'));
+    // print('-------------------------------------');
 
 
     return EventModel(
-      id: (map['id'] as String?) ?? '',
+      // --- THE CRUCIAL CHANGE IS HERE ---
+      // Use 'event_id' as the key to get the ID from the Supabase response map.
+      // Supabase returns integer IDs for serial primary keys, so convert to String.
+      id: (map['event_id'] as int?)?.toString() ?? '',
+
       eventName: (map['eventname'] as String?) ?? 'Unnamed Event',
       category: (map['eventcategory'] as String?) ?? 'No Category',
       description: (map['description'] as String?) ?? 'No description provided.',

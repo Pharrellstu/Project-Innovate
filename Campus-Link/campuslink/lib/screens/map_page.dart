@@ -7,7 +7,8 @@ import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:ui' as ui; // <--- ADDED THIS IMPORT WITH A PREFIX
+import 'dart:ui' as ui; // Explicitly import dart:ui and alias it
+import 'dart:async'; // Required for Timer
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -31,6 +32,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   String _timeFilter = 'All';
 
   final MapController _mapController = MapController();
+
+  // --- New additions for highlight and scroll ---
+  final Map<String, GlobalKey> _eventItemKeys = {}; // Map to store GlobalKeys for each event card by its ID
+  String? _highlightedEventId; // Stores the ID of the currently highlighted event
+  Timer? _highlightTimer; // Timer to control the highlight duration
+  // --- End new additions ---
 
   @override
   void initState() {
@@ -59,6 +66,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     _mapController.dispose();
+    _highlightTimer?.cancel(); // Cancel the timer to prevent memory leaks
     debugPrint('[MapPage] dispose called. Time: ${DateTime.now()}');
     super.dispose();
   }
@@ -68,7 +76,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       debugPrint('Location services are disabled. Returning default. Time: ${DateTime.now()}');
-      return LatLng(52.785805, 6.897585); // Default: Campus location
+      return LatLng(52.785805, 6.897585); // Default: Campus location (Erica, Drenthe, Netherlands)
     }
 
     LocationPermission permission = await Geolocator.checkPermission();
@@ -76,7 +84,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
         debugPrint('Location permissions are denied or permanently denied. Returning default. Time: ${DateTime.now()}');
-        return LatLng(52.785805, 6.897585); // Default: Campus location
+        return LatLng(52.785805, 6.897585); // Default: Campus location (Erica, Drenthe, Netherlands)
       }
     }
 
@@ -89,7 +97,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       return LatLng(position.latitude, position.longitude);
     } catch (e) {
       debugPrint('Error getting current location: $e. Returning default. Time: ${DateTime.now()}');
-      return LatLng(52.785805, 6.897585); // Default: Campus location
+      return LatLng(52.785805, 6.897585); // Default: Campus location (Erica, Drenthe, Netherlands)
     }
   }
 
@@ -185,6 +193,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     );
   }
 
+  // In lib/screens/map_page.dart
+
+// ... (rest of your imports and class definition)
+
   static List<EventModel> _applyFiltersStatic(Map<String, dynamic> args) {
     final List<EventModel> events = args['events'];
     final String dateFilter = args['dateFilter'];
@@ -193,62 +205,160 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
     final now = DateTime.now();
 
-    debugPrint('[_applyFiltersStatic] Start filtering. Total events: ${events.length}. Time: ${DateTime.now()}');
+    debugPrint('--- Filtering Started ---');
+    debugPrint('Current Date: $now');
+    debugPrint('Active Filters: Date="$dateFilter", Category="$categoryFilter", Time="$timeFilter"');
+    debugPrint('Total events received for filtering: ${events.length}');
 
     final filteredList = events.where((event) {
       bool keepEvent = true;
+      debugPrint('\nProcessing Event: "${event.eventName}" (ID: ${event.id})');
+      debugPrint('  Event Data: Date=${event.eventDate}, Category=${event.category}, Time=${event.eventTime}, Lat=${event.locationLat}, Lng=${event.locationLng}');
+
 
       // --- Date Filter ---
       if (dateFilter != 'All') {
+        debugPrint('  Applying Date Filter ($dateFilter)...');
         if (event.eventDate == null) {
           keepEvent = false;
+          debugPrint('    - Date Filter: Event "${event.eventName}" removed because eventDate is null.');
         } else {
           final diff = event.eventDate!.difference(now);
           if (diff.isNegative) { // Event is in the past
             keepEvent = false;
+            debugPrint('    - Date Filter: Event "${event.eventName}" removed because it is in the past (diff: $diff).');
           } else {
             final diffInDays = diff.inDays;
-            if ((dateFilter == '1 Week' && diffInDays > 7) ||
-                (dateFilter == '2 Weeks' && diffInDays > 14) ||
-                (dateFilter == '1 Month' && diffInDays > 30)) {
+            if ((dateFilter == '1 Week' && diffInDays > 7)) {
               keepEvent = false;
+              debugPrint('    - Date Filter: Event "${event.eventName}" removed (1 Week) because diffInDays ($diffInDays) > 7.');
+            } else if ((dateFilter == '2 Weeks' && diffInDays > 14)) {
+              keepEvent = false;
+              debugPrint('    - Date Filter: Event "${event.eventName}" removed (2 Weeks) because diffInDays ($diffInDays) > 14.');
+            } else if ((dateFilter == '1 Month' && diffInDays > 30)) {
+              keepEvent = false;
+              debugPrint('    - Date Filter: Event "${event.eventName}" removed (1 Month) because diffInDays ($diffInDays) > 30.');
             }
           }
         }
+      } else {
+        debugPrint('  Date Filter: "All" - Skipping.');
       }
 
+
       // --- Category Filter ---
-      if (keepEvent && categoryFilter != 'All') {
+      if (keepEvent && categoryFilter != 'All') { // Only apply if still kept by previous filters
+        debugPrint('  Applying Category Filter ($categoryFilter)...');
         if (event.category == null || event.category!.toLowerCase() != categoryFilter.toLowerCase()) {
           keepEvent = false;
+          debugPrint('    - Category Filter: Event "${event.eventName}" removed. Category: "${event.category}". Expected: "$categoryFilter".');
         }
+      } else if (keepEvent) { // Only print if still kept and filter is 'All'
+        debugPrint('  Category Filter: "All" - Skipping.');
       }
 
       // --- Time Filter ---
-      if (keepEvent && timeFilter != 'All') {
+      if (keepEvent && timeFilter != 'All') { // Only apply if still kept by previous filters
+        debugPrint('  Applying Time Filter ($timeFilter)...');
         if (event.eventTime == null || event.eventTime!.isEmpty) {
           keepEvent = false;
+          debugPrint('    - Time Filter: Event "${event.eventName}" removed because eventTime is null or empty.');
         } else {
           try {
             final parsedTime = DateFormat('HH:mm').parse(event.eventTime!);
             final hour = parsedTime.hour;
-            if ((timeFilter == 'Morning' && (hour < 6 || hour >= 12)) ||
-                (timeFilter == 'Afternoon' && (hour < 12 || hour >= 18)) ||
-                (timeFilter == 'Evening' && (hour < 18 || hour >= 24))) {
+            debugPrint('    - Time Filter: Event time parsed to hour: $hour.');
+            if ((timeFilter == 'Morning' && (hour < 6 || hour >= 12))) {
               keepEvent = false;
+              debugPrint('    - Time Filter: Event "${event.eventName}" removed (Morning) because hour ($hour) not in 6-11.');
+            } else if ((timeFilter == 'Afternoon' && (hour < 12 || hour >= 18))) {
+              keepEvent = false;
+              debugPrint('    - Time Filter: Event "${event.eventName}" removed (Afternoon) because hour ($hour) not in 12-17.');
+            } else if ((timeFilter == 'Evening' && (hour < 18 || hour >= 24))) {
+              keepEvent = false;
+              debugPrint('    - Time Filter: Event "${event.eventName}" removed (Evening) because hour ($hour) not in 18-23.');
             }
           } catch (e) {
-            debugPrint('Error parsing event time for "${event.eventName}" in background: ${event.eventTime} - $e');
-            keepEvent = false;
+            debugPrint('    - Time Filter: Error parsing event time for "${event.eventName}" in background: ${event.eventTime} - $e');
+            keepEvent = false; // Filter out if time parsing fails
           }
         }
+      } else if (keepEvent) { // Only print if still kept and filter is 'All'
+        debugPrint('  Time Filter: "All" - Skipping.');
       }
+
+      debugPrint('  Final decision for "${event.eventName}": ${keepEvent ? 'KEEP' : 'REMOVE'}');
       return keepEvent;
     }).toList();
 
-    debugPrint('[_applyFiltersStatic] Finished filtering. Filtered events: ${filteredList.length}. Time: ${DateTime.now()}');
+    debugPrint('--- Filtering Finished ---');
+    debugPrint('Filtered events count: ${filteredList.length}');
     return filteredList;
   }
+
+  // --- New method to handle list item tap and move map ---
+  void _onListEventTap(EventModel event) {
+    if (event.locationLat != null && event.locationLng != null) {
+      final targetLatLng = LatLng(event.locationLat!, event.locationLng!);
+      _mapController.move(targetLatLng, _mapController.zoom); // Move map to event location
+
+      // Also trigger the highlight and potential scroll if the panel isn't open
+      _triggerHighlightAndScroll(event);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Location not available for ${event.eventName}')),
+      );
+    }
+  }
+
+  // New method to handle marker tap, scroll to list item, and highlight
+  void _onMarkerTap(EventModel event) {
+    _triggerHighlightAndScroll(event);
+  }
+
+  // Helper method to consolidate highlight and scroll logic
+  void _triggerHighlightAndScroll(EventModel event) {
+    if (mounted) {
+      // Cancel any ongoing highlight timer to prevent conflicts
+      _highlightTimer?.cancel();
+
+      setState(() {
+        _highlightedEventId = event.id; // Set the ID of the event to highlight
+      });
+
+      // Ensure the panel is open enough to see the event
+      if (_panelHeightFraction < 0.3) { // Adjust this threshold as needed
+        setState(() {
+          _panelHeightFraction = 0.5; // Open to halfway
+        });
+      }
+
+      // Give Flutter a moment to build the widget with the new key and state
+      Future.delayed(const Duration(milliseconds: 100), () {
+        final key = _eventItemKeys[event.id];
+        if (key != null && key.currentContext != null) {
+          Scrollable.ensureVisible(
+            key.currentContext!,
+            alignment: 0.5, // Center the item in the viewport
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        } else {
+          debugPrint('Key for event ${event.eventName} (ID: ${event.id}) not found or context is null.');
+        }
+      });
+
+      // Start a timer to clear the highlight after a specific duration (e.g., 1 second)
+      _highlightTimer = Timer(const Duration(seconds: 1), () { // Highlight for 1 second
+        if (mounted) {
+          setState(() {
+            _highlightedEventId = null; // Clear the highlighted ID
+          });
+        }
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -354,15 +464,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               }
                               return Marker(
                                 point: LatLng(lat, lng),
-                                width: 50, // Adjust width/height as needed for the overall marker size
-                                height: 60, // Marker height should be slightly taller for the pin
-                                child: EventMarker( // Using your new custom widget here!
-                                  imagePath: 'resources/img/PubQuiz.png', // Corrected path. Ensure this exists and is correct!
-                                  onTap: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Tapped on ${event.eventName}')),
-                                    );
-                                  },
+                                width: 50,
+                                height: 60,
+                                child: EventMarker(
+                                  imagePath: event.eventImageUrl ?? 'resources/img/placeholder.png',
+                                  isNetworkImage: event.eventImageUrl != null,
+                                  onTap: () => _onMarkerTap(event),
                                 ),
                               );
                             })
@@ -504,13 +611,28 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               itemCount: filteredEvents.length,
                               itemBuilder: (context, index) {
                                 final event = filteredEvents[index];
+                                // Ensure the key is created for each event using event.id
+                                if (_eventItemKeys[event.id] == null) {
+                                  _eventItemKeys[event.id] = GlobalKey();
+                                }
+                                final bool isHighlighted = event.id == _highlightedEventId;
+
                                 return Card(
+                                  key: _eventItemKeys[event.id], // Assign the key here
                                   margin: const EdgeInsets.symmetric(vertical: 8),
                                   elevation: 2,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  // Apply highlight styling for a subtle effect
+                                  color: isHighlighted ? Colors.grey[200] : null, // Soft white/grey highlight
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    side: isHighlighted
+                                        ? const BorderSide(color: Colors.blue, width: 2) // Blue border for highlight
+                                        : BorderSide.none,
+                                  ),
                                   child: InkWell(
                                     onTap: () {
                                       debugPrint('Tapped on event: ${event.eventName}. Time: ${DateTime.now()}');
+                                      _onListEventTap(event);
                                     },
                                     child: Padding(
                                       padding: const EdgeInsets.all(12.0),
@@ -527,19 +649,27 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                               border: Border.all(color: Colors.grey[300]!, width: 1),
                                             ),
                                             child: ClipOval(
-                                              child: Image.asset(
-                                                'resources/img/PubQuiz.png', // Corrected path
-                                                width: 50,
-                                                height: 50,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) {
-                                                  return const Icon(
-                                                    Icons.error_outline,
-                                                    color: Colors.red,
-                                                    size: 28,
-                                                  );
-                                                },
-                                              ),
+                                              child: event.eventImageUrl != null
+                                                  ? Image.network(
+                                                      event.eventImageUrl!,
+                                                      width: 50,
+                                                      height: 50,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (context, error, stackTrace) {
+                                                        return Image.asset(
+                                                          'resources/img/placeholder.png', // Fallback image
+                                                          width: 50,
+                                                          height: 50,
+                                                          fit: BoxFit.cover,
+                                                        );
+                                                      },
+                                                    )
+                                                  : Image.asset(
+                                                      'resources/img/placeholder.png', // Default image if no URL
+                                                      width: 50,
+                                                      height: 50,
+                                                      fit: BoxFit.cover,
+                                                    ),
                                             ),
                                           ),
                                           Expanded(
@@ -640,15 +770,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   }
 }
 
-
 // --- Custom Event Marker Widget ---
 class EventMarker extends StatelessWidget {
-  final String imagePath; // Path to your event image (e.g., 'resources/img/PubQuiz.png')
-  final VoidCallback onTap; // What happens when the marker is tapped
+  final String imagePath; // This can now be a network URL or an asset path
+  final bool isNetworkImage; // New parameter to differentiate image source
+  final VoidCallback onTap;
 
   const EventMarker({
     super.key,
     required this.imagePath,
+    this.isNetworkImage = false, // Default to false (asset image)
     required this.onTap,
   });
 
@@ -659,35 +790,26 @@ class EventMarker extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // The Pin Shape (e.g., a custom painter or a rotated container)
-          // For simplicity, let's start with a Stack of a white circle and a red triangle
           Positioned(
-            bottom: 0, // Align the pin's base to the marker's point
-            child: Container(
-              width: 30, // Adjust size as needed
-              height: 30, // Adjust size as needed
-              decoration: BoxDecoration(
-                color: Colors.red[700], // Marker base color
-                borderRadius: BorderRadius.circular(15),
+            bottom: 0,
+            child: CustomPaint(
+              // FIX: Explicitly use ui.Path in _TrianglePainter
+              painter: _TrianglePainter(
+                color: Colors.red[700]!, // Consistent with marker body color
+              ),
+              child: const SizedBox(
+                width: 20, // Width of the triangle base
+                height: 10, // Height of the triangle
               ),
             ),
           ),
-          Positioned(
-            bottom: -5, // Adjust this to make the triangle overlap the circle nicely
-            child: CustomPaint(
-              size: const Size(20, 20), // Size of the triangle
-              painter: _TrianglePainter(Colors.red[700]!), // Same color as the base
-            ),
-          ),
-
-          // The Image (your PubQuiz.png)
           Container(
-            width: 32, // Size of the image circle
-            height: 32,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
-              color: Colors.white, // Background for the image
+              color: Colors.red[700], // Marker body color
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey[300]!, width: 1), // Optional border
+              border: Border.all(color: Colors.white, width: 2),
               boxShadow: const [
                 BoxShadow(
                   color: Colors.black26,
@@ -697,18 +819,35 @@ class EventMarker extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.cover, // Ensures the image fills the circle
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback for when the image fails to load
-                  return const Icon(
-                    Icons.error_outline,
-                    color: Colors.red,
-                    size: 28,
-                  );
-                },
-              ),
+              child: isNetworkImage
+                  ? Image.network(
+                      imagePath,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'resources/img/placeholder.png', // Fallback asset
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    )
+                  : Image.asset(
+                      imagePath,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'resources/img/placeholder.png', // Fallback asset if asset path is wrong
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    ),
             ),
           ),
         ],
@@ -717,23 +856,32 @@ class EventMarker extends StatelessWidget {
   }
 }
 
-// --- Custom Painter for the Triangle Part of the Marker ---
+// --- Triangle Painter for the marker 'tail' ---
 class _TrianglePainter extends CustomPainter {
   final Color color;
 
-  _TrianglePainter(this.color);
+  _TrianglePainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    final path = ui.Path(); // <--- Corrected: Using ui.Path()
-    path.moveTo(size.width / 2, size.height); // Bottom point
-    path.lineTo(0, 0); // Top-left point
-    path.lineTo(size.width, 0); // Top-right point
+    final paint = ui.Paint() // FIX: Use ui.Paint to be explicit
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    ui.Path path = ui.Path(); // FIX: Explicitly use ui.Path()
+
+    // These coordinates are relative to the 'size' of the CustomPaint widget,
+    // which is used to draw the triangle shape.
+    path.moveTo(size.width / 2, size.height); // Bottom center
+    path.lineTo(0, 0); // Top-left corner
+    path.lineTo(size.width, 0); // Top-right corner
     path.close();
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    // Only repaint if the color changes (or other properties if added)
+    return oldDelegate is _TrianglePainter && oldDelegate.color != color;
+  }
 }
