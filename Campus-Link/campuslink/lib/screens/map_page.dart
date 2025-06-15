@@ -6,7 +6,8 @@ import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart'; // <--- ADD THIS LINE
+import 'package:flutter/foundation.dart';
+import 'dart:ui' as ui; // <--- ADDED THIS IMPORT WITH A PREFIX
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -184,15 +185,13 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     );
   }
 
-  // This function is now a top-level function or static method
-  // to be used with compute for background processing.
   static List<EventModel> _applyFiltersStatic(Map<String, dynamic> args) {
     final List<EventModel> events = args['events'];
     final String dateFilter = args['dateFilter'];
     final String categoryFilter = args['categoryFilter'];
     final String timeFilter = args['timeFilter'];
 
-    final now = DateTime.now(); // 'now' should be captured within the isolate for consistency
+    final now = DateTime.now();
 
     debugPrint('[_applyFiltersStatic] Start filtering. Total events: ${events.length}. Time: ${DateTime.now()}');
 
@@ -303,7 +302,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     ),
                   ],
                 ),
-              // FutureBuilder for event markers, now with background filtering
               FutureBuilder<List<EventModel>>(
                 future: _eventsFuture,
                 builder: (context, snapshot) {
@@ -321,7 +319,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   }
 
                   final allEvents = snapshot.data!;
-                  // Use a nested FutureBuilder with compute to perform filtering in background
                   return FutureBuilder<List<EventModel>>(
                     future: compute(_applyFiltersStatic, {
                       'events': allEvents,
@@ -332,7 +329,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     builder: (context, filteredSnapshot) {
                       debugPrint('[Map Markers Filtered FutureBuilder] Connection state: ${filteredSnapshot.connectionState}. Time: ${DateTime.now()}');
                       if (filteredSnapshot.connectionState == ConnectionState.waiting) {
-                        return const SizedBox.shrink(); // Still loading filtered data
+                        return const SizedBox.shrink();
                       }
                       if (filteredSnapshot.hasError) {
                         debugPrint('Error filtering events for map in background: ${filteredSnapshot.error}. Time: ${DateTime.now()}');
@@ -357,15 +354,15 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               }
                               return Marker(
                                 point: LatLng(lat, lng),
-                                width: 36,
-                                height: 36,
-                                child: GestureDetector(
+                                width: 50, // Adjust width/height as needed for the overall marker size
+                                height: 60, // Marker height should be slightly taller for the pin
+                                child: EventMarker( // Using your new custom widget here!
+                                  imagePath: 'resources/img/PubQuiz.png', // Corrected path. Ensure this exists and is correct!
                                   onTap: () {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Tapped on ${event.eventName}')),
                                     );
                                   },
-                                  child: const Icon(Icons.location_pin, color: Colors.red, size: 36),
                                 ),
                               );
                             })
@@ -474,7 +471,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                         }
 
                         final allEvents = snapshot.data!;
-                        // Use a nested FutureBuilder with compute for background filtering
                         return FutureBuilder<List<EventModel>>(
                           future: compute(_applyFiltersStatic, {
                             'events': allEvents,
@@ -525,11 +521,26 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                             width: 50,
                                             height: 50,
                                             margin: const EdgeInsets.only(right: 16, top: 4),
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFFE0E0E0),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFE0E0E0),
                                               shape: BoxShape.circle,
+                                              border: Border.all(color: Colors.grey[300]!, width: 1),
                                             ),
-                                            child: const Icon(Icons.event, color: Colors.grey),
+                                            child: ClipOval(
+                                              child: Image.asset(
+                                                'resources/img/PubQuiz.png', // Corrected path
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return const Icon(
+                                                    Icons.error_outline,
+                                                    color: Colors.red,
+                                                    size: 28,
+                                                  );
+                                                },
+                                              ),
+                                            ),
                                           ),
                                           Expanded(
                                             child: Column(
@@ -565,7 +576,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                     Expanded(
                                                       child: Text(
                                                         event.eventDate != null
-                                                            ? DateFormat('MMM d, yyyy').format(event.eventDate!)
+                                                            ? DateFormat('MMM d,yyyy').format(event.eventDate!)
                                                             : 'No Date',
                                                         style: const TextStyle(fontSize: 14),
                                                         overflow: TextOverflow.ellipsis,
@@ -627,4 +638,102 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       ),
     );
   }
+}
+
+
+// --- Custom Event Marker Widget ---
+class EventMarker extends StatelessWidget {
+  final String imagePath; // Path to your event image (e.g., 'resources/img/PubQuiz.png')
+  final VoidCallback onTap; // What happens when the marker is tapped
+
+  const EventMarker({
+    super.key,
+    required this.imagePath,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // The Pin Shape (e.g., a custom painter or a rotated container)
+          // For simplicity, let's start with a Stack of a white circle and a red triangle
+          Positioned(
+            bottom: 0, // Align the pin's base to the marker's point
+            child: Container(
+              width: 30, // Adjust size as needed
+              height: 30, // Adjust size as needed
+              decoration: BoxDecoration(
+                color: Colors.red[700], // Marker base color
+                borderRadius: BorderRadius.circular(15),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -5, // Adjust this to make the triangle overlap the circle nicely
+            child: CustomPaint(
+              size: const Size(20, 20), // Size of the triangle
+              painter: _TrianglePainter(Colors.red[700]!), // Same color as the base
+            ),
+          ),
+
+          // The Image (your PubQuiz.png)
+          Container(
+            width: 32, // Size of the image circle
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white, // Background for the image
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey[300]!, width: 1), // Optional border
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                imagePath,
+                fit: BoxFit.cover, // Ensures the image fills the circle
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback for when the image fails to load
+                  return const Icon(
+                    Icons.error_outline,
+                    color: Colors.red,
+                    size: 28,
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- Custom Painter for the Triangle Part of the Marker ---
+class _TrianglePainter extends CustomPainter {
+  final Color color;
+
+  _TrianglePainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = ui.Path(); // <--- Corrected: Using ui.Path()
+    path.moveTo(size.width / 2, size.height); // Bottom point
+    path.lineTo(0, 0); // Top-left point
+    path.lineTo(size.width, 0); // Top-right point
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
