@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../models/eventenrollment.dart';
 import '../models/user.dart';
+import '../services/event_invitation_service.dart';
 import 'create_event_page.dart';
 
 class EventPage extends StatefulWidget {
@@ -130,6 +131,17 @@ class _EventPageState extends State<EventPage> {
         widget.eventId,
         _currentUserAccountId!,
       );
+
+      // Add this block to update invitation status
+      try {
+        await EventInvitationService.acceptInvitationByEventAndReceiver(
+          widget.eventId,
+          _currentUserAccountId!,
+        );
+      } catch (e) {
+        print("No invitation found to update: $e");
+      }
+
       setState(() => _isEnrolled = true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Successfully joined the event!')),

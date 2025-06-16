@@ -32,6 +32,17 @@ class EventInvitationModel {
       'eventinvitationcreater_id': eventInvitationCreaterId,
     };
   }
+
+  // In eventinvitation.dart
+  EventInvitationModel withStatus(String newStatus) {
+    return EventInvitationModel(
+      eventInvitationId: eventInvitationId,
+      eventId: eventId,
+      receiverAccountId: receiverAccountId,
+      eventInvitationCreaterId: eventInvitationCreaterId,
+      status: newStatus,
+    );
+  }
 }
 
 // 1. Add this extension to your EventInvitationModel
