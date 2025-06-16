@@ -198,7 +198,17 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A verification code has been sent to ${widget.email}.Please enter it below.',
+                    'A verification code has been sent to:',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                  ),
+                  Text(
+                    '${widget.email}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[850], fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Please enter it below.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                   ),
