@@ -2,7 +2,7 @@ import 'package:flutter/material.dart'; // Keep if you use other Flutter specifi
 import 'package:intl/intl.dart';
 
 class EventModel {
-  final String id;
+  final int eventId;
   final String eventName;
   final String? category;
   final String description;
@@ -17,11 +17,11 @@ class EventModel {
   final int? maxnumberofpeople;
   final DateTime? signUpDeadline;
   //final bool offerBadge;
-  final String creatorUserId;
-  final String? eventimageurl;
+  final String? eventCreatorUUID;
+  final String? eventImageUrl;
 
   EventModel({
-    required this.id,
+    required this.eventId,
     required this.eventName,
     this.category,
     required this.description,
@@ -35,9 +35,9 @@ class EventModel {
     required this.isPublic,
     this.maxnumberofpeople,
     this.signUpDeadline,
-    this.eventimageurl,
+    this.eventImageUrl,
     //required this.offerBadge,
-    required this.creatorUserId,
+    required this.eventCreatorUUID,
   });
 
   factory EventModel.fromMap(Map<String, dynamic> map) {
@@ -60,10 +60,10 @@ class EventModel {
 
 
     return EventModel(
-      id: (map['id'] as String?) ?? '',
+      eventId: (map['event_id'] as int?) ?? 0,
       eventName: (map['eventname'] as String?) ?? 'Unnamed Event',
       category: (map['eventcategory'] as String?) ?? 'No Category',
-      description: (map['description'] as String?) ?? 'No description provided.',
+      description: (map['eventdescription'] as String?) ?? 'No description provided.',
       isOnline: (map['is_online'] as bool?) ?? false,
       eventDate: map['startdate'] != null
           ? DateTime.tryParse(map['startdate'] as String)
@@ -78,8 +78,8 @@ class EventModel {
       signUpDeadline: map['sign_up_deadline'] != null
           ? DateTime.tryParse(map['sign_up_deadline'] as String)
           : null,
-      creatorUserId: (map['creator_user_id'] as String?) ?? '',
-      eventimageurl: (map['eventimageurl'] as String?) ?? 'No Url.',
+      eventCreatorUUID: map['eventcreatorid_uuid'] as String?,
+      eventImageUrl: map['eventimageurl'] as String?,
     );
   }
 }

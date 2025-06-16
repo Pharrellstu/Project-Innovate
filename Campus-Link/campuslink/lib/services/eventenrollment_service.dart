@@ -5,59 +5,51 @@ class EventEnrollmentService {
   static final _supabase = Supabase.instance.client;
   static const _table = 'eventenrollment';
 
-  /// Create a new enrollment
-  static Future<EventEnrollmentModel> create({
-    required int accountId,
-    required int eventId,
-  }) async {
-    final payload = {
-      'accountid': accountId,
-      'eventid':   eventId,
-    };
-
-    final resp = await _supabase
-        .from(_table)
-        .insert(payload)
-        .select()
-        .single();
-
-    return EventEnrollmentModel.fromMap(resp as Map<String, dynamic>);
+  /// Enroll user in an event
+  static Future<void> enrollToEvent(int eventId, int accountId) async {
+    try {
+      await _supabase.from(_table).insert({
+        'eventid': eventId,
+        'accountid': accountId,
+        'enrollmentdate': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      print('Error enrolling to event: $e');
+      rethrow;
+    }
   }
 
-  /// Fetch all enrollments
-  static Future<List<EventEnrollmentModel>> fetchAll() async {
-    final rows = await _supabase.from(_table).select();
-    return (rows as List)
-        .map((r) => EventEnrollmentModel.fromMap(r as Map<String, dynamic>))
-        .toList();
+  /// Check if user is enrolled in an event
+  static Future<bool> isUserEnrolled(int eventId, int accountId) async {
+    try {
+      final response = await _supabase
+          .from(_table)
+          .select()
+          .eq('eventid', eventId)
+          .eq('accountid', accountId)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      print('Error checking enrollment: $e');
+      return false;
+    }
   }
 
-  /// Fetch one by its PK
-  static Future<EventEnrollmentModel?> fetchById(int id) async {
-    final resp = await _supabase
-        .from(_table)
-        .select()
-        .eq('eventenrollment_id', id)
-        .maybeSingle();
-    if (resp == null) return null;
-    return EventEnrollmentModel.fromMap(resp as Map<String, dynamic>);
-  }
+  /// Get all enrollments for an event
+  static Future<List<EventEnrollmentModel>> getEnrollmentsForEvent(int eventId) async {
+    try {
+      final response = await _supabase
+          .from(_table)
+          .select()
+          .eq('eventid', eventId);
 
-  /// Update an existing enrollment
-  static Future<bool> update(EventEnrollmentModel model) async {
-    final resp = await _supabase
-        .from(_table)
-        .update(model.toMap())
-        .eq('eventenrollment_id', model.eventEnrollmentId);
-    return resp.error == null;
-  }
-
-  /// Delete an enrollment
-  static Future<bool> delete(int id) async {
-    final resp = await _supabase
-        .from(_table)
-        .delete()
-        .eq('eventenrollment_id', id);
-    return resp.error == null;
+      return (response as List)
+          .map((r) => EventEnrollmentModel.fromMap(r as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching enrollments: $e');
+      return [];
+    }
   }
 }

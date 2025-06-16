@@ -5,7 +5,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
-import 'package:intl/intl.dart'; // Import for parsing time strings
+import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart'; // For compute
+import 'dart:ui' as ui; // For ImageByteFormat
+import 'dart:async'; // For Timer
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -20,215 +23,446 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   late double _dragStartY;
   late double _startHeightFraction;
 
-  late Future<List<EventModel>> _eventsFuture;
+  List<EventModel> _allEvents = [];
+  Future<List<EventModel>>? _filteredEventsFuture;
+
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   LatLng? _currentLocation;
 
-  // Initialize filters to 'All' to ensure nothing is filtered by default
   String _dateFilter = 'All';
   String _categoryFilter = 'All';
   String _timeFilter = 'All';
 
+  final MapController _mapController = MapController();
+
+  final Map<int, GlobalKey> _eventItemKeys = {};
+  int? _highlightedEventId;
+  Timer? _highlightTimer;
+
   @override
   void initState() {
     super.initState();
-    _eventsFuture = EventService.fetchEvents();
+    debugPrint('[MapPage] initState called. Time: ${DateTime.now()}');
+
+    _fetchAndFilterEvents();
+
+    _searchController.addListener(_onSearchChanged);
 
     _getCurrentLocation().then((loc) {
-      setState(() {
-        _currentLocation = loc;
-      });
+      if (mounted) {
+        setState(() {
+          _currentLocation = loc;
+          _mapController.move(loc, _mapController.zoom);
+        });
+        debugPrint('[MapPage] Current location updated and map moved. Time: ${DateTime.now()}');
+      }
+    }).catchError((e) {
+      debugPrint('[MapPage] Error getting current location during initState: $e. Time: ${DateTime.now()}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not get current location: $e')),
+        );
+      }
     });
   }
 
-  Future<LatLng> _getCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      print('Location services are disabled.');
-      // Fallback to a default location if services are disabled
-      return LatLng(52.785805, 6.897585);
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-        print('Location permissions are denied or permanently denied.');
-        // Fallback to a default location if permissions are denied
-        return LatLng(52.785805, 6.897585);
-      }
-    }
-
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high, // Increased accuracy
-        timeLimit: const Duration(seconds: 10), // Add a time limit
-      );
-      return LatLng(position.latitude, position.longitude);
-    } catch (e) {
-      print('Error getting current location: $e');
-      // Fallback to a default location on error
-      return LatLng(52.785805, 6.897585);
+  void _onSearchChanged() {
+    if (mounted) {
+      setState(() {
+        _searchQuery = _searchController.text;
+        _applyAndSetFilteredEvents(); // Re-filter events with the new search query
+      });
     }
   }
 
+  @override
+  void dispose() {
+    _mapController.dispose();
+    _highlightTimer?.cancel();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    debugPrint('[MapPage] dispose called. Time: ${DateTime.now()}');
+    super.dispose();
+  }
+
+  // --- METHODS THAT WERE MISSING OR INCOMPLETE ---
+
+  Future<LatLng> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users to enable the location services.
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try
+        // requesting permissions again (this is also where
+        // Android's shouldShowRequestPermissionRationale
+        // documented code goes).
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    return LatLng(position.latitude, position.longitude);
+  }
+
   void _showFilterDialog() {
-    // Use temporary variables for dialog selection to avoid updating state until 'Apply' is pressed
     String tempDateFilter = _dateFilter;
     String tempCategoryFilter = _categoryFilter;
     String tempTimeFilter = _timeFilter;
 
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Filter Events'),
-          content: StatefulBuilder( // Use StatefulBuilder to update dialog content
-            builder: (context, setState) {
-              return SizedBox(
-                height: 280, // Adjust height as needed
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Date Range'),
-                      ...['All', '1 Week', '2 Weeks', '1 Month'].map((value) {
-                        return RadioListTile<String>(
-                          title: Text(value),
+      builder: (BuildContext context) {
+        return StatefulBuilder( // Use StatefulBuilder to update dialog state
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Filter Events"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Filter by Date:"),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: tempDateFilter,
+                      onChanged: (String? newValue) {
+                        setDialogState(() {
+                          tempDateFilter = newValue!;
+                        });
+                      },
+                      items: <String>['All', '1 Week', '2 Weeks', '1 Month']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
                           value: value,
-                          groupValue: tempDateFilter,
-                          onChanged: (val) {
-                            setState(() {
-                              tempDateFilter = val!;
-                            });
-                          },
+                          child: Text(value),
                         );
-                      }),
-                      const SizedBox(height: 8),
-                      const Text('Category'),
-                      // Add your actual categories here. Example:
-                      ...['All', 'Music', 'Sports', 'Food', 'Academics', 'Social', 'Workshop', 'Conference'].map((value) {
-                        return RadioListTile<String>(
-                          title: Text(value),
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text("Filter by Category:"),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: tempCategoryFilter,
+                      onChanged: (String? newValue) {
+                        setDialogState(() {
+                          tempCategoryFilter = newValue!;
+                        });
+                      },
+                      items: <String>[
+                        'All',
+                        'Sports',
+                        'Culture',
+                        'Academic',
+                        'Social',
+                        'Workshop',
+                        'Other'
+                      ].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
                           value: value,
-                          groupValue: tempCategoryFilter,
-                          onChanged: (val) {
-                            setState(() {
-                              tempCategoryFilter = val!;
-                            });
-                          },
+                          child: Text(value),
                         );
-                      }),
-                      const SizedBox(height: 8),
-                      const Text('Time of Day'),
-                      ...['All', 'Morning', 'Afternoon', 'Evening'].map((value) {
-                        return RadioListTile<String>(
-                          title: Text(value),
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text("Filter by Time of Day:"),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: tempTimeFilter,
+                      onChanged: (String? newValue) {
+                        setDialogState(() {
+                          tempTimeFilter = newValue!;
+                        });
+                      },
+                      items: <String>['All', 'Morning', 'Afternoon', 'Evening']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
                           value: value,
-                          groupValue: tempTimeFilter,
-                          onChanged: (val) {
-                            setState(() {
-                              tempTimeFilter = val!;
-                            });
-                          },
+                          child: Text(value),
                         );
-                      }),
-                    ],
-                  ),
+                      }).toList(),
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() { // Update the main page's state
-                  _dateFilter = tempDateFilter;
-                  _categoryFilter = tempCategoryFilter;
-                  _timeFilter = tempTimeFilter;
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Apply'),
-            ),
-          ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text("Reset"),
+                  onPressed: () {
+                    setDialogState(() {
+                      tempDateFilter = 'All';
+                      tempCategoryFilter = 'All';
+                      tempTimeFilter = 'All';
+                    });
+                  },
+                ),
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text("Apply"),
+                  onPressed: () {
+                    if (mounted) {
+                      setState(() {
+                        _dateFilter = tempDateFilter;
+                        _categoryFilter = tempCategoryFilter;
+                        _timeFilter = tempTimeFilter;
+                        _applyAndSetFilteredEvents(); // Apply filters
+                      });
+                    }
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  List<EventModel> _applyFilters(List<EventModel> events) {
+  // --- END OF MISSING METHODS ---
+
+  Future<void> _fetchAndFilterEvents() async {
+    try {
+      final fetchedEvents = await EventService.fetchEvents();
+      if (mounted) {
+        setState(() {
+          _allEvents = fetchedEvents;
+          _applyAndSetFilteredEvents(); // Initial filter with empty search query
+        });
+        debugPrint('[MapPage] Events fetched and initial filter applied. Total: ${_allEvents.length}. Time: ${DateTime.now()}');
+      }
+    } catch (e) {
+      debugPrint('[MapPage] Error fetching events: $e. Time: ${DateTime.now()}');
+      if (mounted) {
+        setState(() {
+          _allEvents = [];
+          _filteredEventsFuture = Future.value([]);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching events: $e')),
+        );
+      }
+    }
+  }
+
+  void _applyAndSetFilteredEvents() {
+    if (mounted) {
+      setState(() {
+        _filteredEventsFuture = compute(_applyFiltersStatic, {
+          'events': _allEvents,
+          'dateFilter': _dateFilter,
+          'categoryFilter': _categoryFilter,
+          'timeFilter': _timeFilter,
+          'searchQuery': _searchQuery,
+        });
+      });
+      debugPrint('[MapPage] Filters re-applied. Time: ${DateTime.now()}');
+    }
+  }
+
+  static List<EventModel> _applyFiltersStatic(Map<String, dynamic> args) {
+    final List<EventModel> events = args['events'];
+    final String dateFilter = args['dateFilter'];
+    final String categoryFilter = args['categoryFilter'];
+    final String timeFilter = args['timeFilter'];
+    final String searchQuery = args['searchQuery'];
+
     final now = DateTime.now();
 
-    return events.where((event) {
-      final eventDate = event.eventDate;
-      final eventTimeString = event.eventTime;
-      final category = event.category;
+    debugPrint('--- Filtering Started ---');
+    debugPrint('Current Date: $now');
+    debugPrint('Active Filters: Date="$dateFilter", Category="$categoryFilter", Time="$timeFilter", Search="$searchQuery"');
+    debugPrint('Total events received for filtering: ${events.length}');
 
-      bool keepEvent = true; // Assume we keep it unless a filter condition makes it false
+    final filteredList = events.where((event) {
+      bool keepEvent = true;
+      debugPrint('\nProcessing Event: "${event.eventName}" (ID: ${event.eventId})');
+      debugPrint('   Event Data: Date=${event.eventDate}, Category=${event.category}, Time=${event.eventTime}, Lat=${event.locationLat}, Lng=${event.locationLng}');
 
-      // --- Date Filter ---
-      if (_dateFilter != 'All') {
-        if (eventDate == null) {
-          // If a date filter is active but event has no date, exclude it
-          print('Filtering out event "${event.eventName}" by Date: eventDate is null but filter is $_dateFilter');
+      // Date Filter
+      if (dateFilter != 'All') {
+        debugPrint('   Applying Date Filter ($dateFilter)...');
+        if (event.eventDate == null) {
           keepEvent = false;
+          debugPrint('     - Date Filter: Event "${event.eventName}" removed because eventDate is null.');
         } else {
-          final diff = eventDate.difference(now).inDays;
-          if ((_dateFilter == '1 Week' && (diff < 0 || diff > 7)) ||
-              (_dateFilter == '2 Weeks' && (diff < 0 || diff > 14)) ||
-              (_dateFilter == '1 Month' && (diff < 0 || diff > 30))) {
-            print('Filtering out event "${event.eventName}" by Date: $eventDate (diff=$diff, filter: $_dateFilter)');
+          final diff = event.eventDate!.difference(now);
+          if (diff.isNegative) { // Event is in the past
+            keepEvent = false;
+            debugPrint('     - Date Filter: Event "${event.eventName}" removed because it is in the past (diff: $diff).');
+          } else {
+            final diffInDays = diff.inDays;
+            if ((dateFilter == '1 Week' && diffInDays > 7)) {
+              keepEvent = false;
+              debugPrint('     - Date Filter: Event "${event.eventName}" removed (1 Week) because diffInDays ($diffInDays) > 7.');
+            } else if ((dateFilter == '2 Weeks' && diffInDays > 14)) {
+              keepEvent = false;
+              debugPrint('     - Date Filter: Event "${event.eventName}" removed (2 Weeks) because diffInDays ($diffInDays) > 14.');
+            } else if ((dateFilter == '1 Month' && diffInDays > 30)) {
+              keepEvent = false;
+              debugPrint('     - Date Filter: Event "${event.eventName}" removed (1 Month) because diffInDays ($diffInDays) > 30.');
+            }
+          }
+        }
+      } else {
+        debugPrint('   Date Filter: "All" - Skipping.');
+      }
+
+      // Category Filter
+      if (keepEvent && categoryFilter != 'All') {
+        debugPrint('   Applying Category Filter ($categoryFilter)...');
+        if (event.category == null || event.category!.toLowerCase() != categoryFilter.toLowerCase()) {
+          keepEvent = false;
+          debugPrint('     - Category Filter: Event "${event.eventName}" removed. Category: "${event.category}". Expected: "$categoryFilter".');
+        }
+      } else if (keepEvent) {
+        debugPrint('   Category Filter: "All" - Skipping.');
+      }
+
+      // Time Filter
+      if (keepEvent && timeFilter != 'All') {
+        debugPrint('   Applying Time Filter ($timeFilter)...');
+        if (event.eventTime == null || event.eventTime!.isEmpty) {
+          keepEvent = false;
+          debugPrint('     - Time Filter: Event "${event.eventName}" removed because eventTime is null or empty.');
+        } else {
+          try {
+            final parsedTime = DateFormat('HH:mm').parse(event.eventTime!);
+            final hour = parsedTime.hour;
+            debugPrint('     - Time Filter: Event time parsed to hour: $hour.');
+            if ((timeFilter == 'Morning' && (hour < 6 || hour >= 12))) {
+              keepEvent = false;
+              debugPrint('     - Time Filter: Event "${event.eventName}" removed (Morning) because hour ($hour) not in 6-11.');
+            } else if ((timeFilter == 'Afternoon' && (hour < 12 || hour >= 18))) {
+              keepEvent = false;
+              debugPrint('     - Time Filter: Event "${event.eventName}" removed (Afternoon) because hour ($hour) not in 12-17.');
+            } else if ((timeFilter == 'Evening' && (hour < 18 || hour >= 24))) {
+              keepEvent = false;
+              debugPrint('     - Time Filter: Event "${event.eventName}" removed (Evening) because hour ($hour) not in 18-23.');
+            }
+          } catch (e) {
+            debugPrint('     - Time Filter: Error parsing event time for "${event.eventName}" in background: ${event.eventTime} - $e');
             keepEvent = false;
           }
         }
+      } else if (keepEvent) {
+        debugPrint('   Time Filter: "All" - Skipping.');
       }
 
-      // --- Category Filter ---
-      if (keepEvent && _categoryFilter != 'All') { // Only apply if not already filtered
-        if (category == null || category != _categoryFilter) {
-          print('Filtering out event "${event.eventName}" by Category: $category (filter: $_categoryFilter)');
+      // Search Filter
+      if (keepEvent && searchQuery.isNotEmpty) {
+        debugPrint('   Applying Search Filter ("$searchQuery")...');
+        final lowerCaseQuery = searchQuery.toLowerCase();
+        final String eventName = event.eventName.toLowerCase();
+        final String description = event.description.toLowerCase();
+        final String category = event.category?.toLowerCase() ?? '';
+        final String locationName = event.locationName?.toLowerCase() ?? '';
+
+        if (!eventName.contains(lowerCaseQuery) &&
+            !description.contains(lowerCaseQuery) &&
+            !category.contains(lowerCaseQuery) &&
+            !locationName.contains(lowerCaseQuery)) {
           keepEvent = false;
+          debugPrint('     - Search Filter: Event "${event.eventName}" removed because it does not match query "$searchQuery".');
         }
+      } else if (keepEvent) {
+        debugPrint('   Search Filter: Empty - Skipping.');
       }
 
-      // --- Time Filter ---
-      if (keepEvent && _timeFilter != 'All') { // Only apply if not already filtered
-        if (eventTimeString == null) {
-          // If a time filter is active but event has no time, exclude it
-          print('Filtering out event "${event.eventName}" by Time: eventTime is null but filter is $_timeFilter');
-          keepEvent = false;
-        } else {
-          try {
-            final parsedTime = DateFormat('HH:mm').parse(eventTimeString);
-            final hour = parsedTime.hour;
-            if ((_timeFilter == 'Morning' && (hour < 6 || hour >= 12)) ||
-                (_timeFilter == 'Afternoon' && (hour < 12 || hour >= 18)) ||
-                (_timeFilter == 'Evening' && (hour < 18 || hour >= 24))) {
-              print('Filtering out event "${event.eventName}" by Time: $eventTimeString (hour=$hour, filter: $_timeFilter)');
-              keepEvent = false;
-            }
-          } catch (e) {
-            print('Error parsing event time for "${event.eventName}": $eventTimeString - $e');
-            keepEvent = false; // Exclude events with unparsable time
-          }
-        }
-      }
-
-      if (!keepEvent) {
-        return false; // This event was filtered out by one of the conditions
-      }
-      return true; // This event passed all active filters
+      debugPrint('   Final decision for "${event.eventName}": ${keepEvent ? 'KEEP' : 'REMOVE'}');
+      return keepEvent;
     }).toList();
+
+    debugPrint('--- Filtering Finished ---');
+    debugPrint('Filtered events count: ${filteredList.length}');
+    return filteredList;
+  }
+
+  void _onListEventTap(EventModel event) {
+    if (event.locationLat != null && event.locationLng != null) {
+      final targetLatLng = LatLng(event.locationLat!, event.locationLng!);
+      _mapController.move(targetLatLng, _mapController.zoom);
+
+      _triggerHighlightAndScroll(event);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Location not available for ${event.eventName}')),
+      );
+    }
+  }
+
+  void _onMarkerTap(EventModel event) {
+    _triggerHighlightAndScroll(event);
+  }
+
+  void _triggerHighlightAndScroll(EventModel event) {
+    if (mounted) {
+      _highlightTimer?.cancel();
+
+      setState(() {
+        _highlightedEventId = event.eventId;
+      });
+
+      if (_panelHeightFraction < 0.3) {
+        setState(() {
+          _panelHeightFraction = 0.5;
+        });
+      }
+
+      Future.delayed(const Duration(milliseconds: 100), () {
+        final key = _eventItemKeys[event.eventId];
+        if (key != null && key.currentContext != null) {
+          Scrollable.ensureVisible(
+            key.currentContext!,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        } else {
+          debugPrint('Key for event ${event.eventName} (ID: ${event.eventId}) not found or context is null.');
+        }
+      });
+
+      _highlightTimer = Timer(const Duration(seconds: 1), () {
+        if (mounted) {
+          setState(() {
+            _highlightedEventId = null;
+          });
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    debugPrint('[MapPage] Building widget tree. Time: ${DateTime.now()}');
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -253,16 +487,20 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       body: Stack(
         children: [
           FlutterMap(
+            mapController: _mapController,
             options: MapOptions(
-              center: _currentLocation ?? LatLng(52.785805, 6.897585), // Default to a central location if _currentLocation is null
+              center: _currentLocation ?? LatLng(52.785805, 6.897585),
               zoom: 13.0,
+              onTap: (tapPos, latLng) {
+                debugPrint('Map tapped at: $latLng. Time: ${DateTime.now()}');
+              },
             ),
             children: [
               TileLayer(
                 urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 subdomains: const ['a', 'b', 'c'],
               ),
-              if (_currentLocation != null) // Only show current location marker if available
+              if (_currentLocation != null)
                 MarkerLayer(
                   markers: [
                     Marker(
@@ -274,38 +512,45 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   ],
                 ),
               FutureBuilder<List<EventModel>>(
-                future: _eventsFuture,
+                future: _filteredEventsFuture,
                 builder: (context, snapshot) {
+                  debugPrint('[Map Markers FutureBuilder] Connection state: ${snapshot.connectionState}. Time: ${DateTime.now()}');
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator(); // Show loading indicator
+                    return const SizedBox.shrink();
                   }
                   if (snapshot.hasError) {
-                    print('Error fetching events: ${snapshot.error}'); // Log error
-                    return Center(child: Text('Error loading events: ${snapshot.error}'));
+                    debugPrint('Error fetching/filtering events for map: ${snapshot.error}. Time: ${DateTime.now()}');
+                    return const SizedBox.shrink();
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const SizedBox(); // No data for map markers
+                    debugPrint('No events data for map or data is empty. Time: ${DateTime.now()}');
+                    return const SizedBox.shrink();
                   }
 
-                  // Print before and after filtering to debug list emptiness
-                  print('Total events fetched for map: ${snapshot.data!.length}');
-                  final filteredEventsForMap = _applyFilters(snapshot.data!); // Apply filters for map markers too
-                  print('Events after filtering for map: ${filteredEventsForMap.length}');
+                  final filteredEventsForMap = snapshot.data!;
+                  debugPrint('Events for map after filtering: ${filteredEventsForMap.length}. Time: ${DateTime.now()}');
 
                   return MarkerLayer(
                     markers: filteredEventsForMap
                         .map((event) {
                           final lat = event.locationLat;
                           final lng = event.locationLng;
-                          if (lat == null || lng == null) return null; // Only show marker if location is valid
+                          if (lat == null || lng == null) {
+                            debugPrint('Skipping marker for event "${event.eventName}" due to null coordinates. Time: ${DateTime.now()}');
+                            return null;
+                          }
                           return Marker(
                             point: LatLng(lat, lng),
-                            width: 36,
-                            height: 36,
-                            child: const Icon(Icons.location_pin, color: Colors.red, size: 36),
+                            width: 50,
+                            height: 60,
+                            child: EventMarker(
+                              imagePath: event.eventImageUrl ?? 'resources/img/placeholder.png',
+                              isNetworkImage: event.eventImageUrl != null,
+                              onTap: () => _onMarkerTap(event),
+                            ),
                           );
                         })
-                        .whereType<Marker>() // Remove any null markers
+                        .whereType<Marker>()
                         .toList(),
                   );
                 },
@@ -321,10 +566,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               backgroundColor: Colors.white,
               child: const Icon(Icons.my_location, color: Colors.blue),
               onPressed: () async {
+                debugPrint('[MapPage] My Location button pressed. Time: ${DateTime.now()}');
                 final loc = await _getCurrentLocation();
-                setState(() {
-                  _currentLocation = loc;
-                });
+                if (mounted) {
+                  setState(() {
+                    _currentLocation = loc;
+                    _mapController.move(loc, _mapController.zoom);
+                  });
+                }
               },
             ),
           ),
@@ -332,7 +581,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           Positioned(
             left: 12,
             right: 12,
-            // Adjust position based on panel height, leaving some padding at the bottom
             bottom: (_panelHeightFraction * screenHeight) + 12,
             child: Container(
               decoration: BoxDecoration(
@@ -340,13 +588,24 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))],
               ),
-              child: const TextField(
+              child: TextField(
+                controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Search...',
-                  suffixIcon: Icon(Icons.search),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                          },
+                        )
+                      : const Icon(Icons.search),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
+                onSubmitted: (value) {
+                  FocusScope.of(context).unfocus();
+                },
               ),
             ),
           ),
@@ -360,11 +619,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, -2))],
               ),
               child: Column(
                 children: [
                   GestureDetector(
-                    behavior: HitTestBehavior.translucent, // Allows drag on transparent parts
+                    behavior: HitTestBehavior.translucent,
                     onVerticalDragStart: (details) {
                       _dragStartY = details.globalPosition.dy;
                       _startHeightFraction = _panelHeightFraction;
@@ -372,10 +632,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     onVerticalDragUpdate: (details) {
                       double dragDelta = _dragStartY - details.globalPosition.dy;
                       double newHeight = _startHeightFraction + dragDelta / screenHeight;
-                      newHeight = newHeight.clamp(0.05, 0.9); // Clamp height between 5% and 90%
-                      setState(() {
-                        _panelHeightFraction = newHeight;
-                      });
+                      newHeight = newHeight.clamp(0.1, 0.9);
+                      if (mounted) {
+                        setState(() {
+                          _panelHeightFraction = newHeight;
+                        });
+                      }
                     },
                     child: Container(
                       width: 40,
@@ -386,25 +648,23 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   ),
                   Expanded(
                     child: FutureBuilder<List<EventModel>>(
-                      future: _eventsFuture,
+                      future: _filteredEventsFuture,
                       builder: (context, snapshot) {
+                        debugPrint('[Event List FutureBuilder] Connection state: ${snapshot.connectionState}. Time: ${DateTime.now()}');
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return const Center(child: CircularProgressIndicator());
                         }
                         if (snapshot.hasError) {
-                          print('Error loading events for list: ${snapshot.error}'); // Log error
+                          debugPrint('Error loading events for list: ${snapshot.error}. Time: ${DateTime.now()}');
                           return Center(child: Text('Error loading events: ${snapshot.error}'));
                         }
                         if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          debugPrint('No events data for list or data is empty. Time: ${DateTime.now()}');
                           return const Center(child: Text('No events found.'));
                         }
 
-                        // Apply filters to the list of events
-                        print('Current Filters in List View: Date=$_dateFilter, Category=$_categoryFilter, Time=$_timeFilter');
-                        print('Total events fetched for list: ${snapshot.data!.length}');
-                        final filteredEvents = _applyFilters(snapshot.data!);
-                        print('Events after filtering for list: ${filteredEvents.length}');
-
+                        final filteredEvents = snapshot.data!;
+                        debugPrint('Events for list after filtering: ${filteredEvents.length}. Time: ${DateTime.now()}');
 
                         if (filteredEvents.isEmpty) {
                           return const Center(child: Text('No events found matching current filters.'));
@@ -415,118 +675,137 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                           itemCount: filteredEvents.length,
                           itemBuilder: (context, index) {
                             final event = filteredEvents[index];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 50,
-                                    height: 50,
-                                    margin: const EdgeInsets.only(right: 16, top: 4),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFE0E0E0), // Placeholder for event image
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.event, color: Colors.grey), // Example icon
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // Row 1: Event Name & Category
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Row(
-                                                children: [
-                                                  Image.asset('resources/icons/event_list_1.png', width: 16, height: 16),
-                                                  const SizedBox(width: 6),
-                                                  Expanded(
-                                                    child: Text(
-                                                      event.eventName.isNotEmpty ? event.eventName : 'Unnamed Event', // Ensure non-empty display
-                                                      style: const TextStyle(fontSize: 14),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: Row(
-                                                children: [
-                                                  Image.asset('resources/icons/event_list_2.png', width: 16, height: 16),
-                                                  const SizedBox(width: 6),
-                                                  Expanded(
-                                                    child: Text(
-                                                      event.category ?? 'No Category', // Default for nullable category
-                                                      style: const TextStyle(fontSize: 14),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
+                            if (_eventItemKeys[event.eventId] == null) {
+                              _eventItemKeys[event.eventId] = GlobalKey();
+                            }
+                            final bool isHighlighted = event.eventId == _highlightedEventId;
+
+                            return Card(
+                              key: _eventItemKeys[event.eventId],
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              elevation: 2,
+                              color: isHighlighted ? Colors.grey[200] : null,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: isHighlighted
+                                    ? const BorderSide(color: Colors.blue, width: 2)
+                                    : BorderSide.none,
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  debugPrint('Tapped on event: ${event.eventName}. Time: ${DateTime.now()}');
+                                  _onListEventTap(event);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 50,
+                                        height: 50,
+                                        margin: const EdgeInsets.only(right: 16, top: 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0E0E0),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.grey[300]!, width: 1),
                                         ),
-                                        const SizedBox(height: 8),
-                                        // Row 2: Event Date & Location Name
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Row(
-                                                children: [
-                                                  Image.asset('resources/icons/event_list_3.png', width: 16, height: 16),
-                                                  const SizedBox(width: 6),
-                                                  Expanded(
-                                                    child: Text(
-                                                      event.eventDate != null
-                                                          ? DateFormat('MMM d, yyyy').format(event.eventDate!) // Format date nicely
-                                                          : 'No Date', // Default for nullable eventDate
-                                                      style: const TextStyle(fontSize: 14),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: Row(
-                                                children: [
-                                                  Image.asset('resources/icons/event_list_4.png', width: 16, height: 16),
-                                                  const SizedBox(width: 6),
-                                                  Expanded(
-                                                    child: Text(
-                                                      event.locationName ?? 'Unknown Location', // Default for nullable locationName
-                                                      style: const TextStyle(fontSize: 14),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
+                                        child: ClipOval(
+                                          child: event.eventImageUrl != null
+                                              ? Image.network(
+                                                  event.eventImageUrl!,
+                                                  width: 50,
+                                                  height: 50,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Image.asset(
+                                                      'resources/img/placeholder.png',
+                                                      width: 50,
+                                                      height: 50,
+                                                      fit: BoxFit.cover,
+                                                    );
+                                                  },
+                                                )
+                                              : Image.asset(
+                                                  'resources/img/placeholder.png',
+                                                  width: 50,
+                                                  height: 50,
+                                                  fit: BoxFit.cover,
+                                                ),
                                         ),
-                                        // Optional: Add Event Time row if needed
-                                        if (event.eventTime != null && event.eventTime!.isNotEmpty)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 8.0),
-                                            child: Row(
+                                      ),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
                                               children: [
-                                                Icon(Icons.access_time, size: 16), // Example icon for time
+                                                Image.asset('resources/icons/event_list_1.png', width: 16, height: 16),
                                                 const SizedBox(width: 6),
-                                                Text(
-                                                  event.eventTime!,
-                                                  style: const TextStyle(fontSize: 14),
-                                                  overflow: TextOverflow.ellipsis,
+                                                Expanded(
+                                                  child: Text(
+                                                    event.eventName.isNotEmpty ? event.eventName : 'Unnamed Event',
+                                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Image.asset('resources/icons/event_list_2.png', width: 16, height: 16),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    event.category ?? 'No Category',
+                                                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
                                                 ),
                                               ],
                                             ),
-                                          ),
-                                      ],
-                                    ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Image.asset('resources/icons/event_list_3.png', width: 16, height: 16),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    event.eventDate != null
+                                                        ? DateFormat('MMM d,yyyy').format(event.eventDate!)
+                                                        : 'No Date',
+                                                    style: const TextStyle(fontSize: 14),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Image.asset('resources/icons/event_list_4.png', width: 16, height: 16),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    event.locationName ?? 'Unknown Location',
+                                                    style: const TextStyle(fontSize: 14),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (event.eventTime != null && event.eventTime!.isNotEmpty)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 8.0),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      event.eventTime!,
+                                                      style: const TextStyle(fontSize: 14),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             );
                           },
@@ -539,7 +818,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
           ),
 
-          // Navbar (position based on current context)
           const Positioned(
             left: 0,
             right: 0,
@@ -550,4 +828,104 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       ),
     );
   }
+}
+
+// --- Custom Event Marker Widget ---
+class EventMarker extends StatelessWidget {
+  final String imagePath;
+  final bool isNetworkImage;
+  final VoidCallback onTap;
+
+  const EventMarker({
+    super.key,
+    required this.imagePath,
+    this.isNetworkImage = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            bottom: 0,
+            child: CustomPaint(
+              painter: _TrianglePainter(
+                color: Colors.red[700]!,
+              ),
+              child: const SizedBox(
+                width: 20,
+                height: 10,
+              ),
+            ),
+          ),
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.red[700],
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: isNetworkImage
+                  ? Image.network(
+                      imagePath,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'resources/img/placeholder.png',
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    )
+                  : Image.asset(
+                      imagePath,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ... (rest of your map_page.dart code) ...
+
+class _TrianglePainter extends CustomPainter {
+  final Color color;
+
+  _TrianglePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // --- FIX: Explicitly use ui.Paint and ui.Path for drawing operations ---
+    final paint = ui.Paint()..color = color;
+    final path = ui.Path()
+      ..moveTo(size.width / 2, size.height)
+      ..lineTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
