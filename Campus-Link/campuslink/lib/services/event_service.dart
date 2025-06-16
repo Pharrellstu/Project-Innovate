@@ -170,11 +170,15 @@ class EventService {
           .map<int>((e) => e['eventid'] as int)
           .toList();
 
-      // Then fetch full event details - FIXED: use 'inFilter' instead of 'in_'
+      // Get current user ID
+      final currentUserId = AuthGate.getCurrentUserId();
+
+      // Fetch events excluding those created by current user
       final eventsResponse = await _supabase
           .from('event')
           .select()
-          .inFilter('event_id', eventIds) // Corrected method name
+          .inFilter('event_id', eventIds)
+          .neq('eventcreatorid_uuid', currentUserId!) // Exclude user's own events
           .order('startdate', ascending: false);
 
       return (eventsResponse as List<dynamic>)

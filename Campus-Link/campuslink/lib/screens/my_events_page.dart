@@ -153,7 +153,7 @@ class _EventListItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: InkWell(
-        onTap: onPressed, // Make entire row tappable
+        onTap: onPressed,
         child: Row(
           children: [
             CircleAvatar(
@@ -177,7 +177,10 @@ class _EventListItem extends StatelessWidget {
                         : 'No date',
                   ),
                   const SizedBox(height: 4),
-                  _buildInfoRow(Icons.location_on, event.locationName ?? 'Location'),
+                  _buildInfoRow(
+                      Icons.location_on,
+                      event.locationName ?? 'Location'
+                  ),
                 ],
               ),
             ),
