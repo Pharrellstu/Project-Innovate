@@ -17,7 +17,7 @@ class _InterestingPeopleState extends State<InterestingPeople> {
   @override
   void initState() {
     super.initState();
-    fetchAccounts(); // ⬅️ Fetch data when the widget loads
+    fetchAccounts();
   }
 
   Future<void> fetchAccounts() async {
@@ -25,7 +25,7 @@ class _InterestingPeopleState extends State<InterestingPeople> {
       final response = await Supabase.instance.client
           .from('account')
           .select() // Fetches all columns
-          .order('username', ascending: false);
+          .order('accountid', ascending: false);
 
       print('Supabase response: $response');
 
@@ -42,11 +42,6 @@ class _InterestingPeopleState extends State<InterestingPeople> {
       });
     }
   }
-    // Simulate network delay
-
-    // Update the state with the fetched posts
-    // Uncomment the above line and comment the below line when using Supabase
-
 
   @override
   Widget build(BuildContext context) {
@@ -70,13 +65,8 @@ class _InterestingPeopleState extends State<InterestingPeople> {
       );
     }
 
-
-    // if (accounts.isEmpty) {
-    //   return const Center(child: Text('No accounts found'));
-    // }
-
     return RefreshIndicator(
-      onRefresh: fetchAccounts, // ⬅️ Called when user pulls down
+      onRefresh: fetchAccounts,
       child: Scaffold(
         body: Padding(
         padding: const EdgeInsets.only(top: 20.0),
@@ -92,15 +82,13 @@ class _InterestingPeopleState extends State<InterestingPeople> {
           itemBuilder: (context, index) {
             final account = accounts[index];
 
-            // if (account['accountImage'] == null) {
-            //   return const Text('hello'); // Show placeholder
-            // }
 
             return AccountCard(
-              accountImage: account['accountImage'] ?? "",
+              accountImage: account['profilepictureurl'] ?? "",
               accountName: account['username'],
               accountCountry: account["nationality"] ?? "",
               favouriteActivities: account['favouriteActivities'] ?? "",
+              accountId: account['accountid'],
             );
           },
         ),
@@ -109,50 +97,3 @@ class _InterestingPeopleState extends State<InterestingPeople> {
     );
   }
 }
-
-
-//
-// await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-// final response = [
-// {
-// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-// 'accountName': 'Joe Doe',
-// 'accountCountry': 'Netherlands',
-// 'favouriteActivities': 'Reading, Hiking, Gaming',
-//
-// },
-// {
-// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-// 'accountName': 'Joe Doe',
-// 'accountCountry': 'Netherlands',
-// 'favouriteActivities': 'Reading, Hiking, Gaming',
-// },
-//
-// {
-// 'accountImage': 'https://static.wikia.nocookie.net/zelda_gamepedia_en/images/9/9d/Link_TotK.png',
-// 'accountName': 'Joe Doe',
-// 'accountCountry': 'Netherlands',
-// 'favouriteActivities': 'Reading, Hiking, Gaming',
-// },
-// {
-// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-// 'accountName': 'Anna P.',
-// 'accountCountry': 'Germany',
-// 'favouriteActivities': 'Photography, Cycling',
-// },
-//
-// {
-// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-// 'accountName': 'Anna P.',
-// 'accountCountry': 'Germany',
-// 'favouriteActivities': 'Photography, Cycling',
-// },
-//
-// {
-// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-// 'accountName': 'Anna P.',
-// 'accountCountry': 'Germany',
-// 'favouriteActivities': 'Photography, Cycling',
-// },
-//
-// ];
