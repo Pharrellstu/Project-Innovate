@@ -12,6 +12,7 @@
   font-size: clamp(1.8rem, 4vw, 2.5rem);
   margin-bottom: clamp(1rem, 2vw, 1.5rem);
   color: var(--color-text);
+  text-align: center;
 }
 
 .loneliness-types-section p {
@@ -156,17 +157,14 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
   .loneliness-cards {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
+    grid-template-columns: 1fr; /* Stack items in a single column */
+    grid-template-rows: auto;   /* Rows will size based on content */
     gap: clamp(0.8rem, 2vw, 1rem);
   }
 
-  .loneliness-card:nth-child(4),
-  .loneliness-card:nth-child(5) {
-    grid-column: span 1;
-  }
-
   .loneliness-card {
+    grid-column: auto !important; /* Ensure cards occupy the single column, overriding desktop spans */
+    grid-row: auto !important;    /* Ensure cards flow naturally in rows, overriding desktop row placement */
     min-height: auto;
     padding: clamp(1rem, 2.5vw, 1.2rem);
     transition: all 0.3s ease;
@@ -202,7 +200,7 @@
     transform: translateY(-10px);
     max-height: 0;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease; /* Ensure all animated properties are transitioned */
     position: relative;
     top: auto;
     left: auto;
@@ -214,25 +212,33 @@
   .loneliness-card.active .card-content {
     opacity: 1;
     transform: translateY(0);
-    max-height: 300px;
+    max-height: 500px; /* Increased max-height for potentially longer content */
     padding-top: 0.5rem;
   }
 
-  /* Disable hover effects on mobile */
+  /* Disable hover effects on mobile as click is used for interaction */
   .loneliness-card:hover {
     transform: none;
     box-shadow: none;
   }
 
   .loneliness-card:hover h4 {
+    /* Explicitly reset properties affected by desktop hover */
     top: auto;
     transform: none;
-    transition: none;
   }
 
-  .loneliness-card:hover .card-content {
+  .loneliness-card:not(.active):hover .card-content {
+    /* Ensure content remains hidden on hover if card is not active */
     opacity: 0;
     transform: translateY(-10px);
-    transition: none;
+    max-height: 0;
+  }
+
+  .loneliness-card.active:hover .card-content {
+    /* If card is active, hover should not hide it */
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px; /* Keep it open */
   }
 }

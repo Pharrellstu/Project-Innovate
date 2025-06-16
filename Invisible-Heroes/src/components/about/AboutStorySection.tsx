@@ -3,16 +3,23 @@ import "./AboutStorySection.css";
 
 function AboutStorySection() {
   const [isExpanded, setIsExpanded] = useState(false);
-
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      const triggerPoint = 80; // Trigger after scrolling 80px
+    let ticking = false;
 
-      setIsExpanded(scrollPosition > triggerPoint);
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const scrollPosition = window.scrollY;
+          const triggerPoint = 80; // Trigger after scrolling 80px
+
+          setIsExpanded(scrollPosition > triggerPoint);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 

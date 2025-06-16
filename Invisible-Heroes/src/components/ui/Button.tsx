@@ -4,7 +4,7 @@ import "./Button.css";
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   variant?: "filled" | "hollow" | "rounded-hollow";
-  size?: "small" | "medium" | "large";
+  size?: "extra-small" | "small" | "medium" | "large";
   className?: string;
   icon?: React.ReactNode;
 }

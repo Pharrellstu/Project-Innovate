@@ -87,9 +87,18 @@
 
 /* Button Sizes */
 .btn--small {
-  height: clamp(45px, 6vw, 50px);
-  padding: 0 clamp(20px, 3vw, 24px);
-  font-size: clamp(0.85rem, 1vw, 0.9rem);
+  height: 40px;
+  padding: 0 20px;
+  font-size: 1rem;
+  width: 232px;
+  margin-top: 20px;
+}
+
+.btn--extra-small {
+  height: 32px;
+  padding: 0 16px;
+  font-size: 0.9rem;
+  max-width: 150px;
 }
 
 .btn--medium {

@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import Button from "../ui/Button";
 import "./Footer.css";
 
 // Footer data structure for better maintainability
@@ -99,15 +100,14 @@ function Footer() {
           <h1 className="stayUpdatedHeadin">{footerData.newsletter.title}</h1>
           <p className="stayUpdatedText">
             {footerData.newsletter.description}
-          </p>
-
-          <div className="emailInputDiv">
+          </p>          <div className="emailInputDiv">
             <input
               type="email"
               placeholder="Enter your email"
               className="emailInput"
-            />
-            <button className="subscribeButton">Subscribe</button>
+            />            <Button variant="filled" size="small">
+              Subscribe
+            </Button>
           </div>
 
           <div className="footerAlignmentDiv">
@@ -143,12 +143,12 @@ function Footer() {
                 type="text"
                 placeholder="Subject"
                 className="subjectInput"
-              />
-              <textarea
+              />              <textarea
                 className="messageInput"
                 placeholder="Message"
-              ></textarea>
-              <button className="messageButton">Send Message</button>
+              ></textarea>              <Button variant="filled" size="extra-small">
+                Send Message
+              </Button>
             </div>
           </div>          <div className="infoDivMobile">
             <h1 className="headerFooterMobile">{footerData.brandName}</h1>

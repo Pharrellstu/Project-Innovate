@@ -104,7 +104,31 @@
   background-color: transparent;
   padding-bottom: 10px;
   border: none;
-  border-bottom: white 1px solid;
+  border-bottom: #7e7e7e 1px solid;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-size: 16px;
+}
+
+.emailInput:hover {
+  border-bottom-color: white;
+  transform: translateY(-1px);
+}
+
+.emailInput:focus {
+  border-bottom-color: white;
+  border-bottom-width: 2px;
+  transform: translateY(-1px);
+}
+
+.emailInput::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+}
+
+.emailInput:focus::placeholder {
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
 }
 
 .subscribeButton {
@@ -143,8 +167,7 @@
     display: flex;
     flex-direction: column;
     margin-bottom: 20px;
-  }
-  .inputDivMobile input {
+  }  .inputDivMobile input {
     outline: none;
     font-family: Syne;
     color: white;
@@ -153,6 +176,27 @@
     margin-bottom: 1rem;
     border: none;
     border-bottom: #7e7e7e 1px solid;
+    transition: all 0.3s ease;
+    font-size: 16px;
+  }
+  .inputDivMobile input:hover {
+    border-bottom-color: white;
+    transform: translateY(-1px);
+  }
+
+  .inputDivMobile input:focus {
+    border-bottom-color: white;
+    border-bottom-width: 2px;
+    transform: translateY(-1px);
+  }
+
+  .inputDivMobile input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+  }
+
+  .inputDivMobile input:focus::placeholder {
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .inputDivMobile textarea {
@@ -167,6 +211,27 @@
     margin-bottom: 1rem;
     border: none;
     border-bottom: #7e7e7e 1px solid;
+    transition: all 0.3s ease;
+    font-size: 16px;
+  }
+  .inputDivMobile textarea:hover {
+    border-bottom-color: white;
+    transform: translateY(-1px);
+  }
+
+  .inputDivMobile textarea:focus {
+    border-bottom-color: white;
+    border-bottom-width: 2px;
+    transform: translateY(-1px);
+  }
+
+  .inputDivMobile textarea::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+  }
+
+  .inputDivMobile textarea:focus::placeholder {
+    color: rgba(255, 255, 255, 0.9);
   }
   .infoDiv {
     display: none;

@@ -3,16 +3,18 @@ import Footer from "../components/layout/Footer";
 import AboutHeroSection from "../components/about/AboutHeroSection";
 import AboutStorySection from "../components/about/AboutStorySection";
 import LonelinessTypesSection from "../components/about/LonelinessTypesSection";
+import MeetTheTeamSection from "../components/about/MeetTheTeamSection";
 import "./css/AboutPage.css";
 
 function AboutPage() {
   return (
     <>
-      <Navigation />
+      <Navigation />{" "}
       <div className="about-page-container">
         <AboutHeroSection />
         <AboutStorySection />
         <LonelinessTypesSection />
+        <MeetTheTeamSection /> {/* Use the new MeetTheTeamSection component */}
       </div>
       <Footer />
     </>

@@ -7,20 +7,18 @@ function DownloadPage() {
   return (
     <div className="downloadPage">
       <Navigation />
-      <div className="content">        <div className="left-section">
+      <div className="content">
+        {" "}
+        <div className="left-section">
           <h1>Your next great story starts here</h1>
           <p>
             New friendships, unforgettable memories, and endless possibilities
             await!
-          </p>          <Button 
-            variant="filled" 
-            size="medium"
-            className="download-button"
-          >
+          </p>{" "}
+          <Button variant="filled" size="medium" className="download-button">
             Download Now!
           </Button>
         </div>
-
         <div className="right-section">
           <img
             src="/src/assets/iphoneWithMap.jpg"
