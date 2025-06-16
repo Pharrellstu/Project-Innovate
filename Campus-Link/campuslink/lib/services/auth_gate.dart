@@ -57,26 +57,47 @@ class AuthGate extends StatelessWidget {
   // Method send SignUp request to the backend
   Future<bool> register(String email, String password) async {
     final supabase = Supabase.instance.client;
-    final response = await supabase.auth.signUp(
-      email: email,
-      password: password,
-      data: {
-        'isNewUser': true, // Custom metadata
-      },
-    );
+    try {
+      final AuthResponse response = await supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {'isNewUser': true}, // Custom metadata
+      );
 
-    final userId = response.user?.id;
+      // If signUp is successful, response.user should not be null.
+      // AuthException would be thrown for issues like user already exists.
+      if (response.user == null) {
+        print(
+          'AuthGate.register: Supabase signUp call returned a null user without an AuthException.',
+        );
+        // This is an unexpected state, treat as a generic failure.
+        throw Exception(
+          'Registration failed: No user data returned from Supabase.',
+        );
+      }
 
-    if (userId == null) {
-      return false; // Registration failed
+      // User created in auth.users. Now add to our custom 'account' table.
+      // This call might throw its own exceptions if it fails (e.g., network, database policy).
+      await userService.insertUser(response.user!.id, email);
+
+      // DO NOT call login(email, password) here.
+      // The onAuthStateChange stream in AuthGate will detect the new user.
+      // AuthForm._handleRegistration will navigate to EmailVerificationPage upon true from this method.
+      return true; // Registration process (auth user + custom table entry) successful.
+    } on AuthException catch (e) {
+      // Specific Supabase authentication error during signUp
+      // e.g., "User already registered", "Password should be at least 6 characters", etc.
+      print(
+        'AuthGate.register: AuthException during Supabase signUp: ${e.message}',
+      );
+      rethrow; // Rethrow for AuthForm to handle and display
+    } catch (e) {
+      // Other errors (e.g., from userService.insertUser, network issues not caught as AuthException)
+      print(
+        'AuthGate.register: Generic error during registration: ${e.toString()}',
+      );
+      rethrow; // Rethrow for AuthForm to handle and display
     }
-
-    // If the user is created successfully, insert into aditional values in the 'account' table
-    await userService.insertUser(userId, email);
-
-    login(email, password); // Automatically log in after registration
-
-    return true; // Registration successful
   }
 
   // Method to Login the user

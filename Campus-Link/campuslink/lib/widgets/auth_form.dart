@@ -41,7 +41,8 @@ class _AuthFormState extends State<AuthForm> {
     String email,
     String password,
     String confirmPassword,
-  ) {
+  ) async {
+    // Make the method async
     if (password != confirmPassword) {
       _showSnackBar('Passwords do not match');
       return;
@@ -51,15 +52,43 @@ class _AuthFormState extends State<AuthForm> {
       return;
     }
 
-    AuthGate()
-        .register(email, password)
-        .then((_) {
-          _showSnackBar('Registration successful!');
-        })
-        .catchError((error) {
-          String errorMessage = error.message ?? 'An unknown error occurred';
-          _showSnackBar('Registration failed: $errorMessage');
-        });
+    final authService = AuthGate();
+    try {
+      bool success = await authService.register(email, password);
+      if (mounted) {
+        // Check if widget is still in the tree
+        if (success) {
+          // Navigate to EmailVerificationPage upon successful registration initiation
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => EmailVerificationPage(
+                    email: email, // Pass the email used for registration
+                    postRegistrationContext:
+                        true, // Indicate this is for immediate post-registration
+                  ),
+            ),
+          );
+          emailController.clear();
+          passwordController.clear();
+          confirmPasswordController.clear();
+        } else {
+          // This case should ideally not be reached if AuthGate.register throws on failure
+          _showSnackBar('Registration failed. Please try again.');
+        }
+      }
+    } on AuthException catch (e) {
+      if (mounted) {
+        _showSnackBar('Registration failed: ${e.message}');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar(
+          'An unexpected registration error occurred: ${e.toString()}',
+        );
+      }
+    }
   }
 
   void _handleLogin(String email, String password) async {
