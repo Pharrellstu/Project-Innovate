@@ -15,7 +15,8 @@
   max-width: 50%;
   border-radius: clamp(2rem, 5vw, 3rem);
   margin-bottom: 0;
-  transition: flex 0.8s ease-in-out, max-width 0.8s ease-in-out, transform 0.8s ease-in-out;
+  transition: flex 0.8s ease-in-out, max-width 0.8s ease-in-out,
+    transform 0.8s ease-in-out;
   transform: scale(1);
 }
 
@@ -58,7 +59,7 @@
     max-width: 100%;
     flex: 1;
   }
-  
+
   .about-story-section img.expanded {
     max-width: 100%;
     flex: 1;

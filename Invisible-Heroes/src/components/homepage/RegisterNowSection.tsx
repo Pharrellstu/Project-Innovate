@@ -141,11 +141,7 @@ function RegisterNowSection() {
                   gradientUnits="userSpaceOnUse"
                 >
                   <stop stopColor="#094676" />
-                  <stop
-                    offset="1"
-                    stopColor="#094676"
-                    stopOpacity="0"
-                  />
+                  <stop offset="1" stopColor="#094676" stopOpacity="0" />
                 </linearGradient>
               </defs>
             </svg>

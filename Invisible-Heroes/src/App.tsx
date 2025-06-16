@@ -12,7 +12,8 @@ import ScrollToTop from "./components/ui/ScrollToTop";
 function App() {
   return (
     <Router>
-      <ScrollToTop />      <Routes>
+      <ScrollToTop />{" "}
+      <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/download" element={<DownloadPage />} />
@@ -22,7 +23,7 @@ function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
       </Routes>
     </Router>
-  ); 
+  );
 }
 
 export default App;

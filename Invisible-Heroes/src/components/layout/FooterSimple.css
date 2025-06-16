@@ -63,26 +63,26 @@
   .footerSimple {
     padding: 1.5rem 0 1rem 0;
   }
-  
+
   .footerSimpleContent {
     padding: 0 1rem;
   }
-  
+
   .footerSimpleTop {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .footerSimpleBrand {
     font-size: 1.25rem;
   }
-  
+
   .footerSimpleNav {
     gap: 1rem;
     justify-content: flex-start;
   }
-  
+
   .footerSimpleLink {
     font-size: 0.85rem;
   }

@@ -167,7 +167,8 @@
     display: flex;
     flex-direction: column;
     margin-bottom: 20px;
-  }  .inputDivMobile input {
+  }
+  .inputDivMobile input {
     outline: none;
     font-family: Syne;
     color: white;

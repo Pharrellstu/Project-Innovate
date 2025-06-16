@@ -19,9 +19,11 @@ function SignInPage() {
             <div className="form-group">
               <label htmlFor="password">Password</label>
               <input type="password" id="password" name="password" required />
-            </div>            <p className="alternative-action">
+            </div>{" "}
+            <p className="alternative-action">
               Don't have an account? <a href="/signup">Sign Up</a>
-            </p>            <Button type="submit" variant="filled" size="medium">
+            </p>{" "}
+            <Button type="submit" variant="filled" size="medium">
               Sign In
             </Button>
           </form>

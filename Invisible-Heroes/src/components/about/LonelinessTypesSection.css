@@ -158,13 +158,13 @@
 @media (max-width: 768px) {
   .loneliness-cards {
     grid-template-columns: 1fr; /* Stack items in a single column */
-    grid-template-rows: auto;   /* Rows will size based on content */
+    grid-template-rows: auto; /* Rows will size based on content */
     gap: clamp(0.8rem, 2vw, 1rem);
   }
 
   .loneliness-card {
     grid-column: auto !important; /* Ensure cards occupy the single column, overriding desktop spans */
-    grid-row: auto !important;    /* Ensure cards flow naturally in rows, overriding desktop row placement */
+    grid-row: auto !important; /* Ensure cards flow naturally in rows, overriding desktop row placement */
     min-height: auto;
     padding: clamp(1rem, 2.5vw, 1.2rem);
     transition: all 0.3s ease;

@@ -82,19 +82,19 @@
 }
 
 /* Background color rotation */
-.student-story:nth-child(3n+1) {
-  background-color: #1A1A1A;
+.student-story:nth-child(3n + 1) {
+  background-color: #1a1a1a;
   color: var(--color-white);
 }
 
-.student-story:nth-child(3n+2) {
+.student-story:nth-child(3n + 2) {
   background-color: #094676;
   color: var(--color-white);
 }
 
-.student-story:nth-child(3n+3) {
-  background-color: #FFF;
-  color: #1A1A1A;
+.student-story:nth-child(3n + 3) {
+  background-color: #fff;
+  color: #1a1a1a;
   border: 1px solid #e0e0e0;
 }
 
@@ -145,22 +145,22 @@
   .student-story {
     flex: 0 0 calc(50% - calc(var(--section-gap) / 2));
   }
-  
+
   /* Ensure white panels have dark text on medium screens */
-  .student-story:nth-child(3n+3) {
-    color: #1A1A1A !important;
+  .student-story:nth-child(3n + 3) {
+    color: #1a1a1a !important;
   }
-  
-  .student-story:nth-child(3n+3) h2 {
-    color: #1A1A1A !important;
+
+  .student-story:nth-child(3n + 3) h2 {
+    color: #1a1a1a !important;
   }
-  
-  .student-story:nth-child(3n+3) p {
-    color: #1A1A1A !important;
+
+  .student-story:nth-child(3n + 3) p {
+    color: #1a1a1a !important;
   }
-  
-  .student-story:nth-child(3n+3) .story-author p {
-    color: #1A1A1A !important;
+
+  .student-story:nth-child(3n + 3) .story-author p {
+    color: #1a1a1a !important;
   }
 }
 
@@ -171,32 +171,32 @@
     text-align: center; /* Center text within H1 and P on mobile */
     gap: 1.5rem;
   }
-  
+
   .student-stories-intro h1 {
     font-size: var(--fs-h2); /* Slightly smaller for mobile */
     margin-bottom: 0.5em; /* Add margin back when stacked */
   }
-  
+
   .student-stories-intro p {
     font-size: var(--fs-body-small);
     max-width: 100%; /* Allow full width when stacked */
   }
-  
+
   /* Ensure white panels have dark text on tablet screens */
-  .student-story:nth-child(3n+3) {
-    color: #1A1A1A !important;
+  .student-story:nth-child(3n + 3) {
+    color: #1a1a1a !important;
   }
-  
-  .student-story:nth-child(3n+3) h2 {
-    color: #1A1A1A !important;
+
+  .student-story:nth-child(3n + 3) h2 {
+    color: #1a1a1a !important;
   }
-  
-  .student-story:nth-child(3n+3) p {
-    color: #1A1A1A !important;
+
+  .student-story:nth-child(3n + 3) p {
+    color: #1a1a1a !important;
   }
-  
-  .student-story:nth-child(3n+3) .story-author p {
-    color: #1A1A1A !important;
+
+  .student-story:nth-child(3n + 3) .story-author p {
+    color: #1a1a1a !important;
   }
 }
 
@@ -206,7 +206,7 @@
   .carousel-controls {
     display: none;
   }
-  
+
   /* Enable horizontal scrolling on mobile */
   .carousel-container {
     overflow-x: auto;
@@ -217,11 +217,11 @@
     position: relative;
     scroll-snap-type: x mandatory;
   }
-  
+
   .carousel-container::-webkit-scrollbar {
     display: none;
   }
-  
+
   .student-stories-container {
     transform: none !important; /* Disable transform on mobile */
     transition: none; /* Disable transition on mobile */
@@ -230,40 +230,40 @@
     padding: 0 var(--section-padding);
     width: max-content; /* Allow container to be wider than viewport */
   }
-  
+
   .student-story {
     flex: 0 0 85vw; /* Each story takes 85% of viewport width */
     min-height: 250px;
     padding: 1.25rem;
     scroll-snap-align: start; /* Add scroll snap alignment */
   }
-  
+
   /* Ensure white panels have dark text on mobile */
-  .student-story:nth-child(3n+3) {
-    color: #1A1A1A !important;
+  .student-story:nth-child(3n + 3) {
+    color: #1a1a1a !important;
   }
-  
-  .student-story:nth-child(3n+3) h2 {
-    color: #1A1A1A !important;
+
+  .student-story:nth-child(3n + 3) h2 {
+    color: #1a1a1a !important;
   }
-  
-  .student-story:nth-child(3n+3) p {
-    color: #1A1A1A !important;
+
+  .student-story:nth-child(3n + 3) p {
+    color: #1a1a1a !important;
   }
-  
-  .student-story:nth-child(3n+3) .story-author p {
-    color: #1A1A1A !important;
+
+  .student-story:nth-child(3n + 3) .story-author p {
+    color: #1a1a1a !important;
   }
-  
+
   /* Fix margin for first and last stories */
   .student-story:first-child {
     margin-left: 0;
   }
-  
+
   .student-story:last-child {
     margin-right: var(--section-padding);
   }
-  
+
   .story-author img {
     width: 40px;
     height: 40px;

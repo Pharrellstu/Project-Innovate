@@ -16,11 +16,9 @@ function FeaturesSection() {
 
         <div className="featuresContentDiv">
           <h1 className="stepHeading">Step 1| 2| 3</h1>
-
           <div className="stepHeadingDiv">
             <h2 className="signUpHeading">Sign Up</h2>
           </div>
-
           <div className="stepTextDiv">
             <p className="stepText">
               The summit kicks off with a keynote, expert panels, and
@@ -55,7 +53,6 @@ function FeaturesSection() {
               </defs>
             </svg>
           </div>
-
           <div className="discoverEventsDiv">
             <h2>Discover Events</h2>
             <p>
@@ -64,7 +61,6 @@ function FeaturesSection() {
               investor insights highlight AI’s business potential.
             </p>
           </div>
-
           <div className="joinCommunityDiv">
             <h2>Join & Sync</h2>
             <p>
@@ -73,7 +69,6 @@ function FeaturesSection() {
               visionary keynote and final networking sessions.
             </p>
           </div>
-
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="301"
@@ -102,7 +97,6 @@ function FeaturesSection() {
               </linearGradient>
             </defs>
           </svg>
-
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="370"
@@ -128,8 +122,9 @@ function FeaturesSection() {
                 <stop offset="1" stop-color="#005FA9" stop-opacity="0" />
               </linearGradient>
             </defs>
-          </svg>          <Button 
-            variant="filled" 
+          </svg>{" "}
+          <Button
+            variant="filled"
             size="medium"
             className="getStartedButton"
             icon={
@@ -164,11 +159,9 @@ function FeaturesSection() {
 
         <div className="featuresContentDivMobile">
           <h1 className="stepHeadingMobile">Step 1|2|3</h1>
-
           <div className="stepHeadingDivMobile">
             <h2>Sign Up</h2>
           </div>
-
           <div className="checkListDivMobile">
             <ul className="checkListMobile">
               <li className="checkListItemMobile">
@@ -181,16 +174,16 @@ function FeaturesSection() {
                 &#10003; Complete your profile
               </li>
             </ul>
-          </div>          <div className="buttonDivMobile">
-            <Button 
-              variant="filled" 
+          </div>{" "}
+          <div className="buttonDivMobile">
+            <Button
+              variant="filled"
               size="medium"
               className="getStartedButtonMobile"
             >
               Get the App
             </Button>
           </div>
-
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="109"
@@ -219,7 +212,6 @@ function FeaturesSection() {
               </linearGradient>
             </defs>
           </svg>
-
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="90"

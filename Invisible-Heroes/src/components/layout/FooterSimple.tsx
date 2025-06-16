@@ -8,9 +8,9 @@ const simpleFooterData = {
     { text: "About", href: "/about" },
     { text: "Terms & conditions", href: "/terms" },
     { text: "Privacy policy", href: "/privacy" },
-    { text: "Support", href: "/support" }
+    { text: "Support", href: "/support" },
   ],
-  copyrightText: "© 2025 CampusLink. All rights reserved."
+  copyrightText: "© 2025 CampusLink. All rights reserved.",
 };
 
 function FooterSimple() {
@@ -29,7 +29,9 @@ function FooterSimple() {
             </nav>
           </div>
           <div className="footerSimpleBottom">
-            <p className="footerSimpleCopyright">{simpleFooterData.copyrightText}</p>
+            <p className="footerSimpleCopyright">
+              {simpleFooterData.copyrightText}
+            </p>
           </div>
         </div>
       </footer>

@@ -14,7 +14,7 @@ function AboutPage() {
         <AboutHeroSection />
         <AboutStorySection />
         <LonelinessTypesSection />
-        <MeetTheTeamSection /> {/* Use the new MeetTheTeamSection component */}
+        <MeetTheTeamSection />
       </div>
       <Footer />
     </>

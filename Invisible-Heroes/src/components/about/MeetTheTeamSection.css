@@ -36,8 +36,11 @@
   font-size: var(--fs-h2); /* Added font size for card subheading */
 }
 
-.team-member .text-muted { /* This class is often used for secondary text, consider its role */
-  color: var(--color-primary) !important; /* Overriding Bootstrap's default muted color */
+.team-member .text-muted {
+  /* This class is often used for secondary text, consider its role */
+  color: var(
+    --color-primary
+  ) !important; /* Overriding Bootstrap's default muted color */
   font-weight: var(--font-weight-medium);
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -89,7 +92,7 @@
   .team-member {
     margin-bottom: 2rem;
   }
-  
+
   .team-member img {
     width: 100px;
     height: 100px;

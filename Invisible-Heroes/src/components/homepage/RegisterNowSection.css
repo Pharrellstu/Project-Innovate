@@ -173,13 +173,13 @@
     padding: calc(var(--section-padding) * 0.75) 0;
     margin-bottom: 10rem;
   }
-  
+
   .register-now-intro {
     flex-direction: column; /* Stack H1 and P on mobile */
     align-items: center; /* Center them when stacked */
     text-align: center; /* Center text within H1 and P on mobile */
   }
-  
+
   .register-now-intro h1 {
     font-size: var(--fs-h2); /* Slightly smaller for mobile */
     margin-bottom: 0.5em; /* Add margin back when stacked */
@@ -189,9 +189,9 @@
     font-size: var(--fs-body-small);
     max-width: 100%; /* Allow full width when stacked */
   }
-    .register-now-timer-container {
-    padding: 3rem 2rem; 
-    min-height: auto; 
+  .register-now-timer-container {
+    padding: 3rem 2rem;
+    min-height: auto;
   }
 
   .timer-left-section {

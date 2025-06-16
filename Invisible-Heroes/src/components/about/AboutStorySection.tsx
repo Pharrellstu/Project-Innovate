@@ -35,11 +35,10 @@ function AboutStorySection() {
         <h3>Fitting In Isn't Easy</h3>
         <p>
           Moving to a new country meant navigating unfamiliar streets, new
-          rules, and a campus full of strangers. We—like so many
-          others—found ourselves sitting alone between lectures, scrolling
-          for a friendly face. It was only when we organized our first
-          casual game night that we realized how powerful a simple
-          invitation could be.
+          rules, and a campus full of strangers. We—like so many others—found
+          ourselves sitting alone between lectures, scrolling for a friendly
+          face. It was only when we organized our first casual game night that
+          we realized how powerful a simple invitation could be.
         </p>
         <p>
           Inspired by that moment, we set out to build CampusLink: an app
