@@ -25,6 +25,8 @@ class EventService {
 
     final payload = data.toMap(creatorId);
 
+    payload['eventcreatorid_uuid'] = creatorId;
+
     try {
       payload.remove('invited_user_ids');
 
@@ -120,6 +122,18 @@ class EventService {
     } catch (e) {
       print('Error fetching event: $e');
       return null;
+    }
+  }
+
+  static Future<void> deleteEvent(int eventId) async {
+    try {
+      await _supabase
+          .from('event')
+          .delete()
+          .eq('event_id', eventId);
+    } catch (e) {
+      print('Event deletion error: $e');
+      rethrow;
     }
   }
 }
