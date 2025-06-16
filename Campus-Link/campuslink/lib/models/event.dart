@@ -2,7 +2,7 @@ import 'package:flutter/material.dart'; // Keep if you use other Flutter specifi
 import 'package:intl/intl.dart';
 
 class EventModel {
-  final String id; // This must be unique!
+  final int eventId;
   final String eventName;
   final String? category;
   final String description;
@@ -16,11 +16,12 @@ class EventModel {
   final bool isPublic;
   final int? maxnumberofpeople;
   final DateTime? signUpDeadline;
+  //final bool offerBadge;
   final String creatorUserId;
   final String? eventImageUrl;
 
   EventModel({
-    required this.id,
+    required this.eventId,
     required this.eventName,
     this.category,
     required this.description,
@@ -35,6 +36,7 @@ class EventModel {
     this.maxnumberofpeople,
     this.signUpDeadline,
     this.eventImageUrl,
+    //required this.offerBadge,
     required this.creatorUserId,
   });
 
@@ -46,21 +48,22 @@ class EventModel {
       return double.tryParse(getLat ? parts[0].trim() : parts[1].trim());
     }
 
-    // You can uncomment these print statements for your own debugging if you wish
-    // print('--- Event Raw Map Data in fromMap ---');
-    // map.forEach((key, value) => print('$key: $value'));
-    // print('-------------------------------------');
+    // You can keep the print statements for your own debugging if you wish
+    // print('--- Event Raw Map Data ---');
+    // print('id: ${map['id']}');
+    // print('eventname: ${map['eventname']}'); // Corrected key
+    // print('eventcategory: ${map['eventcategory']}'); // Corrected key
+    // print('startdate: ${map['startdate']}'); // Corrected key
+    // print('locationName: ${map['locationName']}'); // Corrected key
+    // // ... print other fields
+    // print('--------------------------');
 
 
     return EventModel(
-      // --- THE CRUCIAL CHANGE IS HERE ---
-      // Use 'event_id' as the key to get the ID from the Supabase response map.
-      // Supabase returns integer IDs for serial primary keys, so convert to String.
-      id: (map['event_id'] as int?)?.toString() ?? '',
-
+      eventId: (map['event_id'] as int?) ?? 0,
       eventName: (map['eventname'] as String?) ?? 'Unnamed Event',
       category: (map['eventcategory'] as String?) ?? 'No Category',
-      description: (map['description'] as String?) ?? 'No description provided.',
+      description: (map['eventdescription'] as String?) ?? 'No description provided.',
       isOnline: (map['is_online'] as bool?) ?? false,
       eventDate: map['startdate'] != null
           ? DateTime.tryParse(map['startdate'] as String)

@@ -33,11 +33,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   final MapController _mapController = MapController();
 
-  // --- New additions for highlight and scroll ---
-  final Map<String, GlobalKey> _eventItemKeys = {}; // Map to store GlobalKeys for each event card by its ID
-  String? _highlightedEventId; // Stores the ID of the currently highlighted event
+  // --- MODIFIED: Types changed from String? to int? for _highlightedEventId ---
+  // --- MODIFIED: Key type changed from String to int for _eventItemKeys map ---
+  final Map<int, GlobalKey> _eventItemKeys = {}; // Map to store GlobalKeys for each event card by its ID
+  int? _highlightedEventId; // Stores the ID of the currently highlighted event (now int?)
   Timer? _highlightTimer; // Timer to control the highlight duration
-  // --- End new additions ---
+  // --- End modified additions ---
 
   @override
   void initState() {
@@ -193,10 +194,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     );
   }
 
-  // In lib/screens/map_page.dart
-
-// ... (rest of your imports and class definition)
-
   static List<EventModel> _applyFiltersStatic(Map<String, dynamic> args) {
     final List<EventModel> events = args['events'];
     final String dateFilter = args['dateFilter'];
@@ -212,7 +209,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
     final filteredList = events.where((event) {
       bool keepEvent = true;
-      debugPrint('\nProcessing Event: "${event.eventName}" (ID: ${event.id})');
+      debugPrint('\nProcessing Event: "${event.eventName}" (ID: ${event.eventId})'); // Use event.eventId
       debugPrint('  Event Data: Date=${event.eventDate}, Category=${event.category}, Time=${event.eventTime}, Lat=${event.locationLat}, Lng=${event.locationLng}');
 
 
@@ -323,7 +320,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       _highlightTimer?.cancel();
 
       setState(() {
-        _highlightedEventId = event.id; // Set the ID of the event to highlight
+        _highlightedEventId = event.eventId; // Use event.eventId here
       });
 
       // Ensure the panel is open enough to see the event
@@ -335,7 +332,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
       // Give Flutter a moment to build the widget with the new key and state
       Future.delayed(const Duration(milliseconds: 100), () {
-        final key = _eventItemKeys[event.id];
+        final key = _eventItemKeys[event.eventId]; // Use event.eventId here
         if (key != null && key.currentContext != null) {
           Scrollable.ensureVisible(
             key.currentContext!,
@@ -344,7 +341,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             curve: Curves.easeInOut,
           );
         } else {
-          debugPrint('Key for event ${event.eventName} (ID: ${event.id}) not found or context is null.');
+          debugPrint('Key for event ${event.eventName} (ID: ${event.eventId}) not found or context is null.'); // Use event.eventId
         }
       });
 
@@ -611,14 +608,15 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               itemCount: filteredEvents.length,
                               itemBuilder: (context, index) {
                                 final event = filteredEvents[index];
-                                // Ensure the key is created for each event using event.id
-                                if (_eventItemKeys[event.id] == null) {
-                                  _eventItemKeys[event.id] = GlobalKey();
+                                // Ensure the key is created for each event using event.eventId
+                                // MODIFIED: Use event.eventId as int key
+                                if (_eventItemKeys[event.eventId] == null) {
+                                  _eventItemKeys[event.eventId] = GlobalKey();
                                 }
-                                final bool isHighlighted = event.id == _highlightedEventId;
+                                final bool isHighlighted = event.eventId == _highlightedEventId; // Use event.eventId
 
                                 return Card(
-                                  key: _eventItemKeys[event.id], // Assign the key here
+                                  key: _eventItemKeys[event.eventId], // Use event.eventId as key
                                   margin: const EdgeInsets.symmetric(vertical: 8),
                                   elevation: 2,
                                   // Apply highlight styling for a subtle effect
@@ -793,7 +791,6 @@ class EventMarker extends StatelessWidget {
           Positioned(
             bottom: 0,
             child: CustomPaint(
-              // FIX: Explicitly use ui.Path in _TrianglePainter
               painter: _TrianglePainter(
                 color: Colors.red[700]!, // Consistent with marker body color
               ),
