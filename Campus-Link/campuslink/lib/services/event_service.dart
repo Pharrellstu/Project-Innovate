@@ -136,4 +136,53 @@ class EventService {
       rethrow;
     }
   }
+
+  // Add these methods to the EventService class
+  static Future<List<EventModel>> fetchEventsCreatedByUser(String userId) async {
+    try {
+      final response = await _supabase
+          .from('event')
+          .select()
+          .eq('eventcreatorid_uuid', userId)
+          .order('startdate', ascending: false);
+
+      return (response as List<dynamic>)
+          .map((r) => EventModel.fromMap(r as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching created events: $e');
+      return [];
+    }
+  }
+
+// Fetch events joined by a specific user (using accountId)
+  static Future<List<EventModel>> fetchEventsJoinedByUser(int accountId) async {
+    try {
+      // First get event IDs from enrollment table
+      final enrollmentResponse = await _supabase
+          .from('eventenrollment')
+          .select('eventid')
+          .eq('accountid', accountId);
+
+      if (enrollmentResponse.isEmpty) return [];
+
+      final eventIds = (enrollmentResponse as List<dynamic>)
+          .map<int>((e) => e['eventid'] as int)
+          .toList();
+
+      // Then fetch full event details - FIXED: use 'inFilter' instead of 'in_'
+      final eventsResponse = await _supabase
+          .from('event')
+          .select()
+          .inFilter('event_id', eventIds) // Corrected method name
+          .order('startdate', ascending: false);
+
+      return (eventsResponse as List<dynamic>)
+          .map((r) => EventModel.fromMap(r as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching joined events: $e');
+      return [];
+    }
+  }
 }
