@@ -1,6 +1,7 @@
 import 'package:campuslink/screens/create_event_page.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -35,7 +36,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
               onPressed: () {
                 AuthGate.logout(context);
               },
-              icon: const Icon(Icons.logout),
+              icon: SvgPicture.asset("resources/icons/signOut.svg"),
             )
             : Container(),
       ],
