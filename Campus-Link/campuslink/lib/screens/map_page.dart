@@ -7,8 +7,8 @@ import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:ui' as ui; // Explicitly import dart:ui and alias it
-import 'dart:async'; // Required for Timer
+import 'dart:ui' as ui;
+import 'dart:async';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -23,7 +23,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   late double _dragStartY;
   late double _startHeightFraction;
 
-  late Future<List<EventModel>> _eventsFuture;
+  // We no longer need _eventsFuture, as we'll store raw events directly
+  // late Future<List<EventModel>> _eventsFuture;
+
+  // --- NEW: Store raw fetched events ---
+  List<EventModel> _allEvents = [];
+  // --- NEW: Future for filtered events, will be computed on demand ---
+  Future<List<EventModel>>? _filteredEventsFuture;
+
 
   LatLng? _currentLocation;
 
@@ -33,18 +40,17 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   final MapController _mapController = MapController();
 
-  // --- MODIFIED: Types changed from String? to int? for _highlightedEventId ---
-  // --- MODIFIED: Key type changed from String to int for _eventItemKeys map ---
-  final Map<int, GlobalKey> _eventItemKeys = {}; // Map to store GlobalKeys for each event card by its ID
-  int? _highlightedEventId; // Stores the ID of the currently highlighted event (now int?)
-  Timer? _highlightTimer; // Timer to control the highlight duration
-  // --- End modified additions ---
+  final Map<int, GlobalKey> _eventItemKeys = {};
+  int? _highlightedEventId;
+  Timer? _highlightTimer;
 
   @override
   void initState() {
     super.initState();
     debugPrint('[MapPage] initState called. Time: ${DateTime.now()}');
-    _eventsFuture = EventService.fetchEvents();
+
+    // --- MODIFIED: Initial data fetch and filtering ---
+    _fetchAndFilterEvents(); // Call a new method to handle fetching and initial filtering
 
     _getCurrentLocation().then((loc) {
       if (mounted) {
@@ -64,10 +70,57 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     });
   }
 
+  // --- NEW METHOD: To fetch raw events and then apply filters ---
+  Future<void> _fetchAndFilterEvents() async {
+    try {
+      final fetchedEvents = await EventService.fetchEvents();
+      if (mounted) {
+        setState(() {
+          _allEvents = fetchedEvents; // Store the raw events
+          // Trigger initial filtering
+          _filteredEventsFuture = compute(_applyFiltersStatic, {
+            'events': _allEvents,
+            'dateFilter': _dateFilter,
+            'categoryFilter': _categoryFilter,
+            'timeFilter': _timeFilter,
+          });
+        });
+        debugPrint('[MapPage] Events fetched and initial filter applied. Total: ${_allEvents.length}. Time: ${DateTime.now()}');
+      }
+    } catch (e) {
+      debugPrint('[MapPage] Error fetching events: $e. Time: ${DateTime.now()}');
+      if (mounted) {
+        setState(() {
+          _allEvents = []; // Clear events on error
+          _filteredEventsFuture = Future.value([]); // Set future to empty list on error
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching events: $e')),
+        );
+      }
+    }
+  }
+
+  // --- NEW METHOD: To re-apply filters (called when filter settings change) ---
+  void _applyAndSetFilteredEvents() {
+    if (mounted) {
+      setState(() {
+        _filteredEventsFuture = compute(_applyFiltersStatic, {
+          'events': _allEvents, // Use the stored raw events
+          'dateFilter': _dateFilter,
+          'categoryFilter': _categoryFilter,
+          'timeFilter': _timeFilter,
+        });
+      });
+      debugPrint('[MapPage] Filters re-applied. Time: ${DateTime.now()}');
+    }
+  }
+
+
   @override
   void dispose() {
     _mapController.dispose();
-    _highlightTimer?.cancel(); // Cancel the timer to prevent memory leaks
+    _highlightTimer?.cancel();
     debugPrint('[MapPage] dispose called. Time: ${DateTime.now()}');
     super.dispose();
   }
@@ -180,7 +233,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     _dateFilter = tempDateFilter;
                     _categoryFilter = tempCategoryFilter;
                     _timeFilter = tempTimeFilter;
-                    _eventsFuture = EventService.fetchEvents(); // Re-fetch to apply new filters
+                    // --- MODIFIED: Only re-apply filters, don't re-fetch raw data ---
+                    _applyAndSetFilteredEvents();
                     debugPrint('[MapPage] Filters applied and events future reset. Time: ${DateTime.now()}');
                   });
                 }
@@ -194,7 +248,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     );
   }
 
+  // This method remains static and runs in an isolate
   static List<EventModel> _applyFiltersStatic(Map<String, dynamic> args) {
+    // ... (Your _applyFiltersStatic method remains unchanged) ...
     final List<EventModel> events = args['events'];
     final String dateFilter = args['dateFilter'];
     final String categoryFilter = args['categoryFilter'];
@@ -293,13 +349,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     return filteredList;
   }
 
-  // --- New method to handle list item tap and move map ---
   void _onListEventTap(EventModel event) {
     if (event.locationLat != null && event.locationLng != null) {
       final targetLatLng = LatLng(event.locationLat!, event.locationLng!);
-      _mapController.move(targetLatLng, _mapController.zoom); // Move map to event location
+      _mapController.move(targetLatLng, _mapController.zoom);
 
-      // Also trigger the highlight and potential scroll if the panel isn't open
       _triggerHighlightAndScroll(event);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -308,54 +362,47 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     }
   }
 
-  // New method to handle marker tap, scroll to list item, and highlight
   void _onMarkerTap(EventModel event) {
     _triggerHighlightAndScroll(event);
   }
 
-  // Helper method to consolidate highlight and scroll logic
   void _triggerHighlightAndScroll(EventModel event) {
     if (mounted) {
-      // Cancel any ongoing highlight timer to prevent conflicts
       _highlightTimer?.cancel();
 
       setState(() {
-        _highlightedEventId = event.eventId; // Use event.eventId here
+        _highlightedEventId = event.eventId;
       });
 
-      // Ensure the panel is open enough to see the event
-      if (_panelHeightFraction < 0.3) { // Adjust this threshold as needed
+      if (_panelHeightFraction < 0.3) {
         setState(() {
-          _panelHeightFraction = 0.5; // Open to halfway
+          _panelHeightFraction = 0.5;
         });
       }
 
-      // Give Flutter a moment to build the widget with the new key and state
       Future.delayed(const Duration(milliseconds: 100), () {
-        final key = _eventItemKeys[event.eventId]; // Use event.eventId here
+        final key = _eventItemKeys[event.eventId];
         if (key != null && key.currentContext != null) {
           Scrollable.ensureVisible(
             key.currentContext!,
-            alignment: 0.5, // Center the item in the viewport
+            alignment: 0.5,
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInOut,
           );
         } else {
-          debugPrint('Key for event ${event.eventName} (ID: ${event.eventId}) not found or context is null.'); // Use event.eventId
+          debugPrint('Key for event ${event.eventName} (ID: ${event.eventId}) not found or context is null.');
         }
       });
 
-      // Start a timer to clear the highlight after a specific duration (e.g., 1 second)
-      _highlightTimer = Timer(const Duration(seconds: 1), () { // Highlight for 1 second
+      _highlightTimer = Timer(const Duration(seconds: 1), () {
         if (mounted) {
           setState(() {
-            _highlightedEventId = null; // Clear the highlighted ID
+            _highlightedEventId = null;
           });
         }
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -409,15 +456,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     ),
                   ],
                 ),
+              // --- MODIFIED: Use the _filteredEventsFuture for map markers ---
               FutureBuilder<List<EventModel>>(
-                future: _eventsFuture,
+                future: _filteredEventsFuture, // Now watching the filtered future
                 builder: (context, snapshot) {
                   debugPrint('[Map Markers FutureBuilder] Connection state: ${snapshot.connectionState}. Time: ${DateTime.now()}');
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const SizedBox.shrink();
                   }
                   if (snapshot.hasError) {
-                    debugPrint('Error fetching events for map: ${snapshot.error}. Time: ${DateTime.now()}');
+                    debugPrint('Error fetching/filtering events for map: ${snapshot.error}. Time: ${DateTime.now()}');
                     return const SizedBox.shrink();
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -425,55 +473,31 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     return const SizedBox.shrink();
                   }
 
-                  final allEvents = snapshot.data!;
-                  return FutureBuilder<List<EventModel>>(
-                    future: compute(_applyFiltersStatic, {
-                      'events': allEvents,
-                      'dateFilter': _dateFilter,
-                      'categoryFilter': _categoryFilter,
-                      'timeFilter': _timeFilter,
-                    }),
-                    builder: (context, filteredSnapshot) {
-                      debugPrint('[Map Markers Filtered FutureBuilder] Connection state: ${filteredSnapshot.connectionState}. Time: ${DateTime.now()}');
-                      if (filteredSnapshot.connectionState == ConnectionState.waiting) {
-                        return const SizedBox.shrink();
-                      }
-                      if (filteredSnapshot.hasError) {
-                        debugPrint('Error filtering events for map in background: ${filteredSnapshot.error}. Time: ${DateTime.now()}');
-                        return const SizedBox.shrink();
-                      }
-                      if (!filteredSnapshot.hasData || filteredSnapshot.data!.isEmpty) {
-                        debugPrint('No filtered events data for map. Time: ${DateTime.now()}');
-                        return const SizedBox.shrink();
-                      }
+                  final filteredEventsForMap = snapshot.data!;
+                  debugPrint('Events for map after filtering: ${filteredEventsForMap.length}. Time: ${DateTime.now()}');
 
-                      final filteredEventsForMap = filteredSnapshot.data!;
-                      debugPrint('Events after background filtering for map: ${filteredEventsForMap.length}. Time: ${DateTime.now()}');
-
-                      return MarkerLayer(
-                        markers: filteredEventsForMap
-                            .map((event) {
-                              final lat = event.locationLat;
-                              final lng = event.locationLng;
-                              if (lat == null || lng == null) {
-                                debugPrint('Skipping marker for event "${event.eventName}" due to null coordinates. Time: ${DateTime.now()}');
-                                return null;
-                              }
-                              return Marker(
-                                point: LatLng(lat, lng),
-                                width: 50,
-                                height: 60,
-                                child: EventMarker(
-                                  imagePath: event.eventImageUrl ?? 'resources/img/placeholder.png',
-                                  isNetworkImage: event.eventImageUrl != null,
-                                  onTap: () => _onMarkerTap(event),
-                                ),
-                              );
-                            })
-                            .whereType<Marker>()
-                            .toList(),
-                      );
-                    },
+                  return MarkerLayer(
+                    markers: filteredEventsForMap
+                        .map((event) {
+                          final lat = event.locationLat;
+                          final lng = event.locationLng;
+                          if (lat == null || lng == null) {
+                            debugPrint('Skipping marker for event "${event.eventName}" due to null coordinates. Time: ${DateTime.now()}');
+                            return null;
+                          }
+                          return Marker(
+                            point: LatLng(lat, lng),
+                            width: 50,
+                            height: 60,
+                            child: EventMarker(
+                              imagePath: event.eventImageUrl ?? 'resources/img/placeholder.png',
+                              isNetworkImage: event.eventImageUrl != null,
+                              onTap: () => _onMarkerTap(event),
+                            ),
+                          );
+                        })
+                        .whereType<Marker>()
+                        .toList(),
                   );
                 },
               ),
@@ -558,8 +582,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     ),
                   ),
                   Expanded(
+                    // --- MODIFIED: Use the _filteredEventsFuture for the list ---
                     child: FutureBuilder<List<EventModel>>(
-                      future: _eventsFuture,
+                      future: _filteredEventsFuture, // Now watching the filtered future
                       builder: (context, snapshot) {
                         debugPrint('[Event List FutureBuilder] Connection state: ${snapshot.connectionState}. Time: ${DateTime.now()}');
                         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -574,177 +599,150 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                           return const Center(child: Text('No events found.'));
                         }
 
-                        final allEvents = snapshot.data!;
-                        return FutureBuilder<List<EventModel>>(
-                          future: compute(_applyFiltersStatic, {
-                            'events': allEvents,
-                            'dateFilter': _dateFilter,
-                            'categoryFilter': _categoryFilter,
-                            'timeFilter': _timeFilter,
-                          }),
-                          builder: (context, filteredSnapshot) {
-                            debugPrint('[Event List Filtered FutureBuilder] Connection state: ${filteredSnapshot.connectionState}. Time: ${DateTime.now()}');
-                            if (filteredSnapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
-                            }
-                            if (filteredSnapshot.hasError) {
-                              debugPrint('Error filtering events for list in background: ${filteredSnapshot.error}. Time: ${DateTime.now()}');
-                              return Center(child: Text('Error filtering events: ${filteredSnapshot.error}'));
-                            }
-                            if (!filteredSnapshot.hasData || filteredSnapshot.data!.isEmpty) {
-                              debugPrint('No filtered events data for list. Time: ${DateTime.now()}');
-                              return const Center(child: Text('No events found matching current filters.'));
-                            }
+                        final filteredEvents = snapshot.data!;
+                        debugPrint('Events for list after filtering: ${filteredEvents.length}. Time: ${DateTime.now()}');
 
-                            final filteredEvents = filteredSnapshot.data!;
-                            debugPrint('Events after background filtering for list: ${filteredEvents.length}. Time: ${DateTime.now()}');
+                        if (filteredEvents.isEmpty) {
+                          return const Center(child: Text('No events found matching current filters.'));
+                        }
 
-                            if (filteredEvents.isEmpty) {
-                              return const Center(child: Text('No events found matching current filters.'));
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: filteredEvents.length,
+                          itemBuilder: (context, index) {
+                            final event = filteredEvents[index];
+                            if (_eventItemKeys[event.eventId] == null) {
+                              _eventItemKeys[event.eventId] = GlobalKey();
                             }
+                            final bool isHighlighted = event.eventId == _highlightedEventId;
 
-                            return ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              itemCount: filteredEvents.length,
-                              itemBuilder: (context, index) {
-                                final event = filteredEvents[index];
-                                // Ensure the key is created for each event using event.eventId
-                                // MODIFIED: Use event.eventId as int key
-                                if (_eventItemKeys[event.eventId] == null) {
-                                  _eventItemKeys[event.eventId] = GlobalKey();
-                                }
-                                final bool isHighlighted = event.eventId == _highlightedEventId; // Use event.eventId
-
-                                return Card(
-                                  key: _eventItemKeys[event.eventId], // Use event.eventId as key
-                                  margin: const EdgeInsets.symmetric(vertical: 8),
-                                  elevation: 2,
-                                  // Apply highlight styling for a subtle effect
-                                  color: isHighlighted ? Colors.grey[200] : null, // Soft white/grey highlight
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    side: isHighlighted
-                                        ? const BorderSide(color: Colors.blue, width: 2) // Blue border for highlight
-                                        : BorderSide.none,
-                                  ),
-                                  child: InkWell(
-                                    onTap: () {
-                                      debugPrint('Tapped on event: ${event.eventName}. Time: ${DateTime.now()}');
-                                      _onListEventTap(event);
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Container(
-                                            width: 50,
-                                            height: 50,
-                                            margin: const EdgeInsets.only(right: 16, top: 4),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFE0E0E0),
-                                              shape: BoxShape.circle,
-                                              border: Border.all(color: Colors.grey[300]!, width: 1),
-                                            ),
-                                            child: ClipOval(
-                                              child: event.eventImageUrl != null
-                                                  ? Image.network(
-                                                      event.eventImageUrl!,
+                            return Card(
+                              key: _eventItemKeys[event.eventId],
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              elevation: 2,
+                              color: isHighlighted ? Colors.grey[200] : null,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: isHighlighted
+                                    ? const BorderSide(color: Colors.blue, width: 2)
+                                    : BorderSide.none,
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  debugPrint('Tapped on event: ${event.eventName}. Time: ${DateTime.now()}');
+                                  _onListEventTap(event);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 50,
+                                        height: 50,
+                                        margin: const EdgeInsets.only(right: 16, top: 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0E0E0),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.grey[300]!, width: 1),
+                                        ),
+                                        child: ClipOval(
+                                          child: event.eventImageUrl != null
+                                              ? Image.network(
+                                                  event.eventImageUrl!,
+                                                  width: 50,
+                                                  height: 50,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Image.asset(
+                                                      'resources/img/placeholder.png',
                                                       width: 50,
                                                       height: 50,
                                                       fit: BoxFit.cover,
-                                                      errorBuilder: (context, error, stackTrace) {
-                                                        return Image.asset(
-                                                          'resources/img/placeholder.png', // Fallback image
-                                                          width: 50,
-                                                          height: 50,
-                                                          fit: BoxFit.cover,
-                                                        );
-                                                      },
-                                                    )
-                                                  : Image.asset(
-                                                      'resources/img/placeholder.png', // Default image if no URL
-                                                      width: 50,
-                                                      height: 50,
-                                                      fit: BoxFit.cover,
-                                                    ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                    );
+                                                  },
+                                                )
+                                              : Image.asset(
+                                                  'resources/img/placeholder.png',
+                                                  width: 50,
+                                                  height: 50,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
                                               children: [
-                                                Row(
-                                                  children: [
-                                                    Image.asset('resources/icons/event_list_1.png', width: 16, height: 16),
-                                                    const SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: Text(
-                                                        event.eventName.isNotEmpty ? event.eventName : 'Unnamed Event',
-                                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                    Image.asset('resources/icons/event_list_2.png', width: 16, height: 16),
-                                                    const SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: Text(
-                                                        event.category ?? 'No Category',
-                                                        style: const TextStyle(fontSize: 14, color: Colors.grey),
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Row(
-                                                  children: [
-                                                    Image.asset('resources/icons/event_list_3.png', width: 16, height: 16),
-                                                    const SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: Text(
-                                                        event.eventDate != null
-                                                            ? DateFormat('MMM d,yyyy').format(event.eventDate!)
-                                                            : 'No Date',
-                                                        style: const TextStyle(fontSize: 14),
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                    Image.asset('resources/icons/event_list_4.png', width: 16, height: 16),
-                                                    const SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: Text(
-                                                        event.locationName ?? 'Unknown Location',
-                                                        style: const TextStyle(fontSize: 14),
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                if (event.eventTime != null && event.eventTime!.isNotEmpty)
-                                                  Padding(
-                                                    padding: const EdgeInsets.only(top: 8.0),
-                                                    child: Row(
-                                                      children: [
-                                                        const Icon(Icons.access_time, size: 16, color: Colors.grey),
-                                                        const SizedBox(width: 6),
-                                                        Text(
-                                                          event.eventTime!,
-                                                          style: const TextStyle(fontSize: 14),
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                      ],
-                                                    ),
+                                                Image.asset('resources/icons/event_list_1.png', width: 16, height: 16),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    event.eventName.isNotEmpty ? event.eventName : 'Unnamed Event',
+                                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
+                                                ),
+                                                Image.asset('resources/icons/event_list_2.png', width: 16, height: 16),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    event.category ?? 'No Category',
+                                                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
                                               ],
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Image.asset('resources/icons/event_list_3.png', width: 16, height: 16),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    event.eventDate != null
+                                                        ? DateFormat('MMM d,yyyy').format(event.eventDate!)
+                                                        : 'No Date',
+                                                    style: const TextStyle(fontSize: 14),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Image.asset('resources/icons/event_list_4.png', width: 16, height: 16),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    event.locationName ?? 'Unknown Location',
+                                                    style: const TextStyle(fontSize: 14),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (event.eventTime != null && event.eventTime!.isNotEmpty)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 8.0),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      event.eventTime!,
+                                                      style: const TextStyle(fontSize: 14),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                );
-                              },
+                                ),
+                              ),
                             );
                           },
                         );
@@ -770,14 +768,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
 // --- Custom Event Marker Widget ---
 class EventMarker extends StatelessWidget {
-  final String imagePath; // This can now be a network URL or an asset path
-  final bool isNetworkImage; // New parameter to differentiate image source
+  final String imagePath;
+  final bool isNetworkImage;
   final VoidCallback onTap;
 
   const EventMarker({
     super.key,
     required this.imagePath,
-    this.isNetworkImage = false, // Default to false (asset image)
+    this.isNetworkImage = false,
     required this.onTap,
   });
 
@@ -792,11 +790,11 @@ class EventMarker extends StatelessWidget {
             bottom: 0,
             child: CustomPaint(
               painter: _TrianglePainter(
-                color: Colors.red[700]!, // Consistent with marker body color
+                color: Colors.red[700]!,
               ),
               child: const SizedBox(
-                width: 20, // Width of the triangle base
-                height: 10, // Height of the triangle
+                width: 20,
+                height: 10,
               ),
             ),
           ),
@@ -804,7 +802,7 @@ class EventMarker extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: Colors.red[700], // Marker body color
+              color: Colors.red[700],
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
               boxShadow: const [
@@ -824,7 +822,7 @@ class EventMarker extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Image.asset(
-                          'resources/img/placeholder.png', // Fallback asset
+                          'resources/img/placeholder.png',
                           width: 50,
                           height: 50,
                           fit: BoxFit.cover,
@@ -838,7 +836,7 @@ class EventMarker extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Image.asset(
-                          'resources/img/placeholder.png', // Fallback asset if asset path is wrong
+                          'resources/img/placeholder.png',
                           width: 50,
                           height: 50,
                           fit: BoxFit.cover,
@@ -853,7 +851,6 @@ class EventMarker extends StatelessWidget {
   }
 }
 
-// --- Triangle Painter for the marker 'tail' ---
 class _TrianglePainter extends CustomPainter {
   final Color color;
 
@@ -861,24 +858,21 @@ class _TrianglePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = ui.Paint() // FIX: Use ui.Paint to be explicit
+    final paint = ui.Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
-    ui.Path path = ui.Path(); // FIX: Explicitly use ui.Path()
+    ui.Path path = ui.Path();
 
-    // These coordinates are relative to the 'size' of the CustomPaint widget,
-    // which is used to draw the triangle shape.
-    path.moveTo(size.width / 2, size.height); // Bottom center
-    path.lineTo(0, 0); // Top-left corner
-    path.lineTo(size.width, 0); // Top-right corner
+    path.moveTo(size.width / 2, size.height);
+    path.lineTo(0, 0);
+    path.lineTo(size.width, 0);
     path.close();
     canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    // Only repaint if the color changes (or other properties if added)
     return oldDelegate is _TrianglePainter && oldDelegate.color != color;
   }
 }
