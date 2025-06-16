@@ -1,3 +1,4 @@
+import 'package:campuslink/screens/my_events_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/profile_service.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
@@ -276,13 +277,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(width: 10), // Spacing between buttons
                 Expanded(
                   child: ElevatedButton.icon(
-                    icon: const Icon(Icons.mail_outline),
-                    label: const Text('Event Invitations'),
+                    icon: const Icon(Icons.event_note_sharp),
+                    label: const Text('My events'),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const EventInvitationsPage(),
+                          builder: (context) => const MyEventsPage(),
                         ),
                       );
                     },
