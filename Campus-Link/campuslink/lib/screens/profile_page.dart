@@ -19,7 +19,7 @@ class _ProfilePageState extends State<ProfilePage> {
   ProfileData? _profileData;
   List<String> _followingImages = [];
   List<String> _badgeImages = [];
-  
+
   bool _isLoading = true;
   bool _isOwnProfile = false;
   int? _loggedInAccountId;
@@ -50,19 +50,28 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_isOwnProfile && widget.viewedAccountId == null) {
       _profileData = await ProfileService.fetchCurrentLoggedInUserProfile();
     } else {
-      _profileData = await ProfileService.fetchProfileByAccountId(accountIdToFetch);
+      _profileData = await ProfileService.fetchProfileByAccountId(
+        accountIdToFetch,
+      );
     }
 
     if (_profileData != null) {
       // Fetch related data only if profile was loaded successfully
-      _followingImages = await ProfileService.fetchFollowingProfilePictures(accountIdToFetch);
+      _followingImages = await ProfileService.fetchFollowingProfilePictures(
+        accountIdToFetch,
+      );
       _badgeImages = await ProfileService.fetchBadgeImageUrls(accountIdToFetch);
 
       if (!_isOwnProfile && _loggedInAccountId != null) {
-        _isCurrentlyFollowing = await ProfileService.isFollowing(_loggedInAccountId!, accountIdToFetch);
+        _isCurrentlyFollowing = await ProfileService.isFollowing(
+          _loggedInAccountId!,
+          accountIdToFetch,
+        );
       }
     } else {
-      log('ProfilePage: Failed to load profile data for account ID $accountIdToFetch');
+      log(
+        'ProfilePage: Failed to load profile data for account ID $accountIdToFetch',
+      );
       // Optionally show an error message to the user
     }
 
@@ -72,14 +81,21 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _handleFollowToggle() async {
-    if (_loggedInAccountId == null || _profileData == null || _isOwnProfile) return;
+    if (_loggedInAccountId == null || _profileData == null || _isOwnProfile)
+      return;
 
     setState(() => _isLoading = true); // Show loading for follow action
     bool success;
     if (_isCurrentlyFollowing) {
-      success = await ProfileService.unfollowUser(_loggedInAccountId!, _profileData!.id);
+      success = await ProfileService.unfollowUser(
+        _loggedInAccountId!,
+        _profileData!.id,
+      );
     } else {
-      success = await ProfileService.followUser(_loggedInAccountId!, _profileData!.id);
+      success = await ProfileService.followUser(
+        _loggedInAccountId!,
+        _profileData!.id,
+      );
     }
 
     if (success) {
@@ -94,7 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     }
     if (mounted) {
-       setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
     }
   }
 
@@ -103,7 +119,8 @@ class _ProfilePageState extends State<ProfilePage> {
       context,
       MaterialPageRoute(builder: (context) => const EditProfilePage()),
     );
-    if (result == true && mounted) { // Check if update was successful
+    if (result == true && mounted) {
+      // Check if update was successful
       _initializeProfilePage(); // Refresh profile data
     }
   }
@@ -113,20 +130,30 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: TopBar(title: _isOwnProfile ? 'My Profile' : (_profileData?.name ?? 'Profile')),
+        child: TopBar(
+          title:
+              _isOwnProfile ? 'My Profile' : (_profileData?.name ?? 'Profile'),
+          isCreateBtnVisible: false,
+          isLogoutBtnVisible: true,
+        ),
       ),
       bottomNavigationBar: const NavBar(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _profileData == null
-              ? const Center(child: Text('Could not load profile. Please try again.'))
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _profileData == null
+              ? const Center(
+                child: Text('Could not load profile. Please try again.'),
+              )
               : _buildProfileContent(),
     );
   }
 
   Widget _buildProfileContent() {
     // Default image if URL is empty or null
-    ImageProvider profileImage = const AssetImage('resources/img/profile-icon-9.png'); // Ensure this asset exists
+    ImageProvider profileImage = const AssetImage(
+      'resources/img/profile-icon-9.png',
+    ); // Ensure this asset exists
     if (_profileData!.profilePictureUrl.isNotEmpty) {
       // Try to load network image, fall back to default on error
       profileImage = NetworkImage(_profileData!.profilePictureUrl);
@@ -146,42 +173,69 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     Text(
                       _profileData!.name,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    if (_profileData!.nationality != null && _profileData!.nationality!.isNotEmpty) ...[
+                    if (_profileData!.nationality != null &&
+                        _profileData!.nationality!.isNotEmpty) ...[
                       Text(
                         'Nationality: ${_profileData!.nationality!}',
-                        style: const TextStyle(fontSize: 16, color: Colors.black54),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black54,
+                        ),
                       ),
                       const SizedBox(height: 4),
                     ],
                     if (_profileData!.age != null) ...[
                       Text(
                         'Age: ${_profileData!.age}',
-                        style: const TextStyle(fontSize: 16, color: Colors.black54),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black54,
+                        ),
                       ),
                     ],
                   ],
                 ),
               ),
               const SizedBox(width: 8), // Reduced from 16
-              ClipRRect( // Changed from CircleAvatar to ClipRRect
-                borderRadius: BorderRadius.circular(12.0), // Adjust radius for less roundness
+              ClipRRect(
+                // Changed from CircleAvatar to ClipRRect
+                borderRadius: BorderRadius.circular(
+                  12.0,
+                ), // Adjust radius for less roundness
                 child: Image(
-                  image: profileImage, 
+                  image: profileImage,
                   width: 68, // Reduced from 80
                   height: 68, // Reduced from 80
                   fit: BoxFit.cover,
-                  errorBuilder: (_profileData!.profilePictureUrl.isNotEmpty && profileImage is NetworkImage) 
-                    ? (context, error, stackTrace) {
-                        log('Error loading profile image: ${_profileData!.profilePictureUrl}, $error');
-                        // Fallback to default asset if network image fails
-                        return Image.asset('resources/img/profile-icon-9.png', width: 68, height: 68, fit: BoxFit.cover); // Adjusted size
-                      }
-                    : null,
+                  errorBuilder:
+                      (_profileData!.profilePictureUrl.isNotEmpty &&
+                              profileImage is NetworkImage)
+                          ? (context, error, stackTrace) {
+                            log(
+                              'Error loading profile image: ${_profileData!.profilePictureUrl}, $error',
+                            );
+                            // Fallback to default asset if network image fails
+                            return Image.asset(
+                              'resources/img/profile-icon-9.png',
+                              width: 68,
+                              height: 68,
+                              fit: BoxFit.cover,
+                            ); // Adjusted size
+                          }
+                          : null,
                   // If profilePictureUrl is empty, show default icon within ClipRRect
-                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  frameBuilder: (
+                    context,
+                    child,
+                    frame,
+                    wasSynchronouslyLoaded,
+                  ) {
                     if (wasSynchronouslyLoaded) return child;
                     return AnimatedOpacity(
                       opacity: frame == null ? 0 : 1,
@@ -195,7 +249,11 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 16),
-          Text(_profileData!.bio.isNotEmpty ? _profileData!.bio : 'No bio available.'),
+          Text(
+            _profileData!.bio.isNotEmpty
+                ? _profileData!.bio
+                : 'No bio available.',
+          ),
           const SizedBox(height: 24),
           if (_isOwnProfile)
             Row(
@@ -209,7 +267,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 45),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
@@ -221,29 +281,39 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const EventInvitationsPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const EventInvitationsPage(),
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue, 
+                      backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 45),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
               ],
             )
-          else if (_loggedInAccountId != null) // Show follow/unfollow only if a user is logged in
+          else if (_loggedInAccountId !=
+              null) // Show follow/unfollow only if a user is logged in
             ElevatedButton.icon(
-              icon: Icon(_isCurrentlyFollowing ? Icons.person_remove : Icons.person_add),
+              icon: Icon(
+                _isCurrentlyFollowing ? Icons.person_remove : Icons.person_add,
+              ),
               label: Text(_isCurrentlyFollowing ? 'Unfollow' : 'Follow'),
               onPressed: _handleFollowToggle,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _isCurrentlyFollowing ? Colors.grey : Colors.green,
+                backgroundColor:
+                    _isCurrentlyFollowing ? Colors.grey : Colors.green,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 45),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           const SizedBox(height: 24),
@@ -285,14 +355,20 @@ class _ProfilePageState extends State<ProfilePage> {
         Widget imageDisplayWidget;
 
         if (imageUrl.isEmpty) {
-          imageDisplayWidget = const Icon(Icons.person, size: 40); // Default for empty URL
+          imageDisplayWidget = const Icon(
+            Icons.person,
+            size: 40,
+          ); // Default for empty URL
         } else {
           imageDisplayWidget = Image.network(
             imageUrl,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               log('Error loading image in grid: $imageUrl, $error');
-              return const Icon(Icons.broken_image, size: 40); // Placeholder for failed image
+              return const Icon(
+                Icons.broken_image,
+                size: 40,
+              ); // Placeholder for failed image
             },
           );
         }
@@ -302,12 +378,19 @@ class _ProfilePageState extends State<ProfilePage> {
           return CircleAvatar(
             radius: 35,
             backgroundColor: Colors.grey[300], // Background for error/loading
-            backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-            onBackgroundImageError: imageUrl.isNotEmpty ? (exception, stackTrace) {
-              log('Error loading badge image: $imageUrl, $exception');
-              // The CircleAvatar will show its child or background color on error
-            } : null,
-            child: imageUrl.isEmpty ? const Icon(Icons.shield, size: 30) : null, // Default icon if URL is empty
+            backgroundImage:
+                imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+            onBackgroundImageError:
+                imageUrl.isNotEmpty
+                    ? (exception, stackTrace) {
+                      log('Error loading badge image: $imageUrl, $exception');
+                      // The CircleAvatar will show its child or background color on error
+                    }
+                    : null,
+            child:
+                imageUrl.isEmpty
+                    ? const Icon(Icons.shield, size: 30)
+                    : null, // Default icon if URL is empty
           );
         } else {
           return ClipRRect(
