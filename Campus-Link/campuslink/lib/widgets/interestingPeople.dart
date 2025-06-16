@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/account_card.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class InterestingPeople extends StatefulWidget {
   const InterestingPeople({super.key});
@@ -9,8 +10,9 @@ class InterestingPeople extends StatefulWidget {
 }
 
 class _InterestingPeopleState extends State<InterestingPeople> {
-  List<dynamic> accounts = [];
+  List<Map<String,dynamic>> accounts = [];
   bool isLoading = true;
+  bool hasError = false;
 
   @override
   void initState() {
@@ -19,70 +21,59 @@ class _InterestingPeopleState extends State<InterestingPeople> {
   }
 
   Future<void> fetchAccounts() async {
-    // final response = await Supabase.instance.client
-    //     .from('posts')
-    //     .select()
-    //     .order('created_at', ascending: false); // optional sorting
+    try {
+      final response = await Supabase.instance.client
+          .from('account')
+          .select() // Fetches all columns
+          .order('username', ascending: false);
 
-    // Simulating a network request with dummy data
-    await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-    final response = [
-      {
-        'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-        'accountName': 'Joe Doe',
-        'accountCountry': 'Netherlands',
-        'favouriteActivities': 'Reading, Hiking, Gaming',
+      print('Supabase response: $response');
 
-      },
-      {
-        'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-        'accountName': 'Joe Doe',
-        'accountCountry': 'Netherlands',
-        'favouriteActivities': 'Reading, Hiking, Gaming',
-      },
+      setState(() {
+        accounts = List<Map<String, dynamic>>.from(response);
+        isLoading = false;
+      });
+    } catch (e) {
+      // Handle the error, e.g., show a message or redirect to login
+      print('Error fetching accounts: $e');
+      setState(() {
+        isLoading = false;
+        hasError = true;
+      });
+    }
+  }
+    // Simulate network delay
 
-      {
-        'accountImage': 'https://static.wikia.nocookie.net/zelda_gamepedia_en/images/9/9d/Link_TotK.png',
-        'accountName': 'Joe Doe',
-        'accountCountry': 'Netherlands',
-        'favouriteActivities': 'Reading, Hiking, Gaming',
-      },
-      {
-        'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-        'accountName': 'Anna P.',
-        'accountCountry': 'Germany',
-        'favouriteActivities': 'Photography, Cycling',
-      },
-
-      {
-        'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-        'accountName': 'Anna P.',
-        'accountCountry': 'Germany',
-        'favouriteActivities': 'Photography, Cycling',
-      },
-
-      {
-        'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
-        'accountName': 'Anna P.',
-        'accountCountry': 'Germany',
-        'favouriteActivities': 'Photography, Cycling',
-      },
-
-    ];
     // Update the state with the fetched posts
     // Uncomment the above line and comment the below line when using Supabase
 
-    setState(() {
-      accounts = response;
-      isLoading = false;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+
+
+    if (hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Failed to load data'),
+            ElevatedButton(
+              onPressed: fetchAccounts,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+
+    // if (accounts.isEmpty) {
+    //   return const Center(child: Text('No accounts found'));
+    // }
 
     return RefreshIndicator(
       onRefresh: fetchAccounts, // ⬅️ Called when user pulls down
@@ -92,7 +83,7 @@ class _InterestingPeopleState extends State<InterestingPeople> {
         child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            mainAxisSpacing: 20,
+            mainAxisSpacing: 10,
             crossAxisSpacing: 10,
             mainAxisExtent: 240.0,
 
@@ -100,10 +91,15 @@ class _InterestingPeopleState extends State<InterestingPeople> {
           itemCount: accounts.length,
           itemBuilder: (context, index) {
             final account = accounts[index];
+
+            // if (account['accountImage'] == null) {
+            //   return const Text('hello'); // Show placeholder
+            // }
+
             return AccountCard(
-              accountImage: account['accountImage'],
-              accountName: account['accountName'],
-              accountCountry: account["accountCountry"] ?? "",
+              accountImage: account['accountImage'] ?? "",
+              accountName: account['username'],
+              accountCountry: account["nationality"] ?? "",
               favouriteActivities: account['favouriteActivities'] ?? "",
             );
           },
@@ -113,3 +109,50 @@ class _InterestingPeopleState extends State<InterestingPeople> {
     );
   }
 }
+
+
+//
+// await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
+// final response = [
+// {
+// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
+// 'accountName': 'Joe Doe',
+// 'accountCountry': 'Netherlands',
+// 'favouriteActivities': 'Reading, Hiking, Gaming',
+//
+// },
+// {
+// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
+// 'accountName': 'Joe Doe',
+// 'accountCountry': 'Netherlands',
+// 'favouriteActivities': 'Reading, Hiking, Gaming',
+// },
+//
+// {
+// 'accountImage': 'https://static.wikia.nocookie.net/zelda_gamepedia_en/images/9/9d/Link_TotK.png',
+// 'accountName': 'Joe Doe',
+// 'accountCountry': 'Netherlands',
+// 'favouriteActivities': 'Reading, Hiking, Gaming',
+// },
+// {
+// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
+// 'accountName': 'Anna P.',
+// 'accountCountry': 'Germany',
+// 'favouriteActivities': 'Photography, Cycling',
+// },
+//
+// {
+// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
+// 'accountName': 'Anna P.',
+// 'accountCountry': 'Germany',
+// 'favouriteActivities': 'Photography, Cycling',
+// },
+//
+// {
+// 'accountImage': 'https://hatrabbits.com/wp-content/uploads/2017/01/random.jpg',
+// 'accountName': 'Anna P.',
+// 'accountCountry': 'Germany',
+// 'favouriteActivities': 'Photography, Cycling',
+// },
+//
+// ];
