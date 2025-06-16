@@ -6,9 +6,9 @@ import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart';
-import 'dart:ui' as ui;
-import 'dart:async';
+import 'package:flutter/foundation.dart'; // For compute
+import 'dart:ui' as ui; // For ImageByteFormat
+import 'dart:async'; // For Timer
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -23,14 +23,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   late double _dragStartY;
   late double _startHeightFraction;
 
-  // We no longer need _eventsFuture, as we'll store raw events directly
-  // late Future<List<EventModel>> _eventsFuture;
-
-  // --- NEW: Store raw fetched events ---
   List<EventModel> _allEvents = [];
-  // --- NEW: Future for filtered events, will be computed on demand ---
   Future<List<EventModel>>? _filteredEventsFuture;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   LatLng? _currentLocation;
 
@@ -49,8 +46,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     super.initState();
     debugPrint('[MapPage] initState called. Time: ${DateTime.now()}');
 
-    // --- MODIFIED: Initial data fetch and filtering ---
-    _fetchAndFilterEvents(); // Call a new method to handle fetching and initial filtering
+    _fetchAndFilterEvents();
+
+    _searchController.addListener(_onSearchChanged);
 
     _getCurrentLocation().then((loc) {
       if (mounted) {
@@ -70,89 +68,62 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     });
   }
 
-  // --- NEW METHOD: To fetch raw events and then apply filters ---
-  Future<void> _fetchAndFilterEvents() async {
-    try {
-      final fetchedEvents = await EventService.fetchEvents();
-      if (mounted) {
-        setState(() {
-          _allEvents = fetchedEvents; // Store the raw events
-          // Trigger initial filtering
-          _filteredEventsFuture = compute(_applyFiltersStatic, {
-            'events': _allEvents,
-            'dateFilter': _dateFilter,
-            'categoryFilter': _categoryFilter,
-            'timeFilter': _timeFilter,
-          });
-        });
-        debugPrint('[MapPage] Events fetched and initial filter applied. Total: ${_allEvents.length}. Time: ${DateTime.now()}');
-      }
-    } catch (e) {
-      debugPrint('[MapPage] Error fetching events: $e. Time: ${DateTime.now()}');
-      if (mounted) {
-        setState(() {
-          _allEvents = []; // Clear events on error
-          _filteredEventsFuture = Future.value([]); // Set future to empty list on error
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error fetching events: $e')),
-        );
-      }
-    }
-  }
-
-  // --- NEW METHOD: To re-apply filters (called when filter settings change) ---
-  void _applyAndSetFilteredEvents() {
+  void _onSearchChanged() {
     if (mounted) {
       setState(() {
-        _filteredEventsFuture = compute(_applyFiltersStatic, {
-          'events': _allEvents, // Use the stored raw events
-          'dateFilter': _dateFilter,
-          'categoryFilter': _categoryFilter,
-          'timeFilter': _timeFilter,
-        });
+        _searchQuery = _searchController.text;
+        _applyAndSetFilteredEvents(); // Re-filter events with the new search query
       });
-      debugPrint('[MapPage] Filters re-applied. Time: ${DateTime.now()}');
     }
   }
-
 
   @override
   void dispose() {
     _mapController.dispose();
     _highlightTimer?.cancel();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     debugPrint('[MapPage] dispose called. Time: ${DateTime.now()}');
     super.dispose();
   }
 
+  // --- METHODS THAT WERE MISSING OR INCOMPLETE ---
+
   Future<LatLng> _getCurrentLocation() async {
-    debugPrint('[_getCurrentLocation] Attempting to get location. Time: ${DateTime.now()}');
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      debugPrint('Location services are disabled. Returning default. Time: ${DateTime.now()}');
-      return LatLng(52.785805, 6.897585); // Default: Campus location (Erica, Drenthe, Netherlands)
+      // Location services are not enabled don't continue
+      // accessing the position and request users to enable the location services.
+      return Future.error('Location services are disabled.');
     }
 
-    LocationPermission permission = await Geolocator.checkPermission();
+    permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-        debugPrint('Location permissions are denied or permanently denied. Returning default. Time: ${DateTime.now()}');
-        return LatLng(52.785805, 6.897585); // Default: Campus location (Erica, Drenthe, Netherlands)
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try
+        // requesting permissions again (this is also where
+        // Android's shouldShowRequestPermissionRationale
+        // documented code goes).
+        return Future.error('Location permissions are denied');
       }
     }
 
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      );
-      debugPrint('Current location fetched: ${position.latitude}, ${position.longitude}. Time: ${DateTime.now()}');
-      return LatLng(position.latitude, position.longitude);
-    } catch (e) {
-      debugPrint('Error getting current location: $e. Returning default. Time: ${DateTime.now()}');
-      return LatLng(52.785805, 6.897585); // Default: Campus location (Erica, Drenthe, Netherlands)
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
     }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    return LatLng(position.latitude, position.longitude);
   }
 
   void _showFilterDialog() {
@@ -162,185 +133,269 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Filter Events'),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return SizedBox(
-                height: MediaQuery.of(context).size.height * 0.5,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Date Range', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ...['All', '1 Week', '2 Weeks', '1 Month'].map((value) {
-                        return RadioListTile<String>(
-                          title: Text(value),
+      builder: (BuildContext context) {
+        return StatefulBuilder( // Use StatefulBuilder to update dialog state
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Filter Events"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Filter by Date:"),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: tempDateFilter,
+                      onChanged: (String? newValue) {
+                        setDialogState(() {
+                          tempDateFilter = newValue!;
+                        });
+                      },
+                      items: <String>['All', '1 Week', '2 Weeks', '1 Month']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
                           value: value,
-                          groupValue: tempDateFilter,
-                          onChanged: (val) {
-                            setState(() {
-                              tempDateFilter = val!;
-                            });
-                          },
+                          child: Text(value),
                         );
-                      }),
-                      const SizedBox(height: 8),
-                      const Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ...['All', 'Music', 'Sports', 'Food', 'Academics', 'Social', 'Workshop', 'Conference'].map((value) {
-                        return RadioListTile<String>(
-                          title: Text(value),
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text("Filter by Category:"),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: tempCategoryFilter,
+                      onChanged: (String? newValue) {
+                        setDialogState(() {
+                          tempCategoryFilter = newValue!;
+                        });
+                      },
+                      items: <String>[
+                        'All',
+                        'Sports',
+                        'Culture',
+                        'Academic',
+                        'Social',
+                        'Workshop',
+                        'Other'
+                      ].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
                           value: value,
-                          groupValue: tempCategoryFilter,
-                          onChanged: (val) {
-                            setState(() {
-                              tempCategoryFilter = val!;
-                            });
-                          },
+                          child: Text(value),
                         );
-                      }),
-                      const SizedBox(height: 8),
-                      const Text('Time of Day', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ...['All', 'Morning', 'Afternoon', 'Evening'].map((value) {
-                        return RadioListTile<String>(
-                          title: Text(value),
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text("Filter by Time of Day:"),
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: tempTimeFilter,
+                      onChanged: (String? newValue) {
+                        setDialogState(() {
+                          tempTimeFilter = newValue!;
+                        });
+                      },
+                      items: <String>['All', 'Morning', 'Afternoon', 'Evening']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
                           value: value,
-                          groupValue: tempTimeFilter,
-                          onChanged: (val) {
-                            setState(() {
-                              tempTimeFilter = val!;
-                            });
-                          },
+                          child: Text(value),
                         );
-                      }),
-                    ],
-                  ),
+                      }).toList(),
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (mounted) {
-                  setState(() {
-                    _dateFilter = tempDateFilter;
-                    _categoryFilter = tempCategoryFilter;
-                    _timeFilter = tempTimeFilter;
-                    // --- MODIFIED: Only re-apply filters, don't re-fetch raw data ---
-                    _applyAndSetFilteredEvents();
-                    debugPrint('[MapPage] Filters applied and events future reset. Time: ${DateTime.now()}');
-                  });
-                }
-                Navigator.of(context).pop();
-              },
-              child: const Text('Apply'),
-            ),
-          ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text("Reset"),
+                  onPressed: () {
+                    setDialogState(() {
+                      tempDateFilter = 'All';
+                      tempCategoryFilter = 'All';
+                      tempTimeFilter = 'All';
+                    });
+                  },
+                ),
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text("Apply"),
+                  onPressed: () {
+                    if (mounted) {
+                      setState(() {
+                        _dateFilter = tempDateFilter;
+                        _categoryFilter = tempCategoryFilter;
+                        _timeFilter = tempTimeFilter;
+                        _applyAndSetFilteredEvents(); // Apply filters
+                      });
+                    }
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  // This method remains static and runs in an isolate
+  // --- END OF MISSING METHODS ---
+
+  Future<void> _fetchAndFilterEvents() async {
+    try {
+      final fetchedEvents = await EventService.fetchEvents();
+      if (mounted) {
+        setState(() {
+          _allEvents = fetchedEvents;
+          _applyAndSetFilteredEvents(); // Initial filter with empty search query
+        });
+        debugPrint('[MapPage] Events fetched and initial filter applied. Total: ${_allEvents.length}. Time: ${DateTime.now()}');
+      }
+    } catch (e) {
+      debugPrint('[MapPage] Error fetching events: $e. Time: ${DateTime.now()}');
+      if (mounted) {
+        setState(() {
+          _allEvents = [];
+          _filteredEventsFuture = Future.value([]);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching events: $e')),
+        );
+      }
+    }
+  }
+
+  void _applyAndSetFilteredEvents() {
+    if (mounted) {
+      setState(() {
+        _filteredEventsFuture = compute(_applyFiltersStatic, {
+          'events': _allEvents,
+          'dateFilter': _dateFilter,
+          'categoryFilter': _categoryFilter,
+          'timeFilter': _timeFilter,
+          'searchQuery': _searchQuery,
+        });
+      });
+      debugPrint('[MapPage] Filters re-applied. Time: ${DateTime.now()}');
+    }
+  }
+
   static List<EventModel> _applyFiltersStatic(Map<String, dynamic> args) {
-    // ... (Your _applyFiltersStatic method remains unchanged) ...
     final List<EventModel> events = args['events'];
     final String dateFilter = args['dateFilter'];
     final String categoryFilter = args['categoryFilter'];
     final String timeFilter = args['timeFilter'];
+    final String searchQuery = args['searchQuery'];
 
     final now = DateTime.now();
 
     debugPrint('--- Filtering Started ---');
     debugPrint('Current Date: $now');
-    debugPrint('Active Filters: Date="$dateFilter", Category="$categoryFilter", Time="$timeFilter"');
+    debugPrint('Active Filters: Date="$dateFilter", Category="$categoryFilter", Time="$timeFilter", Search="$searchQuery"');
     debugPrint('Total events received for filtering: ${events.length}');
 
     final filteredList = events.where((event) {
       bool keepEvent = true;
-      debugPrint('\nProcessing Event: "${event.eventName}" (ID: ${event.eventId})'); // Use event.eventId
-      debugPrint('  Event Data: Date=${event.eventDate}, Category=${event.category}, Time=${event.eventTime}, Lat=${event.locationLat}, Lng=${event.locationLng}');
+      debugPrint('\nProcessing Event: "${event.eventName}" (ID: ${event.eventId})');
+      debugPrint('   Event Data: Date=${event.eventDate}, Category=${event.category}, Time=${event.eventTime}, Lat=${event.locationLat}, Lng=${event.locationLng}');
 
-
-      // --- Date Filter ---
+      // Date Filter
       if (dateFilter != 'All') {
-        debugPrint('  Applying Date Filter ($dateFilter)...');
+        debugPrint('   Applying Date Filter ($dateFilter)...');
         if (event.eventDate == null) {
           keepEvent = false;
-          debugPrint('    - Date Filter: Event "${event.eventName}" removed because eventDate is null.');
+          debugPrint('     - Date Filter: Event "${event.eventName}" removed because eventDate is null.');
         } else {
           final diff = event.eventDate!.difference(now);
           if (diff.isNegative) { // Event is in the past
             keepEvent = false;
-            debugPrint('    - Date Filter: Event "${event.eventName}" removed because it is in the past (diff: $diff).');
+            debugPrint('     - Date Filter: Event "${event.eventName}" removed because it is in the past (diff: $diff).');
           } else {
             final diffInDays = diff.inDays;
             if ((dateFilter == '1 Week' && diffInDays > 7)) {
               keepEvent = false;
-              debugPrint('    - Date Filter: Event "${event.eventName}" removed (1 Week) because diffInDays ($diffInDays) > 7.');
+              debugPrint('     - Date Filter: Event "${event.eventName}" removed (1 Week) because diffInDays ($diffInDays) > 7.');
             } else if ((dateFilter == '2 Weeks' && diffInDays > 14)) {
               keepEvent = false;
-              debugPrint('    - Date Filter: Event "${event.eventName}" removed (2 Weeks) because diffInDays ($diffInDays) > 14.');
+              debugPrint('     - Date Filter: Event "${event.eventName}" removed (2 Weeks) because diffInDays ($diffInDays) > 14.');
             } else if ((dateFilter == '1 Month' && diffInDays > 30)) {
               keepEvent = false;
-              debugPrint('    - Date Filter: Event "${event.eventName}" removed (1 Month) because diffInDays ($diffInDays) > 30.');
+              debugPrint('     - Date Filter: Event "${event.eventName}" removed (1 Month) because diffInDays ($diffInDays) > 30.');
             }
           }
         }
       } else {
-        debugPrint('  Date Filter: "All" - Skipping.');
+        debugPrint('   Date Filter: "All" - Skipping.');
       }
 
-
-      // --- Category Filter ---
-      if (keepEvent && categoryFilter != 'All') { // Only apply if still kept by previous filters
-        debugPrint('  Applying Category Filter ($categoryFilter)...');
+      // Category Filter
+      if (keepEvent && categoryFilter != 'All') {
+        debugPrint('   Applying Category Filter ($categoryFilter)...');
         if (event.category == null || event.category!.toLowerCase() != categoryFilter.toLowerCase()) {
           keepEvent = false;
-          debugPrint('    - Category Filter: Event "${event.eventName}" removed. Category: "${event.category}". Expected: "$categoryFilter".');
+          debugPrint('     - Category Filter: Event "${event.eventName}" removed. Category: "${event.category}". Expected: "$categoryFilter".');
         }
-      } else if (keepEvent) { // Only print if still kept and filter is 'All'
-        debugPrint('  Category Filter: "All" - Skipping.');
+      } else if (keepEvent) {
+        debugPrint('   Category Filter: "All" - Skipping.');
       }
 
-      // --- Time Filter ---
-      if (keepEvent && timeFilter != 'All') { // Only apply if still kept by previous filters
-        debugPrint('  Applying Time Filter ($timeFilter)...');
+      // Time Filter
+      if (keepEvent && timeFilter != 'All') {
+        debugPrint('   Applying Time Filter ($timeFilter)...');
         if (event.eventTime == null || event.eventTime!.isEmpty) {
           keepEvent = false;
-          debugPrint('    - Time Filter: Event "${event.eventName}" removed because eventTime is null or empty.');
+          debugPrint('     - Time Filter: Event "${event.eventName}" removed because eventTime is null or empty.');
         } else {
           try {
             final parsedTime = DateFormat('HH:mm').parse(event.eventTime!);
             final hour = parsedTime.hour;
-            debugPrint('    - Time Filter: Event time parsed to hour: $hour.');
+            debugPrint('     - Time Filter: Event time parsed to hour: $hour.');
             if ((timeFilter == 'Morning' && (hour < 6 || hour >= 12))) {
               keepEvent = false;
-              debugPrint('    - Time Filter: Event "${event.eventName}" removed (Morning) because hour ($hour) not in 6-11.');
+              debugPrint('     - Time Filter: Event "${event.eventName}" removed (Morning) because hour ($hour) not in 6-11.');
             } else if ((timeFilter == 'Afternoon' && (hour < 12 || hour >= 18))) {
               keepEvent = false;
-              debugPrint('    - Time Filter: Event "${event.eventName}" removed (Afternoon) because hour ($hour) not in 12-17.');
+              debugPrint('     - Time Filter: Event "${event.eventName}" removed (Afternoon) because hour ($hour) not in 12-17.');
             } else if ((timeFilter == 'Evening' && (hour < 18 || hour >= 24))) {
               keepEvent = false;
-              debugPrint('    - Time Filter: Event "${event.eventName}" removed (Evening) because hour ($hour) not in 18-23.');
+              debugPrint('     - Time Filter: Event "${event.eventName}" removed (Evening) because hour ($hour) not in 18-23.');
             }
           } catch (e) {
-            debugPrint('    - Time Filter: Error parsing event time for "${event.eventName}" in background: ${event.eventTime} - $e');
-            keepEvent = false; // Filter out if time parsing fails
+            debugPrint('     - Time Filter: Error parsing event time for "${event.eventName}" in background: ${event.eventTime} - $e');
+            keepEvent = false;
           }
         }
-      } else if (keepEvent) { // Only print if still kept and filter is 'All'
-        debugPrint('  Time Filter: "All" - Skipping.');
+      } else if (keepEvent) {
+        debugPrint('   Time Filter: "All" - Skipping.');
       }
 
-      debugPrint('  Final decision for "${event.eventName}": ${keepEvent ? 'KEEP' : 'REMOVE'}');
+      // Search Filter
+      if (keepEvent && searchQuery.isNotEmpty) {
+        debugPrint('   Applying Search Filter ("$searchQuery")...');
+        final lowerCaseQuery = searchQuery.toLowerCase();
+        final String eventName = event.eventName.toLowerCase();
+        final String description = event.description.toLowerCase();
+        final String category = event.category?.toLowerCase() ?? '';
+        final String locationName = event.locationName?.toLowerCase() ?? '';
+
+        if (!eventName.contains(lowerCaseQuery) &&
+            !description.contains(lowerCaseQuery) &&
+            !category.contains(lowerCaseQuery) &&
+            !locationName.contains(lowerCaseQuery)) {
+          keepEvent = false;
+          debugPrint('     - Search Filter: Event "${event.eventName}" removed because it does not match query "$searchQuery".');
+        }
+      } else if (keepEvent) {
+        debugPrint('   Search Filter: Empty - Skipping.');
+      }
+
+      debugPrint('   Final decision for "${event.eventName}": ${keepEvent ? 'KEEP' : 'REMOVE'}');
       return keepEvent;
     }).toList();
 
@@ -456,9 +511,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     ),
                   ],
                 ),
-              // --- MODIFIED: Use the _filteredEventsFuture for map markers ---
               FutureBuilder<List<EventModel>>(
-                future: _filteredEventsFuture, // Now watching the filtered future
+                future: _filteredEventsFuture,
                 builder: (context, snapshot) {
                   debugPrint('[Map Markers FutureBuilder] Connection state: ${snapshot.connectionState}. Time: ${DateTime.now()}');
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -534,13 +588,24 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))],
               ),
-              child: const TextField(
+              child: TextField(
+                controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Search...',
-                  suffixIcon: Icon(Icons.search),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                          },
+                        )
+                      : const Icon(Icons.search),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
+                onSubmitted: (value) {
+                  FocusScope.of(context).unfocus();
+                },
               ),
             ),
           ),
@@ -582,9 +647,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     ),
                   ),
                   Expanded(
-                    // --- MODIFIED: Use the _filteredEventsFuture for the list ---
                     child: FutureBuilder<List<EventModel>>(
-                      future: _filteredEventsFuture, // Now watching the filtered future
+                      future: _filteredEventsFuture,
                       builder: (context, snapshot) {
                         debugPrint('[Event List FutureBuilder] Connection state: ${snapshot.connectionState}. Time: ${DateTime.now()}');
                         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -808,7 +872,7 @@ class EventMarker extends StatelessWidget {
               boxShadow: const [
                 BoxShadow(
                   color: Colors.black26,
-                  blurRadius: 4,
+                  blurRadius: 6,
                   offset: Offset(0, 2),
                 ),
               ],
@@ -834,14 +898,6 @@ class EventMarker extends StatelessWidget {
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Image.asset(
-                          'resources/img/placeholder.png',
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                        );
-                      },
                     ),
             ),
           ),
@@ -851,6 +907,8 @@ class EventMarker extends StatelessWidget {
   }
 }
 
+// ... (rest of your map_page.dart code) ...
+
 class _TrianglePainter extends CustomPainter {
   final Color color;
 
@@ -858,21 +916,16 @@ class _TrianglePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = ui.Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    ui.Path path = ui.Path();
-
-    path.moveTo(size.width / 2, size.height);
-    path.lineTo(0, 0);
-    path.lineTo(size.width, 0);
-    path.close();
+    // --- FIX: Explicitly use ui.Paint and ui.Path for drawing operations ---
+    final paint = ui.Paint()..color = color;
+    final path = ui.Path()
+      ..moveTo(size.width / 2, size.height)
+      ..lineTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..close();
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return oldDelegate is _TrianglePainter && oldDelegate.color != color;
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
