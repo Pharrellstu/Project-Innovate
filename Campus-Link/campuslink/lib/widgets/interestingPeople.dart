@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/account_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:campuslink/services/auth_gate.dart';
+import 'package:campuslink/services/user_service.dart';
 
 class InterestingPeople extends StatefulWidget {
   const InterestingPeople({super.key});
@@ -22,10 +24,19 @@ class _InterestingPeopleState extends State<InterestingPeople> {
 
   Future<void> fetchAccounts() async {
     try {
+
+      final currentUser = await UserService().getCurrentUser();
+      if (currentUser.accountId == null) {
+        // Handle error
+        return;
+      }
+
       final response = await Supabase.instance.client
           .from('account')
-          .select() // Fetches all columns
+          .select()
+          .neq('accountid', currentUser.accountId!) // delete the current user from the query
           .order('accountid', ascending: false);
+
 
       print('Supabase response: $response');
 
@@ -74,8 +85,8 @@ class _InterestingPeopleState extends State<InterestingPeople> {
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            mainAxisExtent: 240.0,
+            // crossAxisSpacing: 10,
+            childAspectRatio: 0.89,
 
           ),
           itemCount: accounts.length,
