@@ -197,7 +197,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(children: [
