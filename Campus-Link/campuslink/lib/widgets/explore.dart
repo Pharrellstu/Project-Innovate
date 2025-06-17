@@ -147,7 +147,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.76, // Increased from 0.75
+                childAspectRatio: 0.75, // Reset to original ratio
               ),
               delegate: SliverChildBuilderDelegate(
                     (context, index) => EventCard(
@@ -203,83 +203,94 @@ class EventCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Event image with reduced height
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: event.eventImageUrl != null && event.eventImageUrl!.isNotEmpty
-                  ? Image.network(
-                event.eventImageUrl!,
-                height: 130, // Reduced from 150
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    _buildImagePlaceholder(130), // Height parameter added
-              )
-                  : _buildImagePlaceholder(130), // Height parameter added
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10), // Reduced from 12
+      child: IntrinsicHeight( // Make card adjust to content height
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: onTap,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min, // Important for dynamic height
                 children: [
-                  Text(
-                    event.eventName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14, // Reduced from 16
-                    ),
-                    maxLines: 2, // Allow 2 lines
-                    overflow: TextOverflow.ellipsis,
+                  // Flexible image section
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    child: event.eventImageUrl != null && event.eventImageUrl!.isNotEmpty
+                        ? Image.network(
+                      event.eventImageUrl!,
+                      height: constraints.maxWidth * 0.75, // Height based on card width
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildImagePlaceholder(constraints.maxWidth * 0.75),
+                    )
+                        : _buildImagePlaceholder(constraints.maxWidth * 0.75),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.calendar_today, size: 12, color: Colors.grey), // Size reduced
-                      const SizedBox(width: 4),
-                      Text(
-                        '${event.eventDate!.day}/${event.eventDate!.month}/${event.eventDate!.year}',
-                        style: const TextStyle(fontSize: 11, color: Colors.grey), // Size reduced
+                  // Flexible content section
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            event.eventName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${event.eventDate!.day}/${event.eventDate!.month}/${event.eventDate!.year}',
+                                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_pin, size: 12, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  event.locationName!,
+                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (event.maxnumberofpeople != null) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.people, size: 12, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${event.maxnumberofpeople} spots',
+                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_pin, size: 12, color: Colors.grey), // Size reduced
-                      const SizedBox(width: 4),
-                      Flexible( // Added Flexible to prevent overflow
-                        child: Text(
-                          event.locationName!,
-                          style: const TextStyle(fontSize: 11, color: Colors.grey), // Size reduced
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (event.maxnumberofpeople != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.people, size: 12, color: Colors.grey), // Size reduced
-                        const SizedBox(width: 4),
-                        Text(
-                          '${event.maxnumberofpeople} spots',
-                          style: const TextStyle(fontSize: 11, color: Colors.grey), // Size reduced
-                        ),
-                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
