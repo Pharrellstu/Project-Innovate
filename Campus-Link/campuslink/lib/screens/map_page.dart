@@ -7,7 +7,7 @@ import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart'; // For compute
-import 'dart:ui' as ui; // For ImageByteFormat
+import 'dart:ui' as ui; // For ImageByteFormat and ui.Path, ui.Paint
 import 'dart:async'; // For Timer
 
 class MapPage extends StatefulWidget {
@@ -54,15 +54,18 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       if (mounted) {
         setState(() {
           _currentLocation = loc;
-          _mapController.move(loc, _mapController.zoom);
+          // Set initial map center to current location if available, otherwise default
+          _mapController.move(loc, 13.0); // Set initial zoom to 13.0
         });
         debugPrint('[MapPage] Current location updated and map moved. Time: ${DateTime.now()}');
       }
     }).catchError((e) {
       debugPrint('[MapPage] Error getting current location during initState: $e. Time: ${DateTime.now()}');
       if (mounted) {
+        // Fallback if location not available or denied, move to default
+        _mapController.move(LatLng(52.785805, 6.897585), 13.0); // Move to Leeuwarden if location fails
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not get current location: $e')),
+          SnackBar(content: Text('Could not get current location: $e. Displaying default map area.')),
         );
       }
     });
@@ -86,8 +89,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     debugPrint('[MapPage] dispose called. Time: ${DateTime.now()}');
     super.dispose();
   }
-
-  // --- METHODS THAT WERE MISSING OR INCOMPLETE ---
 
   Future<LatLng> _getCurrentLocation() async {
     bool serviceEnabled;
@@ -244,8 +245,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       },
     );
   }
-
-  // --- END OF MISSING METHODS ---
 
   Future<void> _fetchAndFilterEvents() async {
     try {
@@ -489,6 +488,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
+              // Default to Leeuwarden if _currentLocation is null initially
               center: _currentLocation ?? LatLng(52.785805, 6.897585),
               zoom: 13.0,
               onTap: (tapPos, latLng) {
@@ -558,6 +558,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ],
           ),
 
+          // My Location Button
           Positioned(
             top: 100,
             right: 16,
@@ -574,6 +575,36 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     _mapController.move(loc, _mapController.zoom);
                   });
                 }
+              },
+            ),
+          ),
+          // Zoom In Button
+          Positioned(
+            top: 155, // Position below "My Location" button
+            right: 16,
+            child: FloatingActionButton(
+              mini: true,
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.add, color: Colors.black),
+              onPressed: () {
+                final currentZoom = _mapController.zoom;
+                final newZoom = currentZoom + 1; // Increase zoom level by 1
+                _mapController.move(_mapController.center, newZoom);
+              },
+            ),
+          ),
+          // Zoom Out Button
+          Positioned(
+            top: 210, // Position below "Zoom In" button
+            right: 16,
+            child: FloatingActionButton(
+              mini: true,
+              backgroundColor: Colors.white,
+              child: const Icon(Icons.remove, color: Colors.black),
+              onPressed: () {
+                final currentZoom = _mapController.zoom;
+                final newZoom = currentZoom - 1; // Decrease zoom level by 1
+                _mapController.move(_mapController.center, newZoom);
               },
             ),
           ),
@@ -907,8 +938,6 @@ class EventMarker extends StatelessWidget {
   }
 }
 
-// ... (rest of your map_page.dart code) ...
-
 class _TrianglePainter extends CustomPainter {
   final Color color;
 
@@ -916,7 +945,7 @@ class _TrianglePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // --- FIX: Explicitly use ui.Paint and ui.Path for drawing operations ---
+    // Corrected to use dart:ui's Path and Paint
     final paint = ui.Paint()..color = color;
     final path = ui.Path()
       ..moveTo(size.width / 2, size.height)
