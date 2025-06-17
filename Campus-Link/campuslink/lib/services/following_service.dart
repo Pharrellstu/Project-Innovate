@@ -1,3 +1,4 @@
+// following_service.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/models/following.dart';
 
@@ -53,7 +54,7 @@ class FollowingService {
     return (rows as List).isNotEmpty;
   }
 
-  /// Delete a follow record
+  /// Delete a follow record by primary key
   static Future<bool> delete(int id) async {
     final rows = await _supabase
         .from(_table)
@@ -61,5 +62,31 @@ class FollowingService {
         .eq('following_id', id)
         .select();
     return (rows as List).isNotEmpty;
+  }
+
+  /// Check if a follow relationship exists
+  static Future<bool> isFollowing({
+    required int followerId,
+    required int followingId,
+  }) async {
+    final response = await _supabase
+        .from(_table)
+        .select()
+        .eq('followepersonid', followerId)
+        .eq('followingpersonid', followingId);
+
+    return response.isNotEmpty;
+  }
+
+  /// Unfollow a user by composite key (follower + following)
+  static Future<void> unfollow({
+    required int followerId,
+    required int followingId,
+  }) async {
+    await _supabase
+        .from(_table)
+        .delete()
+        .eq('followepersonid', followerId)
+        .eq('followingpersonid', followingId);
   }
 }
