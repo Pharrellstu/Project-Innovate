@@ -3,7 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/map_page.dart';
 import 'package:campuslink/screens/chat_page.dart';
-import 'package:campuslink/screens/profile_page.dart';
+import 'package:campuslink/screens/profile_page_update.dart';
 import 'package:campuslink/screens/chat_list.dart';
 
 class NavBar extends StatelessWidget {

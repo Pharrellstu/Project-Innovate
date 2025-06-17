@@ -1,128 +1,174 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/login_page.dart';
-import 'package:campuslink/screens/email_verification_page.dart'; // Import EmailVerificationPage
+import 'package:campuslink/screens/email_verification_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/user_service.dart';
+import 'dart:async';
 
-// import 'package:campuslink/screens/edit_profile_page.dart'; //TODO: Uncomment when EditProfilePage is implemented
 final userService = UserService();
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<AuthState>(
-      stream: Supabase.instance.client.auth.onAuthStateChange,
-      builder: (context, snapshot) {
-        final authState = snapshot.data;
-        final session =
-            authState?.session ?? Supabase.instance.client.auth.currentSession;
-        final user = session?.user;
+  State<AuthGate> createState() => _AuthGateState();
 
-        if (user == null) {
-          return LoginPage();
-        }
-
-        // Check if email is confirmed
-        // Supabase sets user.emailConfirmedAt to a timestamp string when confirmed.
-        // It's null if not confirmed.
-        if (user.emailConfirmedAt == null) {
-          // If email is not confirmed, navigate to EmailVerificationPage.
-          // Pass the email so the page can use it for resend/display.
-          // postRegistrationContext will default to false, which is correct here.
-          return EmailVerificationPage(email: user.email!);
-        }
-
-        // Email is confirmed, proceed with new user check or HomePage
-        final isNewUser = user.userMetadata?['isNewUser'] ?? false;
-        if (isNewUser) {
-          // TODO: If the user is new, redirect to the edit profile page
-          // return EditProfilePage(); // Assuming EditProfilePage might need the user
-          // For now, falling through to HomePage if EditProfilePage is commented out.
-        }
-
-        return HomePage();
-      },
-    );
-  }
-
-  // Get current userID
+  // Static methods that can be called from anywhere in the app
   static String? getCurrentUserId() {
     final session = Supabase.instance.client.auth.currentSession;
     return session?.user.id;
   }
 
-  // Method send SignUp request to the backend
-  Future<bool> register(String email, String password) async {
+  static Future<bool> register(String email, String password) async {
     final supabase = Supabase.instance.client;
     try {
       final AuthResponse response = await supabase.auth.signUp(
         email: email,
         password: password,
         data: {'isNewUser': true}, // Custom metadata
+        emailRedirectTo: 'campuslink://email-confirmed',
       );
 
-      // If signUp is successful, response.user should not be null.
-      // AuthException would be thrown for issues like user already exists.
       if (response.user == null) {
         print(
           'AuthGate.register: Supabase signUp call returned a null user without an AuthException.',
         );
-        // This is an unexpected state, treat as a generic failure.
         throw Exception(
           'Registration failed: No user data returned from Supabase.',
         );
       }
 
-      // User created in auth.users. Now add to our custom 'account' table.
-      // This call might throw its own exceptions if it fails (e.g., network, database policy).
       await userService.insertUser(response.user!.id, email);
-
-      // DO NOT call login(email, password) here.
-      // The onAuthStateChange stream in AuthGate will detect the new user.
-      // AuthForm._handleRegistration will navigate to EmailVerificationPage upon true from this method.
-      return true; // Registration process (auth user + custom table entry) successful.
+      return true;
     } on AuthException catch (e) {
-      // Specific Supabase authentication error during signUp
-      // e.g., "User already registered", "Password should be at least 6 characters", etc.
       print(
         'AuthGate.register: AuthException during Supabase signUp: ${e.message}',
       );
-      rethrow; // Rethrow for AuthForm to handle and display
+      rethrow;
     } catch (e) {
-      // Other errors (e.g., from userService.insertUser, network issues not caught as AuthException)
       print(
         'AuthGate.register: Generic error during registration: ${e.toString()}',
       );
-      rethrow; // Rethrow for AuthForm to handle and display
+      rethrow;
     }
   }
 
-  // Method to Login the user
-  Future<void> login(String email, String password) async {
+  static Future<void> login(String email, String password) async {
     final supabase = Supabase.instance.client;
     try {
       await supabase.auth.signInWithPassword(email: email, password: password);
-      // If successful, Supabase updates auth state.
-      // onAuthStateChange in the AuthGate widget will handle redirection
-      // based on email confirmation status (to HomePage or EmailVerificationPage if unconfirmed).
     } on AuthException catch (e) {
-      // Log the exception and rethrow it so the caller (AuthForm) can handle it.
       print('Login AuthException from AuthGate.login: ${e.message}');
       rethrow;
     }
-    // Other non-AuthException errors (e.g. network) will also propagate.
   }
 
-  // Methood to Logout the user
   static Future<void> logout(BuildContext context) async {
     await Supabase.instance.client.auth.signOut();
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const AuthGate()),
       (route) => false,
+    );
+  }
+}
+
+class _AuthGateState extends State<AuthGate> with WidgetsBindingObserver {
+  late StreamSubscription<AuthState> _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _setupAuthListener();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _authSubscription.cancel();
+    super.dispose();
+  }
+
+  void _setupAuthListener() {
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      data,
+    ) {
+      final event = data.event;
+      print(
+        'AuthGate: Auth event received: $event. User: ${data.session?.user?.email}, Confirmed: ${data.session?.user?.emailConfirmedAt}',
+      );
+
+      if (event == AuthChangeEvent.signedIn ||
+          event == AuthChangeEvent.tokenRefreshed ||
+          event == AuthChangeEvent.userUpdated) {
+        print(
+          'AuthGate: Relevant auth event ($event), forcing UI rebuild via setState.',
+        );
+        if (mounted) {
+          setState(() {});
+        }
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      print('AuthGate: App resumed - checking auth state');
+      // Small delay to allow any deep link processing to complete
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<AuthState>(
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        final currentSession = Supabase.instance.client.auth.currentSession;
+        final currentUser = Supabase.instance.client.auth.currentUser;
+
+        print('AuthGate StreamBuilder Rebuilding:');
+        print(
+          '  Snapshot has data: ${snapshot.hasData}, Event: ${snapshot.data?.event}',
+        );
+        print(
+          '  Supabase.currentUser: ${currentUser?.email}, Confirmed: ${currentUser?.emailConfirmedAt}',
+        );
+        print(
+          '  Supabase.currentSession: ${currentSession?.user.email}, Confirmed: ${currentSession?.user.emailConfirmedAt}',
+        );
+
+        final User? userToEvaluate = currentUser ?? currentSession?.user;
+
+        if (userToEvaluate == null) {
+          print('AuthGate: User is null. Navigating to LoginPage.');
+          return LoginPage();
+        }
+
+        if (userToEvaluate.emailConfirmedAt == null) {
+          print(
+            'AuthGate: User email NOT confirmed (${userToEvaluate.emailConfirmedAt}). Navigating to EmailVerificationPage for ${userToEvaluate.email}.',
+          );
+          return EmailVerificationPage(email: userToEvaluate.email!);
+        }
+
+        print(
+          'AuthGate: User email IS confirmed. Navigating to HomePage for ${userToEvaluate.email}.',
+        );
+        final isNewUser = userToEvaluate.userMetadata?['isNewUser'] ?? false;
+        if (isNewUser) {
+          print('AuthGate: User is new. TODO: Redirect to edit profile page.');
+          // TODO: If the user is new, redirect to the edit profile page
+        }
+        return HomePage();
+      },
     );
   }
 }
