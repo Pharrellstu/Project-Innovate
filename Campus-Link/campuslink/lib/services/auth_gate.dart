@@ -4,7 +4,6 @@ import 'package:campuslink/screens/login_page.dart';
 import 'package:campuslink/screens/email_verification_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/user_service.dart';
-import 'package:app_links/app_links.dart';
 import 'dart:async';
 
 final userService = UserService();
@@ -77,123 +76,49 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> with WidgetsBindingObserver {
   late StreamSubscription<AuthState> _authSubscription;
-  late AppLinks _appLinks;
-  StreamSubscription<Uri>? _linkSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _setupDeepLinkHandling();
+    _setupAuthListener();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _authSubscription.cancel();
-    _linkSubscription?.cancel();
     super.dispose();
   }
 
-  void _setupDeepLinkHandling() {
-    _appLinks = AppLinks();
-
-    // Listen for auth state changes
+  void _setupAuthListener() {
     _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
       data,
     ) {
       final event = data.event;
-      print('Auth event: $event');
+      print(
+        'AuthGate: Auth event received: $event. User: ${data.session?.user?.email}, Confirmed: ${data.session?.user?.emailConfirmedAt}',
+      );
+
       if (event == AuthChangeEvent.signedIn ||
-          event == AuthChangeEvent.tokenRefreshed) {
-        print('User signed in or token refreshed - rebuilding UI');
+          event == AuthChangeEvent.tokenRefreshed ||
+          event == AuthChangeEvent.userUpdated) {
+        print(
+          'AuthGate: Relevant auth event ($event), forcing UI rebuild via setState.',
+        );
         if (mounted) {
           setState(() {});
         }
       }
     });
-
-    // Listen for incoming deep links
-    _linkSubscription = _appLinks.uriLinkStream.listen(
-      (Uri uri) {
-        print('Received deep link: $uri');
-        _handleIncomingLink(uri);
-      },
-      onError: (err) {
-        print('Deep link error: $err');
-      },
-    );
-
-    // Check for initial link when app starts
-    _checkInitialLink();
-  }
-
-  Future<void> _checkInitialLink() async {
-    try {
-      final uri = await _appLinks.getInitialLink();
-      if (uri != null) {
-        print('Initial link found: $uri');
-        _handleIncomingLink(uri);
-      }
-    } catch (e) {
-      print('Error checking initial link: $e');
-    }
-  }
-
-  Future<void> _handleIncomingLink(Uri uri) async {
-    print('Processing incoming link: $uri');
-
-    if (uri.scheme == 'campuslink' && uri.host == 'email-confirmed') {
-      try {
-        // Extract the fragment and query parameters
-        final fragment = uri.fragment;
-        final queryParams = uri.queryParameters;
-
-        print('Link fragment: $fragment');
-        print('Link query params: $queryParams');
-
-        // If there's a fragment, it might contain the auth tokens
-        if (fragment.isNotEmpty) {
-          // Parse fragment as query string
-          final fragmentParams = Uri.splitQueryString(fragment);
-          print('Fragment params: $fragmentParams');
-
-          if (fragmentParams.containsKey('access_token')) {
-            // This is the auth callback with tokens
-            await Supabase.instance.client.auth.getSessionFromUrl(uri);
-            print('Session recovered from URL successfully');
-
-            // Force UI rebuild
-            if (mounted) {
-              setState(() {});
-            }
-            return;
-          }
-        }
-
-        // Fallback: try to refresh the session
-        await Supabase.instance.client.auth.refreshSession();
-        print('Session refreshed as fallback');
-
-        if (mounted) {
-          setState(() {});
-        }
-      } catch (e) {
-        print('Error processing auth link: $e');
-        // Force UI rebuild even if session recovery fails
-        if (mounted) {
-          setState(() {});
-        }
-      }
-    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      print('App resumed - checking auth state');
-      // Small delay to ensure any deep link processing is complete
-      Future.delayed(const Duration(milliseconds: 500), () {
+      print('AuthGate: App resumed - checking auth state');
+      // Small delay to allow any deep link processing to complete
+      Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) {
           setState(() {});
         }
@@ -206,30 +131,42 @@ class _AuthGateState extends State<AuthGate> with WidgetsBindingObserver {
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        final authState = snapshot.data;
-        final session =
-            authState?.session ?? Supabase.instance.client.auth.currentSession;
-        final user = session?.user;
+        final currentSession = Supabase.instance.client.auth.currentSession;
+        final currentUser = Supabase.instance.client.auth.currentUser;
 
+        print('AuthGate StreamBuilder Rebuilding:');
         print(
-          'AuthGate build - User: ${user?.email}, Email confirmed: ${user?.emailConfirmedAt}',
+          '  Snapshot has data: ${snapshot.hasData}, Event: ${snapshot.data?.event}',
+        );
+        print(
+          '  Supabase.currentUser: ${currentUser?.email}, Confirmed: ${currentUser?.emailConfirmedAt}',
+        );
+        print(
+          '  Supabase.currentSession: ${currentSession?.user.email}, Confirmed: ${currentSession?.user.emailConfirmedAt}',
         );
 
-        if (user == null) {
+        final User? userToEvaluate = currentUser ?? currentSession?.user;
+
+        if (userToEvaluate == null) {
+          print('AuthGate: User is null. Navigating to LoginPage.');
           return LoginPage();
         }
 
-        // Check if email is confirmed
-        if (user.emailConfirmedAt == null) {
-          return EmailVerificationPage(email: user.email!);
+        if (userToEvaluate.emailConfirmedAt == null) {
+          print(
+            'AuthGate: User email NOT confirmed (${userToEvaluate.emailConfirmedAt}). Navigating to EmailVerificationPage for ${userToEvaluate.email}.',
+          );
+          return EmailVerificationPage(email: userToEvaluate.email!);
         }
 
-        // Email is confirmed, proceed with new user check or HomePage
-        final isNewUser = user.userMetadata?['isNewUser'] ?? false;
+        print(
+          'AuthGate: User email IS confirmed. Navigating to HomePage for ${userToEvaluate.email}.',
+        );
+        final isNewUser = userToEvaluate.userMetadata?['isNewUser'] ?? false;
         if (isNewUser) {
+          print('AuthGate: User is new. TODO: Redirect to edit profile page.');
           // TODO: If the user is new, redirect to the edit profile page
         }
-
         return HomePage();
       },
     );
