@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
 
   await Supabase.initialize(
@@ -24,8 +25,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         fontFamily: 'Poppins',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xFF0074CF),
-        ).copyWith(primary: Color(0xFF0074CF)),
+          seedColor: const Color(0xFF0074CF),
+        ).copyWith(primary: const Color(0xFF0074CF)),
       ),
 
       home: const AuthGate(),
