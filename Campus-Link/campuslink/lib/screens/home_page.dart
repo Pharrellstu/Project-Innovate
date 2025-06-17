@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:campuslink/widgets/feed.dart';
-import 'package:campuslink/widgets/explore.dart'; // Create this later
+import 'package:campuslink/widgets/explore.dart';
+
+import '../widgets/accounts_page.dart'; // Create this later
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -36,7 +38,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           controller: _tabController,
           tabs: const [
             Tab(text: 'Explore'),
-            Tab(text: 'Feed'),
+            Tab(text: 'Accounts'),
           ],
           labelColor: Theme.of(context).primaryColor,
           unselectedLabelColor: Colors.grey,
@@ -48,7 +50,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         controller: _tabController,
         children: const [
           ExploreScreen(),
-          InterestingPeople(),
+          AccountsPage(), // Our new accounts page
         ],
       ),
     );
