@@ -2,6 +2,7 @@ import 'package:campuslink/models/user.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../services/auth_gate.dart';
 import '../create_event_page.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -45,8 +46,14 @@ class _eventFormPageState extends State<eventFormPage> {
     setState(() => _loadingUsers = true);
     try {
       final users = await _userService.getAllUsers();
+
+      // Get current user ID
+      final currentUserId = AuthGate.getCurrentUserId();
+
       setState(() {
-        _allUsers = users;
+        // Filter out the current user
+        _allUsers = users.where((user) => user.authUserId != currentUserId).toList();
+
         // Initialize selected users from eventData
         _selectedUsers = _allUsers.where((user) =>
             widget.eventData.invitedUserIds.contains(user.accountId.toString())

@@ -136,6 +136,16 @@ class _EventInvitationsPageState extends State<EventInvitationsPage>
         accept ? 'accepted' : 'declined',
       );
 
+      setState(() {
+        if (accept) {
+          _pendingInvitations.remove(invitation);
+          _enrolledInvitations.add(invitation.copyWith(status: 'accepted'));
+        } else {
+          _pendingInvitations.remove(invitation);
+          _cancelledInvitations.add(invitation.copyWith(status: 'declined'));
+        }
+      });
+
       // Optional: show a quick success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

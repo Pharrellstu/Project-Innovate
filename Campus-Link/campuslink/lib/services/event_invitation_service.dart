@@ -124,4 +124,22 @@ class EventInvitationService {
         .select();
     return (rows as List).isNotEmpty;
   }
+
+  // Add this new method to the EventInvitationService class
+  static Future<void> acceptInvitationByEventAndReceiver(
+      int eventId,
+      int receiverAccountId
+      ) async {
+    try {
+      await _supabase
+          .from(_table)
+          .update({'status': 'accepted'})
+          .eq('event_id', eventId)
+          .eq('receiveraccount_id', receiverAccountId)
+          .eq('status', 'pending');
+    } catch (e) {
+      print('Error accepting invitation: $e');
+      rethrow;
+    }
+  }
 }

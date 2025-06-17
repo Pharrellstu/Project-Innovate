@@ -1,3 +1,4 @@
+import 'package:campuslink/screens/my_events_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/profile_service.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
@@ -275,23 +276,52 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(width: 10), // Spacing between buttons
                 Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.mail_outline),
-                    label: const Text('Event Invitations'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const EventInvitationsPage(),
-                        ),
-                      );
+                  child: PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'invitations') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EventInvitationsPage(),
+                          ),
+                        );
+                      } else if (value == 'my_events') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MyEventsPage(),
+                          ),
+                        );
+                      }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 45),
-                      shape: RoundedRectangleBorder(
+                    itemBuilder: (BuildContext context) => [
+                      const PopupMenuItem<String>(
+                        value: 'invitations',
+                        child: ListTile(
+                          leading: Icon(Icons.mail),
+                          title: Text('Invitations'),
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'my_events',
+                        child: ListTile(
+                          leading: Icon(Icons.event_note),
+                          title: Text('My Events'),
+                        ),
+                      ),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
                         borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Icon(Icons.arrow_drop_down, color: Colors.white),
+                          Text('Events', style: TextStyle(color: Colors.white)),
+                        ],
                       ),
                     ),
                   ),
