@@ -52,9 +52,8 @@ class _AuthFormState extends State<AuthForm> {
       return;
     }
 
-    final authService = AuthGate();
     try {
-      bool success = await authService.register(email, password);
+      bool success = await AuthGate.register(email, password);
       if (mounted) {
         // Check if widget is still in the tree
         if (success) {
@@ -92,9 +91,8 @@ class _AuthFormState extends State<AuthForm> {
   }
 
   void _handleLogin(String email, String password) async {
-    final authService = AuthGate();
     try {
-      await authService.login(email, password);
+      await AuthGate.login(email, password);
       // If login is successful and email is confirmed, AuthGate's StreamBuilder
       // will handle navigation to HomePage.
       // If login is successful but email is NOT confirmed, AuthGate's StreamBuilder

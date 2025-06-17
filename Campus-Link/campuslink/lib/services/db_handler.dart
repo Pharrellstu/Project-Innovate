@@ -59,6 +59,8 @@ class DbHandler {
         followingCount: response['followingcount'],
         badgeCount: response['badgecount'],
         authUserId: response['auth_user_id'],
+        nationality: response['nationality'] ?? '',
+        age: response['age'] ?? 0,
       );
     } catch (e) {
       log('Error fetching user data: $e');

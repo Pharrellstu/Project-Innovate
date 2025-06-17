@@ -49,5 +49,19 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- ✅ Deep link URL scheme configuration -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>campuslink</string>
+				</array>
+			</dict>
+		</array>
+		<key>FlutterDeepLinkingEnabled</key>
+		<true/>
 	</dict>
 </plist>

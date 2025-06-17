@@ -10,6 +10,8 @@ class UserObject {
   final int? followingCount;
   final int? badgeCount;
   final String? authUserId;
+  final String? nationality;
+  final int? age;
 
   static final emptyUser = UserObject(
     accountId: 0,
@@ -23,6 +25,8 @@ class UserObject {
     followingCount: 0,
     badgeCount: 0,
     authUserId: '',
+    nationality: '',
+    age: 0,
   );
 
   UserObject({
@@ -37,5 +41,7 @@ class UserObject {
     required this.followingCount,
     required this.badgeCount,
     required this.authUserId,
+    required this.nationality,
+    required this.age,
   });
 }
