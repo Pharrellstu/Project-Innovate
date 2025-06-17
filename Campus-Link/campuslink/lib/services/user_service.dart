@@ -183,4 +183,37 @@ class UserService {
       return 0;
     }
   }
+
+  Future<List<UserObject>> searchUsers(String query) async {
+    if (query.isEmpty) return [];
+
+    try {
+      final response = await supabase
+          .from('account')
+          .select()
+          .ilike('username', '%$query%')
+          .order('username', ascending: true);
+
+      return response
+          .map((userData) => UserObject(
+        accountId: userData['accountid'],
+        username: userData['username'],
+        email: userData['email'],
+        studentCardId: userData['studentcardid'],
+        isAdmin: userData['isadmin'],
+        profilePictureUrl: userData['profilepictureurl'],
+        bio: userData['bio'],
+        isVerified: userData['isverified'],
+        badgeCount: userData['badgecount'],
+        authUserId: userData['auth_user_id'],
+        nationality: userData['nationality'] ?? '',
+        age: userData['age'] ?? 0,
+        followingCount: null,
+      ))
+          .toList();
+    } catch (e) {
+      log('Error searching users: $e');
+      return [];
+    }
+  }
 }
