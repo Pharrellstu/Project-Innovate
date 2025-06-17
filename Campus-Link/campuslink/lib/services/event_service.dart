@@ -127,10 +127,7 @@ class EventService {
 
   static Future<void> deleteEvent(int eventId) async {
     try {
-      await _supabase
-          .from('event')
-          .delete()
-          .eq('event_id', eventId);
+      await _supabase.rpc('delete_event', params: {'target_event_id': eventId});
     } catch (e) {
       print('Event deletion error: $e');
       rethrow;
