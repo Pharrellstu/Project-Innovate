@@ -1,3 +1,4 @@
+import 'package:campuslink/screens/user_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
@@ -28,6 +29,7 @@ class _EventPageState extends State<EventPage> {
   int? _currentUserAccountId;
   final ScrollController _locationController = ScrollController();
   final ScrollController _creatorController = ScrollController();
+  late Future<UserObject?> _creatorFuture;
   UserObject? _creator;
 
   // Add this helper method in _EventPageState
@@ -85,14 +87,15 @@ class _EventPageState extends State<EventPage> {
     try {
       final eventData = await EventService.getEventById(widget.eventId);
       if (eventData != null) {
+        UserObject? creator;
         // Fetch creator information
         if (eventData.eventCreatorUUID != null) {
-          final creator = await UserService().getUserByAuthUserId(eventData.eventCreatorUUID!);
-          setState(() => _creator = creator);
+          creator = await UserService().getUserByAuthUserId(eventData.eventCreatorUUID!);
         }
 
         setState(() {
           event = eventData;
+          _creator = creator; // Set creator here
           _isLoading = false;
         });
         return eventData;
@@ -320,47 +323,56 @@ class _EventPageState extends State<EventPage> {
         children: [
           // Creator info with profile picture and name
           // event_page.dart - In the build method
-          FutureBuilder<UserObject?>(
-            future: event?.eventCreatorUUID != null
-                ? UserService().getUserByAuthUserId(event!.eventCreatorUUID!)
-                : Future.value(null),
-            builder: (context, snapshot) {
-              final creator = snapshot.data;
-              return Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundImage: creator?.profilePictureUrl != null
-                        ? NetworkImage(creator!.profilePictureUrl!) as ImageProvider
-                        : AssetImage('resources/icons/profile_placeholder.png'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          creator?.username ?? 'Unknown Creator',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Created ${DateFormat('MMM dd').format(event!.eventDate!)}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
+          InkWell(
+            onTap: () {
+              if (_creator != null && _creator!.accountId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserProfilePage(
+                      userId: _creator!.accountId!,
+                      currentUserAccountId: _currentUserAccountId ?? 0,
                     ),
                   ),
-                ],
-              );
+                );
+              }
             },
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundImage: _creator?.profilePictureUrl != null
+                      ? NetworkImage(_creator!.profilePictureUrl!) as ImageProvider
+                      : AssetImage('resources/icons/profile_placeholder.png'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _creator?.username ?? 'Unknown Creator',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        event != null
+                            ? 'Created ${DateFormat('MMM dd').format(event!.eventDate!)}'
+                            : '',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(height: 20),
