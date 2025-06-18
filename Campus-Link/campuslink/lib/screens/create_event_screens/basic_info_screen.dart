@@ -1,64 +1,53 @@
 import 'package:flutter/material.dart';
-
 import '../create_event_page.dart';
 
 class basicInputInfo extends StatefulWidget {
   final Function(bool) onValidityChanged;
   final EventData eventData;
 
-  const basicInputInfo({Key? key, required this.onValidityChanged, required this.eventData}) : super(key: key);
+  const basicInputInfo(
+      {Key? key, required this.onValidityChanged, required this.eventData})
+      : super(key: key);
 
   @override
   State<basicInputInfo> createState() => _basicInputInfoState();
 }
 
 class _basicInputInfoState extends State<basicInputInfo> {
+  late TextEditingController _eventNameController;
+  late TextEditingController _descriptionController;
 
-  late TextEditingController _eventNameController = TextEditingController();
-  late TextEditingController _descriptionController = TextEditingController();
-  bool _isOnline = false;
-  String? _selectedCategory;
-  int _descriptionCharCount = 0;
-
-  // Define a list of categories with labels and icons
   final List<_Category> _categories = [
-    _Category(label: 'Drinks', icon: Icons.local_bar),
-    _Category(label: 'Party', icon: Icons.celebration),
-    _Category(label: 'Sports', icon: Icons.sports_soccer),
-    _Category(label: 'Gaming', icon: Icons.videogame_asset),
-    _Category(label: 'Food', icon: Icons.fastfood),
-    _Category(label: 'Other', icon: Icons.more_horiz),
+    _Category(label: 'Drinks', icon: Icons.local_bar_rounded),
+    _Category(label: 'Party', icon: Icons.celebration_rounded),
+    _Category(label: 'Sports', icon: Icons.sports_soccer_rounded),
+    _Category(label: 'Gaming', icon: Icons.videogame_asset_rounded),
+    _Category(label: 'Food', icon: Icons.fastfood_rounded),
+    _Category(label: 'Other', icon: Icons.more_horiz_rounded),
   ];
 
   @override
   void initState() {
     super.initState();
-
-    _eventNameController = TextEditingController(text: widget.eventData.eventName);
-    _descriptionController = TextEditingController(text: widget.eventData.description);
-    // Listen to description changes to update character count
-    _descriptionController.addListener(() {
-      setState(() {
-        _descriptionCharCount = _descriptionController.text.length;
-      });
-    });
+    _eventNameController =
+        TextEditingController(text: widget.eventData.eventName);
+    _descriptionController =
+        TextEditingController(text: widget.eventData.description);
 
     _eventNameController.addListener(() {
-      setState(() {
-        widget.eventData.eventName = _eventNameController.text; // Update eventData
-        _checkValidity();
-      });
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.eventData.eventName = _eventNameController.text;
       _checkValidity();
     });
+    _descriptionController.addListener(() {
+      widget.eventData.description = _descriptionController.text;
+    });
 
-    //_eventNameController.addListener(_checkValidity);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkValidity());
   }
 
   void _checkValidity() {
-    final isValid = widget.eventData.eventName.isNotEmpty && widget.eventData.category != null;
+    final isValid =
+        widget.eventData.eventName.trim().isNotEmpty && widget.eventData.category != null;
     widget.onValidityChanged(isValid);
   }
 
@@ -69,79 +58,29 @@ class _basicInputInfoState extends State<basicInputInfo> {
     super.dispose();
   }
 
-  bool get _isNextEnabled {
-    return _eventNameController.text.trim().isNotEmpty && _selectedCategory != null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Event name",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18)
-              ),
-          SizedBox(height: 8),
+          _buildSectionTitle('What is the name of your event?'),
           TextField(
             controller: _eventNameController,
-            decoration: InputDecoration(
-              hintText: 'e.g. Jane’s Birthday Bash', // Grey hint text
-              hintStyle: const TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-              filled: true,
-              fillColor: Color(0xFBBBBBB), // Light background color
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 12,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide(
-                  color: Colors.grey.shade700, // When focused
-                  width: 2,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide(
-                  color: Colors.grey.shade500, // Default border
-                  width: 1,
-                ),
-              ),
-            ),
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black,
-            ),
-            onChanged: (_) {
-              setState(() {
-                // Trigger rebuild to update Next button state
-                _checkValidity();
-              });
-            },
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'What is the category of your event? (Choose one)',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+            decoration: const InputDecoration(
+              hintText: 'e.g. End of Summer Party',
+              prefixIcon: Icon(Icons.title),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 24),
+          _buildSectionTitle('Choose a category'),
           GridView.count(
             crossAxisCount: 3,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.1,
             children: _categories.map((cat) {
               final bool isSelected = widget.eventData.category == cat.label;
               return GestureDetector(
@@ -151,170 +90,109 @@ class _basicInputInfoState extends State<basicInputInfo> {
                   });
                   _checkValidity();
                 },
-                child: Semantics(
-                  button: true,
-                  label: 'Category: ${cat.label}',
-                  selected: isSelected,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isSelected ? Color(0xFF0066CC) : Color(0xFFF2F2F2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: isSelected
-                          ? Border.all(color: Color(0xFF0066CC), width: 2)
-                          : Border.all(color: Colors.transparent),
-                      boxShadow: isSelected
-                          ? [
-                        BoxShadow(
-                          color: Color(0xFF0066CC).withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                          : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Theme.of(context).primaryColor.withOpacity(0.1)
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey.shade200,
+                      width: 2,
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          cat.icon,
-                          size: 36,
-                          color: isSelected ? Colors.white : Colors.grey.shade700,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        cat.icon,
+                        size: 32,
+                        color: isSelected
+                            ? Theme.of(context).primaryColor
+                            : Colors.grey.shade700,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        cat.label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? Theme.of(context).primaryColor
+                              : Colors.black87,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          cat.label,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );
             }).toList(),
           ),
-          SizedBox(height: 15),
-          Text(
-            'Event description',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
+          const SizedBox(height: 24),
+          _buildSectionTitle('Event description (Optional)'),
           TextField(
             controller: _descriptionController,
-            onChanged: (value) => widget.eventData.description = value,
-            maxLines: 2,
-            decoration: InputDecoration(
+            maxLines: 4,
+            decoration: const InputDecoration(
               hintText: 'Tell guests what to expect, any special notes, etc.',
-              hintStyle: const TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-              filled: true,
-              fillColor: Color(0xFBBBBBB),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 12,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide(
-                  color: Colors.grey.shade700,
-                  width: 2,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide(
-                  color: Colors.grey.shade500,
-                  width: 1,
-                ),
-              ),
-            ),
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black,
             ),
           ),
-          SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              '${_descriptionCharCount}/300',
-              style: TextStyle(
-                fontSize: 12,
-                // color: _descriptionCharCount > 300 ? Colors.red : Colors.grey.shade700,
-              ),
-            ),
-          ),
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Is this an online event?',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              Semantics(
-                container: true,
-                label: 'Is this an online event? Switch',
-                child: Switch(
-                  activeColor: Colors.white,
-                  activeTrackColor: Colors.green,
-                  inactiveThumbColor: Colors.white,
-                  inactiveTrackColor: Colors.grey.shade400,
-                  value: widget.eventData.isOnline,
-                  onChanged: (val) {
-                    setState(() {
-                      widget.eventData.isOnline = val;
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-          Text(
-            widget.eventData.isOnline
-                ? 'Guests will join via a link.'
-                : 'You will add a location in the next step.',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade700,
-            ),
-          ),
+          const SizedBox(height: 24),
+          _buildOnlineEventToggle(),
         ],
       ),
     );
   }
 
-  Widget categoryTile(String label, String imagePath) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ClipOval(
-          child: Image.asset(
-            imagePath,
-            width: 95,
-            height: 95,
-            fit: BoxFit.cover,
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _buildOnlineEventToggle() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Online Event',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                'Guests will join via a link',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
           ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+          Switch(
+            value: widget.eventData.isOnline,
+            onChanged: (val) {
+              setState(() {
+                widget.eventData.isOnline = val;
+              });
+            },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -323,8 +201,5 @@ class _Category {
   final String label;
   final IconData icon;
 
-  _Category({
-    required this.label,
-    required this.icon,
-  });
+  _Category({required this.label, required this.icon});
 }

@@ -1,9 +1,5 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:campuslink/widgets/nav_bar.dart';
-import 'package:campuslink/widgets/top_bar.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/user.dart';
 import 'create_event_screens/basic_info_screen.dart';
@@ -13,63 +9,75 @@ import 'create_event_screens/overview.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/eventinvitation.dart';
 import 'package:campuslink/services/event_invitation_service.dart';
+import 'package:campuslink/services/user_service.dart';
 import 'package:campuslink/services/auth_gate.dart';
 
 class CreateEventPage extends StatelessWidget {
   const CreateEventPage({super.key});
-  final String title = "Create event";
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        title: const Text("Create a New Event"),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
-      body: createEventPage(),
-      bottomNavigationBar: NavBar(),
+      body: const CreateEventForm(),
     );
   }
-
 }
 
-class createEventPage extends StatefulWidget {
-  const createEventPage({super.key});
+class CreateEventForm extends StatefulWidget {
+  const CreateEventForm({super.key});
 
   @override
-  State<createEventPage> createState() => _createEventPageState();
+  State<CreateEventForm> createState() => _CreateEventFormState();
 }
 
-class _createEventPageState extends State<createEventPage> {
-
+class _CreateEventFormState extends State<CreateEventForm> {
   int currentStep = 0;
   bool isBasicInfoValid = false;
   bool isLocationValid = false;
-  bool isPrivacyValid = false;
+  bool isPrivacyValid = true; // Default to true
   final EventData _eventData = EventData();
 
-  final EventService _eventService = EventService();
   final EventInvitationService _invitationService = EventInvitationService();
-  final AuthGate _authService = AuthGate();
 
-  List<Widget> get steps => [
-    basicInputInfo(
-      eventData: _eventData,
-      onValidityChanged: (isValid) => setState(() => isBasicInfoValid = isValid),
-    ),
-    timeAndLocation(
-      eventData: _eventData,
-      onValidityChanged: (isValid) => setState(() => isLocationValid = isValid),
-    ),
-    eventFormPage(
-      eventData: _eventData,
-      onValidityChanged: (isValid) => setState(() => isPrivacyValid = isValid),
-    ),
-    // Add your OverviewPage here
-    OverviewPage(eventData: _eventData),
+  List<StepDefinition> get stepsMeta => [
+    StepDefinition(
+        title: 'Basic Info',
+        content: basicInputInfo(
+          eventData: _eventData,
+          onValidityChanged: (isValid) =>
+              setState(() => isBasicInfoValid = isValid),
+        ),
+        isValid: isBasicInfoValid),
+    StepDefinition(
+        title: 'Time & Location',
+        content: timeAndLocation(
+          eventData: _eventData,
+          onValidityChanged: (isValid) =>
+              setState(() => isLocationValid = isValid),
+        ),
+        isValid: isLocationValid),
+    StepDefinition(
+        title: 'Privacy & Details',
+        content: eventFormPage(
+          eventData: _eventData,
+          onValidityChanged: (isValid) =>
+              setState(() => isPrivacyValid = isValid),
+        ),
+        isValid: isPrivacyValid),
+    StepDefinition(
+        title: 'Overview',
+        content: OverviewPage(eventData: _eventData),
+        isValid: true),
   ];
 
   void nextStep() {
-    if (currentStep < steps.length - 1) {
+    if (currentStep < stepsMeta.length - 1) {
       setState(() => currentStep++);
     }
   }
@@ -80,7 +88,6 @@ class _createEventPageState extends State<createEventPage> {
     }
   }
 
-// In create_event_page.dart
   Future<void> _createEventAndInvitations() async {
     showDialog(
       context: context,
@@ -95,7 +102,8 @@ class _createEventPageState extends State<createEventPage> {
       final currentUserId = AuthGate.getCurrentUserId();
       if (currentUserId == null) throw Exception('User not authenticated');
 
-      final currentAccountId = await userService.getAccountIdByAuthUserId(currentUserId);
+      final currentAccountId =
+      await UserService().getAccountIdByAuthUserId(currentUserId);
       if (currentAccountId == null) throw Exception('Account not found');
 
       if (_eventData.invitedUsers.isNotEmpty) {
@@ -110,13 +118,13 @@ class _createEventPageState extends State<createEventPage> {
         await _invitationService.createInvitations(invitations);
       }
 
-      Navigator.pop(context);
+      Navigator.pop(context); // Dismiss loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Event created successfully!')),
       );
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(); // Go back from create event flow
     } catch (e) {
-      Navigator.pop(context);
+      Navigator.pop(context); // Dismiss loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to create event: $e')),
       );
@@ -125,202 +133,126 @@ class _createEventPageState extends State<createEventPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white,
-      body: Container(
-        padding: EdgeInsets.all(0.0),
-        child: Column(
-          children: [
-            Container(
-              child: StepIndicator(value: currentStep),
+    bool isLastStep = currentStep == stepsMeta.length - 1;
+    bool isStepValid = stepsMeta[currentStep].isValid;
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          CustomStepper(
+            step: currentStep,
+            stepTitles: stepsMeta.map((s) => s.title).toList(),
+          ),
+          const SizedBox(height: 24.0),
+          Expanded(
+            child: IndexedStack(
+              index: currentStep,
+              children: stepsMeta.map((s) => s.content).toList(),
             ),
-            SizedBox(height: 20.0),
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Color(0xFFD5EAFF),
-                    width: 1,
+          ),
+          const SizedBox(height: 16.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (currentStep > 0)
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: prevStep,
+                  label: const Text('Back'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(child: IndexedStack(index: currentStep, children: steps)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (currentStep > 0)
-                          TextButton(onPressed: prevStep, child: Text('Back')),
-                        // In CreateEventPage's build method:
-                        TextButton(
-                          onPressed: () async {
-                            final isLastStep = currentStep == steps.length - 1;
-                            bool currentStepValid;
-
-                            switch (currentStep) {
-                              case 0:
-                                currentStepValid = isBasicInfoValid;
-                                break;
-                              case 1:
-                                currentStepValid = isLocationValid;
-                                break;
-                              case 2:
-                                currentStepValid = true; // Event form page is always valid
-                                break;
-                              case 3:
-                                currentStepValid = true; // Overview page is always valid
-                                break;
-                              default:
-                                currentStepValid = true;
-                            }
-                            //return currentStepValid ? nextStep : null;
-                            if (!currentStepValid) return;
-
-                            if (isLastStep) {
-                              // Attempt to create the event in Supabase
-                              //final success = await EventService.createEvent(_eventData);
-                              /*if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Event created successfully!')),
-                                );
-                                Navigator.of(context).pop();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Failed to create event.')),
-                                );
-                              }*/
-
-                              await _createEventAndInvitations();
-                            } else {
-                              nextStep();
-                            }
-                          },
-                          child: Text(
-                              currentStep == steps.length - 1 ? 'Finish' : 'Next'
-                          ),
-                        )
-                      ],
-                    ),
-                  ],
+                )
+              else
+                const SizedBox(), // To maintain space
+              ElevatedButton.icon(
+                icon: Icon(
+                    isLastStep ? Icons.check_circle : Icons.arrow_forward),
+                label: Text(isLastStep ? 'Create Event' : 'Next'),
+                onPressed: !isStepValid
+                    ? null
+                    : () async {
+                  if (isLastStep) {
+                    await _createEventAndInvitations();
+                  } else {
+                    nextStep();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-class StepIndicator extends StatelessWidget {
-  final int value;
-  StepIndicator({required this.value});
+class CustomStepper extends StatelessWidget {
+  final int step;
+  final List<String> stepTitles;
+
+  const CustomStepper({Key? key, required this.step, required this.stepTitles})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: _stepIndicator(value),
-    );
-  }
-
-  Widget _stepBox(bool isActive, String text) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-          color: isActive ? Colors.blue : Color(0xFFD5EAFF),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Color(0xFFD5EAFF),
-            width: 2,
-          )
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: isActive ? Colors.white : Colors.black,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _stepIndicator(int value) {
-    if(value == 0) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _stepBox(true, '1. Basic Info'),
-          Container(width: 15, height: 3, color: Color(0xFFD5EAFF)),
-          _stepBox(false, '2'),
-          Container(width: 15, height: 3, color: Color(0xFFD5EAFF)),
-          _stepBox(false, '3'),
-        ],
-      );
-    } else if(value == 1) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _stepBox(false, '1'),
-          Container(width: 15, height: 3, color: Color(0xFFD5EAFF)),
-          _stepBox(true, '2. Time & Location'),
-          Container(width: 15, height: 3, color: Color(0xFFD5EAFF)),
-          _stepBox(false, '3'),
-        ],
-      );
-    } else if(value == 2) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _stepBox(false, '1'),
-          Container(width: 15, height: 3, color: Color(0xFFD5EAFF)),
-          _stepBox(false, '2'),
-          Container(width: 15, height: 3, color: Color(0xFFD5EAFF)),
-          _stepBox(true, '3. Privacy & Settings'),
-        ],
-      );
-    } else if (value == 3) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _stepBox(true, 'Review your event'),
-        ],
-      );
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _stepBox(true, '1. Basic Info'),
-        Container(width: 15, height: 3, color: Color(0xFFD5EAFF)),
-        _stepBox(false, '2'),
-        Container(width: 15, height: 3, color: Color(0xFFD5EAFF)),
-        _stepBox(false, '3'),
+        Text(
+          'Step ${step + 1} of ${stepTitles.length}: ${stepTitles[step]}',
+          style: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: List.generate(stepTitles.length, (index) {
+            return Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                height: 6,
+                decoration: BoxDecoration(
+                  color: index <= step
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            );
+          }),
+        ),
       ],
     );
   }
 }
 
-class _Category {
-  final String label;
-  final IconData icon;
+class StepDefinition {
+  final String title;
+  final Widget content;
+  final bool isValid;
 
-  _Category({
-    required this.label,
-    required this.icon,
-  });
+  StepDefinition(
+      {required this.title, required this.content, required this.isValid});
 }
 
+// (Keep your existing EventData class here)
 class EventData {
   String eventName = '';
   String? category;
   String description = '';
   bool isOnline = false;
-
-  // Add other fields from other steps as needed
   DateTime? eventDate;
   String? location;
   TimeOfDay? eventTime;
@@ -328,22 +260,18 @@ class EventData {
   bool repeatEvent = false;
   List<bool> repeatDays = [false, false, false, false, false, false, false];
   int repeatEveryWeeks = 1;
-  //LatLng? locationLatLng;
   String? locationName;
-// You can also add badges, limits, privacy, etc.
-
   bool isPublic = true;
   int? maxAttendees;
   DateTime? signUpDeadline;
   bool offerBadge = true;
   List<String> invitedUserIds = [];
   List<UserObject> invitedUsers = [];
-
   File? eventImageFile;
   String? eventImageUrl;
   String? get imagePath => eventImageFile?.path;
+  DateTime? createdAt;
 
-  // Add this to EventData class
   String get invitedUsersDisplay {
     if (invitedUsers.isEmpty) return 'No invited users';
 
@@ -356,33 +284,30 @@ class EventData {
     return '${names.take(3).join(', ')} +${names.length - 3} more';
   }
 
-
-    Map<String, dynamic> toMap(String creatorAccountId) {
-      // 1) Format Date part
-      String? formattedDate = eventDate
-          ?.toIso8601String()
-          .split('T')
-          .first; // yyyy-MM-dd
-
-      // 2) Format Time part
-      String? formattedTime;
-      if (eventTime != null) {
-        final twoDigit = (int v) => v.toString().padLeft(2, '0');
-        formattedTime =
-        '${twoDigit(eventTime!.hour)}:${twoDigit(eventTime!.minute)}:00';
-      }
-      return {
-        'eventname'           : eventName,
-        'eventdescription'    : description,
-        'isPhysical'          : !isOnline,
-        'startdate'           : formattedDate,
-        'eventTime'           : formattedTime,
-        'locationName'        : locationName,
-        'locationLatLng'      : location,
-        'eventcategory'       : category,
-        'maxnumberofpeople'   : maxAttendees,
-        'eventcreatorid_uuid' : creatorAccountId,
-        'eventimageurl': eventImageUrl,
-      };
+  Map<String, dynamic> toMap(String creatorAccountId) {
+    DateTime? startDateTime;
+    if (eventDate != null && eventTime != null) {
+      startDateTime = DateTime(
+        eventDate!.year,
+        eventDate!.month,
+        eventDate!.day,
+        eventTime!.hour,
+        eventTime!.minute,
+      );
     }
+
+    return {
+      'eventname': eventName,
+      'eventdescription': description,
+      'isPhysical': !isOnline,
+      'startdate': startDateTime?.toIso8601String(),
+      'locationName': locationName,
+      'locationLatLng': location,
+      'eventcategory': category,
+      'maxnumberofpeople': maxAttendees,
+      'eventcreatorid_uuid': creatorAccountId,
+      'eventimageurl': eventImageUrl,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+  }
 }
