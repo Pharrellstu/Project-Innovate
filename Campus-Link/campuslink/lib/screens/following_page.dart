@@ -1,8 +1,9 @@
-import 'package:campuslink/screens/user_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/models/user.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:campuslink/services/following_service.dart';
+import 'package:campuslink/screens/user_profile_page.dart';
+import '../services/auth_gate.dart';
 
 class FollowingPage extends StatefulWidget {
   final int accountId;
@@ -14,20 +15,27 @@ class FollowingPage extends StatefulWidget {
 }
 
 class _FollowingPageState extends State<FollowingPage> {
-  final UserService _userService = UserService();
   final FollowingService _followingService = FollowingService();
-  late Future<List<UserObject>> _followingUsersFuture;
+  final UserService _userService = UserService();
+  late Future<List<UserObject>> _followingFuture;
+  late Future<int> _currentUserAccountId;
 
   @override
   void initState() {
     super.initState();
-    _followingUsersFuture = _fetchFollowingUsers();
+    _followingFuture = _fetchFollowing();
+    _currentUserAccountId = _getCurrentUserAccountId();
   }
 
-  Future<List<UserObject>> _fetchFollowingUsers() async {
+  Future<int> _getCurrentUserAccountId() async {
+    final userId = AuthGate.getCurrentUserId();
+    if (userId == null) return 0;
+    return await _userService.getAccountIdByAuthUserId(userId) ?? 0;
+  }
+
+  Future<List<UserObject>> _fetchFollowing() async {
     final followingIds = await FollowingService.getFollowingIds(widget.accountId);
 
-    // Fetch all users in parallel
     final users = await Future.wait(
       followingIds.map((id) => _userService.getUserByAccountId(id)),
     );
@@ -36,12 +44,13 @@ class _FollowingPageState extends State<FollowingPage> {
   }
 
   Future<void> _unfollowUser(int userId) async {
+    final currentUserAccountId = await _currentUserAccountId;
     await FollowingService.unfollow(
-      followerId: widget.accountId,
+      followerId: currentUserAccountId,
       followingId: userId,
     );
     setState(() {
-      _followingUsersFuture = _fetchFollowingUsers();
+      _followingFuture = _fetchFollowing();
     });
   }
 
@@ -52,18 +61,24 @@ class _FollowingPageState extends State<FollowingPage> {
       body: RefreshIndicator(
         onRefresh: () async {
           setState(() {
-            _followingUsersFuture = _fetchFollowingUsers();
+            _followingFuture = _fetchFollowing();
           });
         },
         child: FutureBuilder<List<UserObject>>(
-          future: _followingUsersFuture,
+          future: _followingFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('You are not following anyone yet'));
+              return Center(
+                child: Text(
+                    widget.accountId == (AuthGate.getCurrentUserId() ?? -1)
+                        ? 'You are not following anyone yet'
+                        : 'This account isn\'t following anyone'
+                ),
+              );
             }
 
             final users = snapshot.data!;
@@ -71,35 +86,61 @@ class _FollowingPageState extends State<FollowingPage> {
               itemCount: users.length,
               itemBuilder: (context, index) {
                 final user = users[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: user.profilePictureUrl != null &&
-                        user.profilePictureUrl!.isNotEmpty
-                        ? NetworkImage(user.profilePictureUrl!)
-                        : null,
-                    child: user.profilePictureUrl == null ||
-                        user.profilePictureUrl!.isEmpty
-                        ? const Icon(Icons.person)
-                        : null,
-                  ),
-                  title: Text(user.username ?? 'No username'),
-                  subtitle: Text(user.email ?? ''),
-                  onTap: () {
-                    // Navigate to user profile
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UserProfilePage(
-                          userId: user.accountId!,
-                          currentUserAccountId: widget.accountId,
+                return FutureBuilder<int>(
+                  future: _currentUserAccountId,
+                  builder: (context, currentUserSnapshot) {
+                    final currentUserAccountId = currentUserSnapshot.data ?? 0;
+                    final isCurrentUser = user.accountId == currentUserAccountId;
+
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: user.profilePictureUrl != null &&
+                            user.profilePictureUrl!.isNotEmpty
+                            ? NetworkImage(user.profilePictureUrl!)
+                            : null,
+                      ),
+                      title: Text(user.username ?? 'No username'),
+                      subtitle: Text(user.email ?? ''),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UserProfilePage(
+                              userId: user.accountId!,
+                              currentUserAccountId: currentUserAccountId,
+                            ),
+                          ),
+                        );
+                      },
+                      trailing: isCurrentUser
+                          ? null
+                          : FutureBuilder<bool>(
+                        future: FollowingService.isFollowing(
+                          followerId: currentUserAccountId,
+                          followingId: user.accountId!,
                         ),
+                        builder: (context, isFollowingSnapshot) {
+                          if (isFollowingSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            );
+                          }
+
+                          final isFollowing = isFollowingSnapshot.data ?? false;
+                          return IconButton(
+                            icon: Icon(
+                              isFollowing ? Icons.person_remove : Icons.person_add,
+                              color: isFollowing ? Colors.red : Colors.blue,
+                            ),
+                            onPressed: () => _unfollowUser(user.accountId!),
+                          );
+                        },
                       ),
                     );
                   },
-                  trailing: IconButton(
-                    icon: const Icon(Icons.person_remove, color: Colors.red),
-                    onPressed: () => _unfollowUser(user.accountId!),
-                  ),
                 );
               },
             );

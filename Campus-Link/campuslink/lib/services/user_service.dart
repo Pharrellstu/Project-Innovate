@@ -173,9 +173,9 @@ class UserService {
   Future<int> getFollowersCount(int accountId) async {
     try {
       final response = await supabase
-          .from('follower')
+          .from('following')
           .select()
-          .eq('following_id', accountId);
+          .eq('followingpersonid', accountId);
 
       return response.length;
     } catch (e) {
