@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart'; // Keep if you use other Flutter specific imports here, otherwise remove
-import 'package:intl/intl.dart';
-
 class EventModel {
   final int eventId;
   final String eventName;
@@ -18,10 +15,7 @@ class EventModel {
   final DateTime? signUpDeadline;
   //final bool offerBadge;
   final String? eventCreatorUUID;
-  final String? eventImageUrl;
-  final DateTime? createdAt;
-
-  EventModel({
+  final String? eventImageUrl;  EventModel({
     required this.eventId,
     required this.eventName,
     this.category,
@@ -39,7 +33,6 @@ class EventModel {
     this.eventImageUrl,
     //required this.offerBadge,
     required this.eventCreatorUUID,
-    required this.createdAt,
   });
 
   factory EventModel.fromMap(Map<String, dynamic> map) {
@@ -48,9 +41,7 @@ class EventModel {
       final parts = loc.split(',');
       if (parts.length != 2) return null;
       return double.tryParse(getLat ? parts[0].trim() : parts[1].trim());
-    }
-
-    // You can keep the print statements for your own debugging if you wish
+    }    // You can keep the print statements for your own debugging if you wish
     // print('--- Event Raw Map Data ---');
     // print('id: ${map['id']}');
     // print('eventname: ${map['eventname']}'); // Corrected key
@@ -60,29 +51,26 @@ class EventModel {
     // // ... print other fields
     // print('--------------------------');
 
-
     return EventModel(
       eventId: (map['event_id'] as int?) ?? 0,
       eventName: (map['eventname'] as String?) ?? 'Unnamed Event',
       category: (map['eventcategory'] as String?) ?? 'No Category',
       description: (map['eventdescription'] as String?) ?? 'No description provided.',
-      isOnline: (map['is_online'] as bool?) ?? false,
+      isOnline: !(map['isPhysical'] as bool? ?? true), // isOnline is opposite of isPhysical
       eventDate: map['startdate'] != null
           ? DateTime.tryParse(map['startdate'] as String)
           : null,
-      eventTime: map['event_time'] as String?,
-      eventDuration: map['event_duration'] as int?,
+      eventTime: map['eventTime'] as String?, // Fixed: use eventTime from schema
+      eventDuration: map['duration'] as int?, // Fixed: use duration from schema
       locationName: (map['locationName'] as String?) ?? 'Online',
       locationLat: _parse(map['locationLatLng'] as String?, true),
       locationLng: _parse(map['locationLatLng'] as String?, false),
-      isPublic: (map['is_public'] as bool?) ?? true,
+      isPublic: (map['isPublic'] as bool?) ?? true, // Fixed: use isPublic from schema
       maxnumberofpeople: map['maxnumberofpeople'] as int?,
       signUpDeadline: map['sign_up_deadline'] != null
           ? DateTime.tryParse(map['sign_up_deadline'] as String)
-          : null,
-      eventCreatorUUID: map['eventcreatorid_uuid'] as String?,
+          : null,      eventCreatorUUID: map['eventcreatorid_uuid'] as String?,
       eventImageUrl: map['eventimageurl'] as String?,
-      createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
 }

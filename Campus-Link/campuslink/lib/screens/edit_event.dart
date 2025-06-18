@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:campuslink/services/edit_event_service.dart';
+import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
 import 'dart:developer';
 
@@ -78,7 +78,7 @@ class _EditEventPageState extends State<EditEventPage> {
     setState(() => _isLoading = true);
     
     try {
-      final eventData = await EditEventService.getEventById(widget.eventId);
+      final eventData = await EventService.getEventById(widget.eventId);
       
       if (eventData != null && mounted) {
         setState(() {
@@ -228,10 +228,8 @@ class _EditEventPageState extends State<EditEventPage> {
       String? imageUrl = _currentEventImageUrl;
       
       // Upload new image if selected
-      if (_newEventImage != null) {
-        imageUrl = await EditEventService.uploadEventImage(
+      if (_newEventImage != null) {        imageUrl = await EventService.uploadEventImage(
           _newEventImage!,
-          oldImageUrl: _currentEventImageUrl,
         );
         
         if (imageUrl == null) {
@@ -269,7 +267,7 @@ class _EditEventPageState extends State<EditEventPage> {
       log('Attempting to save event to database...');
       log('Event data: ${updatedEvent.eventName}, Date: ${updatedEvent.eventDate}, Location: ${updatedEvent.locationName}');
       
-      final success = await EditEventService.updateEvent(updatedEvent);
+      final success = await EventService.updateEvent(updatedEvent);
       
       log('Database update result: $success');
       
@@ -653,8 +651,8 @@ class _EditEventPageState extends State<EditEventPage> {
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                      subdomains: ['a', 'b', 'c'],
+                      urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      userAgentPackageName: 'com.example.campuslink',
                     ),
                     MarkerLayer(
                       markers: [
