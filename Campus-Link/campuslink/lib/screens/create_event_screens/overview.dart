@@ -39,7 +39,13 @@ class OverviewPage extends StatelessWidget {
               _buildDetailRow('Date', _formatDate(eventData.eventDate),
                   Icons.calendar_today_rounded),
               _buildDetailRow(
-                  'Time', _formatTime(eventData.eventTime, context), Icons.access_time_rounded),
+                  'Time', _formatTime(eventData.eventTime, context),
+                  Icons.access_time_rounded),
+              // Add duration row here
+              _buildDetailRow(
+                  'Duration',
+                  _formatDuration(eventData.eventDuration),
+                  Icons.timer_rounded),
             ],
           ),
           const SizedBox(height: 16),
@@ -96,6 +102,25 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
+  // Add duration formatting method
+  String _formatDuration(Duration? duration) {
+    if (duration == null) return 'Not specified';
+
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+
+    if (hours > 0 && minutes > 0) {
+      return '$hours hours ${minutes}m';
+    } else if (hours > 0) {
+      return '$hours hours';
+    } else if (minutes > 0) {
+      return '$minutes minutes';
+    } else {
+      return 'Not specified';
+    }
+  }
+
+  // Existing methods remain the same...
   Widget _buildSectionCard(String title, List<Widget> children) {
     return Card(
       elevation: 0,

@@ -25,13 +25,12 @@ class _timeAndLocationState extends State<timeAndLocation> {
   final MapController _mapController = MapController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _eventLinkController = TextEditingController();
-  bool _mapVisible = false; // Add this flag
+  bool _mapVisible = false;
 
   @override
   void initState() {
     super.initState();
     _locationController.text = widget.eventData.locationName ?? '';
-    // Initialize map visibility based on location
     _mapVisible = widget.eventData.location != null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -73,6 +72,109 @@ class _timeAndLocationState extends State<timeAndLocation> {
     }
   }
 
+  // Add duration picker method
+  Future<void> _pickDuration() async {
+    Duration tempDuration = widget.eventData.eventDuration ?? Duration.zero;
+
+    Duration? newDuration = await showDialog<Duration>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(  // Wrap in StatefulBuilder
+            builder: (context, setStateDialog) {  // Local setState for dialog
+              return AlertDialog(
+                title: const Text("Select Duration"),
+                content: Row(
+                  children: [
+                    Expanded(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        const Text("Hours"),
+                        DropdownButton<int>(
+                          value: tempDuration.inHours,
+                          items: List.generate(12, (i) => i)
+                              .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setStateDialog(() => tempDuration = Duration(  // Use setStateDialog
+                                  hours: value,
+                                  minutes: tempDuration.inMinutes.remainder(60)));
+                            }
+                          },
+                        ),
+                      ]),
+                    ),
+                    Expanded(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        const Text("Minutes"),
+                        DropdownButton<int>(
+                          value: tempDuration.inMinutes.remainder(60),
+                          items: List.generate(12, (i) => i * 5)
+                              .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setStateDialog(() => tempDuration = Duration(  // Use setStateDialog
+                                  hours: tempDuration.inHours, minutes: value));
+                            }
+                          },
+                        ),
+                      ]),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Cancel")),
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, tempDuration),
+                      child: const Text("OK")),
+                ],
+              );
+            }
+        );
+      },
+    );
+
+    if (newDuration != null) {
+      setState(() {
+        widget.eventData.eventDuration = newDuration;
+      });
+    }
+  }
+
+  // Add event description method
+  String get eventDescription {
+    if (widget.eventData.eventDate == null ||
+        widget.eventData.eventTime == null) {
+      return "Select date and time";
+    }
+
+    final start = DateTime(
+      widget.eventData.eventDate!.year,
+      widget.eventData.eventDate!.month,
+      widget.eventData.eventDate!.day,
+      widget.eventData.eventTime!.hour,
+      widget.eventData.eventTime!.minute,
+    );
+
+    final end = start.add(widget.eventData.eventDuration ?? Duration.zero);
+    return "This event will take place on ${_formatDate(
+        widget.eventData.eventDate!)} "
+        "from ${_formatTime(widget.eventData.eventTime!)} "
+        "until ${_formatTime(TimeOfDay.fromDateTime(end))}";
+  }
+
+  // Add date formatting method
+  String _formatDate(DateTime date) {
+    return DateFormat.yMMMd().format(date);
+  }
+
+  // Add time formatting method
+  String _formatTime(TimeOfDay time) {
+    return time.format(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -84,8 +186,68 @@ class _timeAndLocationState extends State<timeAndLocation> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          _buildDateTimePicker(),
+
+          // Updated date time picker with duration
+          Card(
+            elevation: 0,
+            color: Colors.grey.shade100,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.calendar_today_rounded),
+                    title: const Text('Date'),
+                    trailing: Text(
+                      widget.eventData.eventDate != null
+                          ? DateFormat.yMMMd().format(widget.eventData.eventDate!)
+                          : 'Select Date',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.blue),
+                    ),
+                    onTap: _pickDate,
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.access_time_rounded),
+                    title: const Text('Time'),
+                    trailing: Text(
+                      widget.eventData.eventTime?.format(context) ?? 'Select Time',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.blue),
+                    ),
+                    onTap: _pickTime,
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.timer_rounded),
+                    title: const Text('Duration'),
+                    trailing: Text(
+                      widget.eventData.eventDuration != null
+                          ? "${widget.eventData.eventDuration!.inHours}h ${widget.eventData.eventDuration!.inMinutes.remainder(60)}m"
+                          : 'Select Duration',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.blue),
+                    ),
+                    onTap: _pickDuration,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Text(
+                      eventDescription,
+                      style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Add repeat event section
+          _buildRepeatSection(),
           const SizedBox(height: 24),
+
           const Text(
             'Where is the event?',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -100,37 +262,87 @@ class _timeAndLocationState extends State<timeAndLocation> {
     );
   }
 
-  Widget _buildDateTimePicker() {
+  // Add repeat section widget
+  Widget _buildRepeatSection() {
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     return Card(
       elevation: 0,
       color: Colors.grey.shade100,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListTile(
-              leading: const Icon(Icons.calendar_today_rounded),
-              title: const Text('Date'),
-              trailing: Text(
-                widget.eventData.eventDate != null
-                    ? DateFormat.yMMMd().format(widget.eventData.eventDate!)
-                    : 'Select Date',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.blue),
-              ),
-              onTap: _pickDate,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Repeat Event? (Feature coming soon)",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Switch(
+                  value: widget.eventData.repeatEvent,
+                  onChanged: (val) => setState(() => widget.eventData.repeatEvent = val),
+                ),
+              ],
             ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.access_time_rounded),
-              title: const Text('Time'),
-              trailing: Text(
-                widget.eventData.eventTime?.format(context) ?? 'Select Time',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.blue),
+            if (widget.eventData.repeatEvent) ...[
+              const SizedBox(height: 10),
+              const Text(
+                "Select days to repeat the event:",
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
-              onTap: _pickTime,
-            ),
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(days.length, (i) {
+                  final selected = widget.eventData.repeatDays[i];
+                  return GestureDetector(
+                    onTap: () => setState(() => widget.eventData.repeatDays[i] = !widget.eventData.repeatDays[i]),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                          color: selected ? Colors.blue : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(width: 1, color: Colors.grey.shade400)),
+                      child: Text(days[i], style: TextStyle(color: selected ? Colors.white : Colors.black)),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Repeat every: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 180,
+                    height: 35,
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFF4F3F3),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(width: 1, color: Colors.grey.shade400)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        DropdownButton<int>(
+                          value: widget.eventData.repeatEveryWeeks,
+                          items: List.generate(10, (i) => i + 1)
+                              .map((e) => DropdownMenuItem(value: e, child: Text("$e")))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) setState(() => widget.eventData.repeatEveryWeeks = val);
+                          },
+                        ),
+                        const Text(" week(s)"),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -191,9 +403,8 @@ class _timeAndLocationState extends State<timeAndLocation> {
                 widget.eventData.location = "$lat,$lon";
                 widget.eventData.locationName = displayName;
                 _locationController.text = displayName;
-                _mapVisible = true; // Make map visible
+                _mapVisible = true;
               });
-              // Move map after state update
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
                   _mapController.move(LatLng(lat, lon), 15.0);
