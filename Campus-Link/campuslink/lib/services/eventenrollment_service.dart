@@ -68,4 +68,15 @@ class EventEnrollmentService {
     }
   }
 
+  static Future<int> getEnrollmentCountForEvent(int eventId) async {
+    try {
+      final response = await _supabase
+          .rpc('get_enrollment_count', params: {'event_id': eventId});
+
+      return response as int? ?? 0;
+    } catch (e) {
+      print('Error getting enrollment count: $e');
+      return 0;
+    }
+  }
 }
