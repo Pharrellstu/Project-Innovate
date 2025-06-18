@@ -2,6 +2,7 @@ import 'package:campuslink/models/user.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../services/auth_gate.dart';
 import '../create_event_page.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -45,8 +46,14 @@ class _eventFormPageState extends State<eventFormPage> {
     setState(() => _loadingUsers = true);
     try {
       final users = await _userService.getAllUsers();
+
+      // Get current user ID
+      final currentUserId = AuthGate.getCurrentUserId();
+
       setState(() {
-        _allUsers = users;
+        // Filter out the current user
+        _allUsers = users.where((user) => user.authUserId != currentUserId).toList();
+
         // Initialize selected users from eventData
         _selectedUsers = _allUsers.where((user) =>
             widget.eventData.invitedUserIds.contains(user.accountId.toString())
@@ -117,210 +124,216 @@ class _eventFormPageState extends State<eventFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Public/Private toggle
-            Text(
-              'Is it a Public or a Private Event?',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-
-            // Segmented control for Public / Private
-            Center(
-              child: ToggleButtons(
-                isSelected: [widget.eventData.isPublic, !widget.eventData.isPublic],
-                onPressed: (index) {
-                  setState(() {
-                    widget.eventData.isPublic = (index == 0);
-                  });
-                },
-                borderRadius: BorderRadius.circular(20),
-                selectedColor: Colors.white,
-                fillColor: Theme.of(context).primaryColor,
-                color: Theme.of(context).primaryColor,
-                borderColor: Theme.of(context).primaryColor,
-                selectedBorderColor: Theme.of(context).primaryColor,
-                constraints: BoxConstraints(
-                  minHeight: 22,
-                  minWidth: 60,
-                ),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    child: Text(
-                      'Public',
-                      style: TextStyle(fontSize: 12),
+                  // Public/Private toggle
+                  Text(
+                    'Is it a Public or a Private Event?',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Segmented control for Public / Private
+                  Center(
+                    child: ToggleButtons(
+                      isSelected: [widget.eventData.isPublic, !widget.eventData.isPublic],
+                      onPressed: (index) {
+                        setState(() {
+                          widget.eventData.isPublic = (index == 0);
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      selectedColor: Colors.white,
+                      fillColor: Theme.of(context).primaryColor,
+                      color: Theme.of(context).primaryColor,
+                      borderColor: Theme.of(context).primaryColor,
+                      selectedBorderColor: Theme.of(context).primaryColor,
+                      constraints: BoxConstraints(
+                        minHeight: 22,
+                        minWidth: 60,
+                      ),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          child: Text(
+                            'Public',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          child: Text(
+                            'Private',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    child: Text(
-                      'Private',
-                      style: TextStyle(fontSize: 12),
-                    ),
+
+                  const SizedBox(height: 24),
+
+                  // Max attendees input
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 180,
+                        child: Text(
+                          'Max attendees (optional)',
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade800,
+                              fontWeight: FontWeight.bold
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: _maxAttendeesController,
+                          keyboardType: TextInputType.number,
+                          style: TextStyle(fontSize: 13),
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            prefixIcon: Icon(Icons.person, size: 18),
+                            hintText: 'e.g. 10',
+                            hintStyle: TextStyle(fontSize: 13),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onChanged: (value) {
+                            final parsed = int.tryParse(value);
+                            if (parsed != null && parsed > 0) {
+                              widget.eventData.maxAttendees = parsed;
+                            } else {
+                              widget.eventData.maxAttendees = null;
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
+
+                  const SizedBox(height: 24),
+
+                  // Sign-up deadline
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 180,
+                        child: Text(
+                          'Sign-up Deadline (optional)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade800,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: InkWell(
+                          onTap: _pickDeadline,
+                          borderRadius: BorderRadius.circular(8),
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              prefixIcon: Icon(Icons.calendar_today, size: 18),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              widget.eventData.signUpDeadline != null
+                                  ? DateFormat.yMMMMd().format(widget.eventData.signUpDeadline!)
+                                  : 'Select date',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: widget.eventData.signUpDeadline == null
+                                    ? Colors.grey.shade500
+                                    : Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Badge offer switch
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Offer Badge/Collectible?',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Switch(
+                        value: widget.eventData.offerBadge,
+                        onChanged: (v) {
+                          setState(() {
+                            widget.eventData.offerBadge = v;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Invite section header
+                  Row(
+                    children: [
+                      Text(
+                        'Invite people',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (_selectedUsers.isNotEmpty)
+                        Text(
+                          '(${_selectedUsers.length} selected)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Invited users list
+                  SizedBox(
+                    height: 70,
+                    child: _loadingUsers
+                        ? Center(child: CircularProgressIndicator())
+                        : _buildInvitedUsersList(),
+                  ),
+                  _buildImageSection(),
                 ],
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Max attendees input
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 180,
-                  child: Text(
-                    'Max attendees (optional)',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade800,
-                        fontWeight: FontWeight.bold
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextField(
-                    controller: _maxAttendeesController,
-                    keyboardType: TextInputType.number,
-                    style: TextStyle(fontSize: 13),
-                    decoration: InputDecoration(
-                      contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      prefixIcon: Icon(Icons.person, size: 18),
-                      hintText: 'e.g. 10',
-                      hintStyle: TextStyle(fontSize: 13),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      final parsed = int.tryParse(value);
-                      if (parsed != null && parsed > 0) {
-                        widget.eventData.maxAttendees = parsed;
-                      } else {
-                        widget.eventData.maxAttendees = null;
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Sign-up deadline
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 180,
-                  child: Text(
-                    'Sign-up Deadline (optional)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade800,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: InkWell(
-                    onTap: _pickDeadline,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                        prefixIcon: Icon(Icons.calendar_today, size: 18),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        widget.eventData.signUpDeadline != null
-                            ? DateFormat.yMMMMd().format(widget.eventData.signUpDeadline!)
-                            : 'Select date',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: widget.eventData.signUpDeadline == null
-                              ? Colors.grey.shade500
-                              : Colors.black,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Badge offer switch
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Offer Badge/Collectible?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade800,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Switch(
-                  value: widget.eventData.offerBadge,
-                  onChanged: (v) {
-                    setState(() {
-                      widget.eventData.offerBadge = v;
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Invite section header
-            Row(
-              children: [
-                Text(
-                  'Invite people',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade800,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (_selectedUsers.isNotEmpty)
-                  Text(
-                    '(${_selectedUsers.length} selected)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Invited users list
-            SizedBox(
-              height: 70,
-              child: _loadingUsers
-                  ? Center(child: CircularProgressIndicator())
-                  : _buildInvitedUsersList(),
-            ),
-            _buildImageSection(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -340,7 +353,7 @@ class _eventFormPageState extends State<eventFormPage> {
         ),
         const SizedBox(height: 8),
         AspectRatio(
-          aspectRatio: 16/5, // Maintain aspect ratio (16:9 is common for event images)
+          aspectRatio: 16/9, // Maintain aspect ratio (16:9 is common for event images)
           child: GestureDetector(
             onTap: _pickImage,
             child: Container(

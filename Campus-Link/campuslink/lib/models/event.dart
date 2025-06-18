@@ -17,7 +17,7 @@ class EventModel {
   final int? maxnumberofpeople;
   final DateTime? signUpDeadline;
   //final bool offerBadge;
-  final String creatorUserId;
+  final String? eventCreatorUUID;
   final String? eventImageUrl;
 
   EventModel({
@@ -37,7 +37,7 @@ class EventModel {
     this.signUpDeadline,
     this.eventImageUrl,
     //required this.offerBadge,
-    required this.creatorUserId,
+    required this.eventCreatorUUID,
   });
 
   factory EventModel.fromMap(Map<String, dynamic> map) {
@@ -78,7 +78,7 @@ class EventModel {
       signUpDeadline: map['sign_up_deadline'] != null
           ? DateTime.tryParse(map['sign_up_deadline'] as String)
           : null,
-      creatorUserId: (map['creator_user_id'] as String?) ?? '',
+      eventCreatorUUID: map['eventcreatorid_uuid'] as String?,
       eventImageUrl: map['eventimageurl'] as String?,
     );
   }

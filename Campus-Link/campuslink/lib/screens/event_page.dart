@@ -7,6 +7,9 @@ import 'package:campuslink/services/auth_gate.dart';
 import 'package:intl/intl.dart';
 
 import '../models/eventenrollment.dart';
+import '../models/user.dart';
+import '../services/event_invitation_service.dart';
+import 'create_event_page.dart';
 
 class EventPage extends StatefulWidget {
   final int eventId;
@@ -25,6 +28,15 @@ class _EventPageState extends State<EventPage> {
   int? _currentUserAccountId;
   final ScrollController _locationController = ScrollController();
   final ScrollController _creatorController = ScrollController();
+  UserObject? _creator;
+
+  // Add this helper method in _EventPageState
+  bool get _isCreator {
+    final currentUserId = AuthGate.getCurrentUserId();
+    return currentUserId != null &&
+        event != null &&
+        event!.eventCreatorUUID == currentUserId;
+  }
 
   @override
   void initState() {
@@ -73,6 +85,12 @@ class _EventPageState extends State<EventPage> {
     try {
       final eventData = await EventService.getEventById(widget.eventId);
       if (eventData != null) {
+        // Fetch creator information
+        if (eventData.eventCreatorUUID != null) {
+          final creator = await UserService().getUserByAuthUserId(eventData.eventCreatorUUID!);
+          setState(() => _creator = creator);
+        }
+
         setState(() {
           event = eventData;
           _isLoading = false;
@@ -113,6 +131,17 @@ class _EventPageState extends State<EventPage> {
         widget.eventId,
         _currentUserAccountId!,
       );
+
+      // Add this block to update invitation status
+      try {
+        await EventInvitationService.acceptInvitationByEventAndReceiver(
+          widget.eventId,
+          _currentUserAccountId!,
+        );
+      } catch (e) {
+        print("No invitation found to update: $e");
+      }
+
       setState(() => _isEnrolled = true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Successfully joined the event!')),
@@ -124,12 +153,88 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
+  Future<void> _editEvent() async {
+    // Navigate to edit screen with event data
+    /*Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateEventPage(),
+      ),
+    );*/
+  }
+
+  Future<void> _deleteEvent() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Event?'),
+        content: const Text('This action cannot be undone'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await EventService.deleteEvent(event!.eventId);
+                Navigator.pop(context); // Close event page after deletion
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Deletion failed: ${e.toString()}')),
+                );
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildJoinButton() {
+    // Creator sees edit/delete buttons
+    if (_isCreator) {
+      return Row(
+        children: [
+          // Edit Button
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _editEvent(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: const Text(
+                'Edit Event',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Delete Button
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _deleteEvent(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: const Text(
+                'Delete Event',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Non-creator sees regular join button
     if (_currentUserAccountId == null) {
       return ElevatedButton(
-        onPressed: () {
-          Navigator.pushReplacementNamed(context, '/login');
-        },
+        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).primaryColor,
           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -144,9 +249,7 @@ class _EventPageState extends State<EventPage> {
     return ElevatedButton(
       onPressed: _isEnrolled ? null : _enrollInEvent,
       style: ElevatedButton.styleFrom(
-        backgroundColor: _isEnrolled
-            ? Colors.grey
-            : Theme.of(context).primaryColor,
+        backgroundColor: _isEnrolled ? Colors.grey : Theme.of(context).primaryColor,
         padding: const EdgeInsets.symmetric(vertical: 16),
       ),
       child: Text(
@@ -216,38 +319,50 @@ class _EventPageState extends State<EventPage> {
         padding: const EdgeInsets.all(16),
         children: [
           // Creator info with profile picture and name
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: AssetImage('resources/icons/profile_placeholder.png'),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event?.creatorUserId ?? 'Unknown Creator',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          // event_page.dart - In the build method
+          FutureBuilder<UserObject?>(
+            future: event?.eventCreatorUUID != null
+                ? UserService().getUserByAuthUserId(event!.eventCreatorUUID!)
+                : Future.value(null),
+            builder: (context, snapshot) {
+              final creator = snapshot.data;
+              return Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: creator?.profilePictureUrl != null
+                        ? NetworkImage(creator!.profilePictureUrl!) as ImageProvider
+                        : AssetImage('resources/icons/profile_placeholder.png'),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          creator?.username ?? 'Unknown Creator',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Created ${DateFormat('MMM dd').format(event!.eventDate!)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'Created ${DateFormat('MMM dd').format(event!.eventDate!)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
+
           const SizedBox(height: 20),
 
           // Event image with overlay text
@@ -355,7 +470,7 @@ class _EventPageState extends State<EventPage> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildMetadataItem(Icons.category, event?.category ?? 'No Category'),
-              _buildMetadataItem(Icons.person, event?.creatorUserId ?? 'Unknown'),
+              //_buildMetadataItem(Icons.person, _creator?.username ?? 'Unknown Creator'),
               _buildMetadataItem(Icons.calendar_today,
                   DateFormat('MM/dd').format(event!.eventDate!)),
               _buildMetadataItem(Icons.location_on, event?.locationName ?? 'Online'),
