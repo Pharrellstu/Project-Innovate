@@ -269,7 +269,11 @@ class _EventPageState extends State<EventPage> {
 
             // Event Card
             _buildEventCard(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+
+            // Join/Leave Button - moved here
+            _buildJoinButton(),
+            const SizedBox(height: 24),
 
             // Metadata
             _buildMetadataGrid(),
@@ -277,10 +281,6 @@ class _EventPageState extends State<EventPage> {
 
             // Attendance
             _buildAttendanceSection(),
-            const SizedBox(height: 24),
-
-            // Join/Leave Button
-            _buildJoinButton(),
           ],
         ),
       ),
@@ -521,78 +521,170 @@ class _EventPageState extends State<EventPage> {
   Widget _buildJoinButton() {
     // Creator sees edit/delete buttons
     if (_isCreator) {
-      return Row(
-        children: [
-          // Edit Button
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => _editEvent(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text(
-                'Edit Event',
-                style: TextStyle(fontSize: 18, color: Colors.white),
+      return Container(
+        width: double.infinity,
+        child: Column(
+          children: [
+            // Edit Button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => _editEvent(),
+                icon: const Icon(Icons.edit, color: Colors.white, size: 20),
+                label: const Text(
+                  'Edit Event',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0074CE),
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: Colors.black26,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          // Delete Button
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => _deleteEvent(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text(
-                'Delete Event',
-                style: TextStyle(fontSize: 18, color: Colors.white),
+            const SizedBox(height: 12),
+            // Delete Button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => _deleteEvent(),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                label: const Text(
+                  'Delete Event',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE53E3E),
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: Colors.black26,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
     // Non-creator sees regular join button
     if (_currentUserAccountId == null) {
-      return ElevatedButton(
-        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: const Text(
-          'Login to Join',
-          style: TextStyle(fontSize: 18, color: Colors.white),
+      return SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: ElevatedButton.icon(
+          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+          icon: const Icon(Icons.login, color: Colors.white, size: 22),
+          label: const Text(
+            'Login to Join',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF0074CE),
+            foregroundColor: Colors.white,
+            elevation: 3,
+            shadowColor: Colors.black26,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
         ),
       );
     }
 
     if (_isEnrolled) {
-      return ElevatedButton(
-        onPressed: _unEnrollInEvent,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFD30E26),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: const Text(
-          'Leave Event',
-          style: TextStyle(fontSize: 18, color: Colors.white),
+      return SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: ElevatedButton.icon(
+          onPressed: _unEnrollInEvent,
+          icon: const Icon(Icons.exit_to_app, color: Colors.white, size: 22),
+          label: const Text(
+            'Leave Event',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFE53E3E),
+            foregroundColor: Colors.white,
+            elevation: 3,
+            shadowColor: Colors.black26,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
         ),
       );
     } else {
-      return ElevatedButton(
-        onPressed: _enrollInEvent,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+      return Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0074CE), Color(0xFF0091FF)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0074CE).withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: const Text(
-          'Join Event',
-          style: TextStyle(fontSize: 18, color: Colors.white),
+        child: ElevatedButton.icon(
+          onPressed: _enrollInEvent,
+          icon: const Icon(
+            Icons.add_circle_outline,
+            color: Colors.white,
+            size: 22,
+          ),
+          label: const Text(
+            'Join Event',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
         ),
       );
     }
