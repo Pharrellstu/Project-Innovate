@@ -162,7 +162,7 @@ class _EventPageState extends State<EventPage> {
     if (_currentUserAccountId == null) return;
 
     try {
-      // Check if event is full with latest count
+      // Get latest count directly from database
       final currentCount = await EventEnrollmentService.getEnrollmentCountForEvent(widget.eventId);
       if (event != null &&
           event!.maxnumberofpeople != null &&
@@ -333,14 +333,23 @@ class _EventPageState extends State<EventPage> {
       );
     } else {
       return ElevatedButton(
-        onPressed: isFull ? null : _enrollInEvent, // Disable if full
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isFull ? Colors.grey : Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+        onPressed: isFull ? null : _enrollInEvent,
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                (Set<MaterialState> states) {
+              return isFull ? Colors.grey[500]! : Theme.of(context).primaryColor;
+            },
+          ),
+          padding: MaterialStateProperty.all<EdgeInsets>(
+            const EdgeInsets.symmetric(vertical: 16),
+          ),
         ),
         child: Text(
           isFull ? 'Event Full' : 'Join Event',
-          style: const TextStyle(fontSize: 18, color: Colors.white),
+          style: const TextStyle(
+            fontSize: 18,
+            color: Colors.white,
+          ),
         ),
       );
     }
