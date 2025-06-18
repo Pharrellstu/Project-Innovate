@@ -1,78 +1,62 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:campuslink/models/comment.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/comment.dart';
+import '../models/user.dart';
+import 'user_service.dart';
 
 class CommentService {
-  static final _supabase = Supabase.instance.client;
-  static const _table = 'comment';
+  static const String _baseUrl = 'http://10.0.2.2:8000/api/comments';
 
-  /// Create a new comment
-  static Future<CommentModel> create({
-    int? commentCreator,
-    int? postId,
-    required String content,
-  }) async {
-    final payload = {
-      'commentcreator': commentCreator,
-      'post_id':        postId,
-      'content':        content,
-    };
+  // Fetch comments for a specific event
+  static Future<List<CommentModel>> getCommentsForEvent(int eventId) async {
+    final response = await http.get(Uri.parse('$_baseUrl/event/$eventId'));
 
-    final resp = await _supabase
-        .from(_table)
-        .insert(payload)
-        .select()
-        .single();
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      List<CommentModel> comments =
+          data.map((json) => CommentModel.fromJson(json)).toList();
 
-    return CommentModel.fromMap(resp as Map<String, dynamic>);
+      // Fetch user details for each comment
+      for (var comment in comments) {
+        comment.user = await UserService().getUserByAccountId(
+          comment.accountId,
+        );
+      }
+      return comments;
+    } else {
+      throw Exception('Failed to load comments');
+    }
   }
 
-  /// Fetch all comments
-  static Future<List<CommentModel>> fetchAll() async {
-    final rows = await _supabase.from(_table).select();
-    return (rows as List)
-        .map((r) => CommentModel.fromMap(r as Map<String, dynamic>))
-        .toList();
+  // Post a new comment
+  static Future<CommentModel> postComment(
+    int eventId,
+    int accountId,
+    String commentText,
+  ) async {
+    final response = await http.post(
+      Uri.parse(_baseUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'event_id': eventId,
+        'account_id': accountId,
+        'comment_text': commentText,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return CommentModel.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to post comment');
+    }
   }
 
-  /// Fetch comments by post
-  static Future<List<CommentModel>> fetchByPostId(int postId) async {
-    final rows = await _supabase
-        .from(_table)
-        .select()
-        .eq('post_id', postId);
-    return (rows as List)
-        .map((r) => CommentModel.fromMap(r as Map<String, dynamic>))
-        .toList();
-  }
+  // Delete a comment
+  static Future<void> deleteComment(int commentId) async {
+    final response = await http.delete(Uri.parse('$_baseUrl/$commentId'));
 
-  /// Fetch a comment by its PK
-  static Future<CommentModel?> fetchById(int id) async {
-    final resp = await _supabase
-        .from(_table)
-        .select()
-        .eq('comment_id', id)
-        .maybeSingle();
-    if (resp == null) return null;
-    return CommentModel.fromMap(resp as Map<String, dynamic>);
-  }
-
-  /// Update an existing comment
-  static Future<bool> update(CommentModel model) async {
-    final rows = await _supabase
-        .from(_table)
-        .update(model.toMap())
-        .eq('comment_id', model.commentId)
-        .select();
-    return (rows as List).isNotEmpty;
-  }
-
-  /// Delete a comment
-  static Future<bool> delete(int id) async {
-    final rows = await _supabase
-        .from(_table)
-        .delete()
-        .eq('comment_id', id)
-        .select();
-    return (rows as List).isNotEmpty;
+    if (response.statusCode != 204) {
+      throw Exception('Failed to delete comment');
+    }
   }
 }
