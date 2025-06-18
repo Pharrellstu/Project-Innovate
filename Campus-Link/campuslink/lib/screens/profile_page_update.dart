@@ -2,6 +2,7 @@ import 'package:campuslink/screens/create_event_page.dart';
 import 'package:campuslink/screens/edit_profile_page.dart';
 import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/my_events_page.dart';
+import 'package:campuslink/screens/setting_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/models/user.dart';
 import 'package:campuslink/services/user_service.dart';
@@ -11,6 +12,7 @@ import 'package:campuslink/screens/following_page.dart';
 import '../services/following_service.dart';
 import '../widgets/nav_bar.dart';
 import 'even_invitations_page.dart';
+import 'followers_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -61,9 +63,14 @@ class _ProfilePageState extends State<ProfilePage> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              //SettingsPage();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsPage(),
+                ),
+              );
             },
-          ),
+          )
         ],
       ),
       body: FutureBuilder<UserObject?>(
@@ -161,14 +168,17 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+// Update _buildCountColumn method
   Widget _buildCountColumn(int count, String label, UserObject user) {
     return GestureDetector(
       onTap: () {
-        if (label == 'Following' && user.accountId != null) {
+        if (user.accountId != null) {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => FollowingPage(accountId: user.accountId!),
+              builder: (context) => label == 'Following'
+                  ? FollowingPage(accountId: user.accountId!)
+                  : FollowersPage(accountId: user.accountId!),
             ),
           );
         }
@@ -181,7 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: label == 'Following' ? Colors.blue : null,
+              color: label == 'Following' ? Colors.blue : Colors.blue,
             ),
           ),
           const SizedBox(height: 4),
@@ -189,7 +199,7 @@ class _ProfilePageState extends State<ProfilePage> {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: label == 'Following' ? Colors.blue : Colors.grey,
+              color: label == 'Following' ? Colors.blue : Colors.blue,
             ),
           ),
         ],

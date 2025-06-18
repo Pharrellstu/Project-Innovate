@@ -75,7 +75,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('Campus Link'),
       ),
       body: FutureBuilder<UserObject?>(
         future: _userFuture,
@@ -122,7 +122,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 const SizedBox(height: 24),
 
                 // Follow Stats
-                _buildFollowStats(user),
+                //_buildFollowStats(user),
               ],
             ),
           );
@@ -135,31 +135,37 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: 60,
-          backgroundImage: user.profilePictureUrl != null &&
-              user.profilePictureUrl!.isNotEmpty
-              ? NetworkImage(user.profilePictureUrl!)
-              : null,
-          child: user.profilePictureUrl == null ||
-              user.profilePictureUrl!.isEmpty
-              ? const Icon(Icons.person, size: 60)
-              : null,
+        Column(
+          children: [
+            CircleAvatar(
+              radius: 60,
+              backgroundImage: user.profilePictureUrl != null &&
+                  user.profilePictureUrl!.isNotEmpty
+                  ? NetworkImage(user.profilePictureUrl!)
+                  : null,
+              child: user.profilePictureUrl == null ||
+                  user.profilePictureUrl!.isEmpty
+                  ? const Icon(Icons.person, size: 60)
+                  : null,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              user.bio ?? 'No bio available',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
         ),
         const SizedBox(width: 20),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            //mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 user.username ?? 'No username',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              const SizedBox(height: 8),
-              Text(
-                user.bio ?? 'No bio available',
-                style: const TextStyle(fontSize: 16),
-              ),
+              _buildFollowStats(user),
             ],
           ),
         ),
@@ -212,6 +218,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget _buildFollowStats(UserObject user) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         FutureBuilder<int>(
           future: _followersFuture,
