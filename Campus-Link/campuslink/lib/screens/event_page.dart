@@ -11,6 +11,7 @@ import '../models/eventenrollment.dart';
 import '../models/user.dart';
 import '../services/event_invitation_service.dart';
 import 'create_event_page.dart';
+import 'edit_event.dart';
 
 class EventPage extends StatefulWidget {
   final int eventId;
@@ -184,12 +185,21 @@ class _EventPageState extends State<EventPage> {
 
   Future<void> _editEvent() async {
     // Navigate to edit screen with event data
-    /*Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CreateEventPage(),
-      ),
-    );*/
+    if (event != null) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditEventPage(eventId: event!.eventId),
+        ),
+      );
+      
+      // If the edit was successful, refresh the event data
+      if (result == true) {
+        setState(() {
+          _eventFuture = _fetchEvent();
+        });
+      }
+    }
   }
 
   Future<void> _deleteEvent() async {
