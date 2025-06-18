@@ -221,16 +221,18 @@ class _AccountsPageState extends State<AccountsPage> {
                         ),
                       ),
                     ),
-                    Padding(
+                  Expanded( // Add Expanded here
+                    child: Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
                         user.bio ?? 'No bio',
                         style: const TextStyle(fontSize: 14),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                       ),
                     ),
+                  ),
                 ],
               ),
             ),

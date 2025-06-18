@@ -31,7 +31,9 @@ class _timeAndLocationState extends State<timeAndLocation> {
 
     // Defer initial validity check
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkValidity();
+      if (mounted) { // Good practice to check if the widget is still in the tree
+        _checkValidity();
+      }
     });
   }
 
@@ -103,55 +105,61 @@ class _timeAndLocationState extends State<timeAndLocation> {
     Duration tempDuration = selectedDuration;
     Duration? newDuration = await showDialog<Duration>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Select Duration"),
-        content: Row(
-          children: [
-            Expanded(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text("Hours"),
-                DropdownButton<int>(
-                  value: tempDuration.inHours,
-                  items: List.generate(12, (i) => i)
-                      .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => tempDuration = Duration(
-                          hours: value,
-                          minutes: tempDuration.inMinutes.remainder(60)));
-                    }
-                  },
+      builder: (context) =>
+          AlertDialog(
+            title: Text("Select Duration"),
+            content: Row(
+              children: [
+                Expanded(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text("Hours"),
+                    DropdownButton<int>(
+                      value: tempDuration.inHours,
+                      items: List.generate(12, (i) => i)
+                          .map((e) =>
+                          DropdownMenuItem(value: e, child: Text('$e')))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() =>
+                          tempDuration = Duration(
+                              hours: value,
+                              minutes: tempDuration.inMinutes.remainder(60)));
+                        }
+                      },
+                    ),
+                  ]),
                 ),
-              ]),
-            ),
-            Expanded(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text("Minutes"),
-                DropdownButton<int>(
-                  value: tempDuration.inMinutes.remainder(60),
-                  items: List.generate(12, (i) => i * 5)
-                      .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => tempDuration = Duration(
-                          hours: tempDuration.inHours, minutes: value));
-                    }
-                  },
+                Expanded(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text("Minutes"),
+                    DropdownButton<int>(
+                      value: tempDuration.inMinutes.remainder(60),
+                      items: List.generate(12, (i) => i * 5)
+                          .map((e) =>
+                          DropdownMenuItem(value: e, child: Text('$e')))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() =>
+                          tempDuration = Duration(
+                              hours: tempDuration.inHours, minutes: value));
+                        }
+                      },
+                    ),
+                  ]),
                 ),
-              ]),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context), child: Text("Cancel")),
-          TextButton(
-              onPressed: () => Navigator.pop(context, tempDuration),
-              child: Text("OK")),
-        ],
-      ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Cancel")),
+              TextButton(
+                  onPressed: () => Navigator.pop(context, tempDuration),
+                  child: Text("OK")),
+            ],
+          ),
     );
 
     if (newDuration != null) {
@@ -163,7 +171,8 @@ class _timeAndLocationState extends State<timeAndLocation> {
   }
 
   String get eventDescription {
-    if (widget.eventData.eventDate == null || widget.eventData.eventTime == null) {
+    if (widget.eventData.eventDate == null ||
+        widget.eventData.eventTime == null) {
       return "Select date and time";
     }
 
@@ -176,7 +185,8 @@ class _timeAndLocationState extends State<timeAndLocation> {
     );
 
     final end = start.add(widget.eventData.eventDuration ?? Duration.zero);
-    return "This event will take place on ${_formatDate(widget.eventData.eventDate!)} "
+    return "This event will take place on ${_formatDate(
+        widget.eventData.eventDate!)} "
         "from ${_formatTime(widget.eventData.eventTime!)} "
         "until ${_formatTime(TimeOfDay.fromDateTime(end))}";
   }
@@ -192,11 +202,18 @@ class _timeAndLocationState extends State<timeAndLocation> {
   String _formatTime(TimeOfDay time) {
     final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
     final period = time.period == DayPeriod.am ? "AM" : "PM";
-    return "${hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} $period";
+    return "${hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(
+        2, '0')} $period";
   }
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) { // Good practice to check if the widget is still in the tree
+        _checkValidity();
+      }
+    });
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -226,8 +243,9 @@ class _timeAndLocationState extends State<timeAndLocation> {
               child: _buildInputRow(
                   "Duration",
                   widget.eventData.eventDuration != null
-                  ? "${widget.eventData.eventDuration!.inHours}h ${widget.eventData.eventDuration!.inMinutes.remainder(60)}m"
-                  : "Select duration",
+                      ? "${widget.eventData.eventDuration!.inHours}h ${widget
+                      .eventData.eventDuration!.inMinutes.remainder(60)}m"
+                      : "Select duration",
                   Icons.timer)
           ),
           SizedBox(height: 8),
@@ -254,28 +272,30 @@ class _timeAndLocationState extends State<timeAndLocation> {
                 SizedBox(width: 10, height: 10,),
               ],
             ),
-          ] else ...[
+          ] else
+            ...[
 
-            _locationPicker(
-              selectedLocation: widget.eventData.location != null
-                  ? _parseLocation(widget.eventData.location!)
-                  : null,
-              isEditingLocation: isEditingLocation,
-              mapController: mapController,
-              locationController: locationController,
-              onEdit: () => setState(() => isEditingLocation = true),
-              onLocationSelected: (latLng, displayName) {
-                setState(() {
-                  widget.eventData.location = "${latLng.latitude},${latLng.longitude}";
-                  locationController.text = displayName;
-                  isEditingLocation = false;
-                  widget.eventData.locationName = displayName;
-                });
-                mapController.move(latLng, 15.0);
-                _checkValidity();
-              },
-            ),
-          ]
+              _locationPicker(
+                selectedLocation: widget.eventData.location != null
+                    ? _parseLocation(widget.eventData.location!)
+                    : null,
+                isEditingLocation: isEditingLocation,
+                mapController: mapController,
+                locationController: locationController,
+                onEdit: () => setState(() => isEditingLocation = true),
+                onLocationSelected: (latLng, displayName) {
+                  setState(() {
+                    widget.eventData.location =
+                    "${latLng.latitude},${latLng.longitude}";
+                    locationController.text = displayName;
+                    isEditingLocation = false;
+                    widget.eventData.locationName = displayName;
+                    _checkValidity();
+                  });
+                  mapController.move(latLng, 15.0);
+                },
+              ),
+            ]
         ]
         ),
       ),
@@ -294,7 +314,8 @@ class _timeAndLocationState extends State<timeAndLocation> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(children: [
-        Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        Text(
+            title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
         SizedBox(width: 10),
         Spacer(),
         Container(
@@ -310,7 +331,8 @@ class _timeAndLocationState extends State<timeAndLocation> {
               Icon(icon, color: Colors.grey),
               Text(
                   value,
-                  style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)
+                  style: TextStyle(
+                      color: Colors.black87, fontWeight: FontWeight.bold)
               ),
             ],
           ),
@@ -323,10 +345,12 @@ class _timeAndLocationState extends State<timeAndLocation> {
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text("Repeat Event? (Feature coming soon)", style: TextStyle(fontWeight: FontWeight.bold)),
+        Text("Repeat Event? (Feature coming soon)",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         Switch(
           value: widget.eventData.repeatEvent,
-          onChanged: (val) => setState(() => widget.eventData.repeatEvent = val),
+          onChanged: (val) =>
+              setState(() => widget.eventData.repeatEvent = val),
         )
       ]),
       if (widget.eventData.repeatEvent) ...[
@@ -344,7 +368,9 @@ class _timeAndLocationState extends State<timeAndLocation> {
               final selected = widget.eventData.repeatDays[i];
               return GestureDetector(
                 onTap: () =>
-                    setState(() => widget.eventData.repeatDays[i] = !widget.eventData.repeatDays[i]),
+                    setState(() =>
+                    widget.eventData.repeatDays[i] =
+                    !widget.eventData.repeatDays[i]),
                 child: Container(
                   width: 36,
                   height: 36,
@@ -391,7 +417,8 @@ class _timeAndLocationState extends State<timeAndLocation> {
                     DropdownButton<int>(
                       value: repeatEveryWeeks,
                       items: List.generate(10, (i) => i + 1)
-                          .map((e) => DropdownMenuItem(value: e, child: Text("[$e]")))
+                          .map((e) =>
+                          DropdownMenuItem(value: e, child: Text("[$e]")))
                           .toList(),
                       onChanged: (val) {
                         //if (val != null) setState(() => repeatEveryWeeks = val);
@@ -447,7 +474,8 @@ class _timeAndLocationState extends State<timeAndLocation> {
                           width: 80.0,
                           height: 80.0,
                           point: selectedLocation,
-                          child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+                          child: Icon(
+                              Icons.location_pin, color: Colors.red, size: 40),
                         ),
                       ],
                     ),
@@ -468,9 +496,44 @@ class _timeAndLocationState extends State<timeAndLocation> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Search for a location:", style: TextStyle(fontWeight: FontWeight.bold)),
-          SizedBox(height: 10),
+          const Text("Search for a location:",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
           TypeAheadField(
+            controller: locationController,
+            builder: (context, controller, focusNode) {
+              return TextField(
+                controller: controller,
+                focusNode: focusNode,
+                decoration: InputDecoration(
+                  hintText: 'e.g. NHL Stenden, Emmen',
+                  hintStyle: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF4F3F3),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 12,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade700,
+                      width: 2,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade500,
+                      width: 1,
+                    ),
+                  ),
+                ),
+              );
+            },
             itemBuilder: (context, suggestion) {
               final displayName = suggestion.split('|')[0];
               return ListTile(
@@ -506,10 +569,10 @@ class _timeAndLocationState extends State<timeAndLocation> {
                     return '$displayName|$lat|$lon';
                   }).toList();
                 } else {
-                  return []; // Return empty list on error
+                  return [];
                 }
               } catch (e) {
-                return []; // Return empty list on exception
+                return [];
               }
             },
           ),

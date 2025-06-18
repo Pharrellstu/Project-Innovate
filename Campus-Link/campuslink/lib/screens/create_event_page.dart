@@ -26,7 +26,6 @@ class CreateEventPage extends StatelessWidget {
         backgroundColor: Colors.white,
       ),
       body: createEventPage(),
-      bottomNavigationBar: NavBar(),
     );
   }
 }
@@ -176,6 +175,7 @@ class _createEventPageState extends State<createEventPage> {
                               default:
                                 currentStepValid = true;
                             }
+                            
                             if (!currentStepValid) return;
 
                             if (isLastStep) {
@@ -184,6 +184,34 @@ class _createEventPageState extends State<createEventPage> {
                               nextStep();
                             }
                           },
+                          style: ButtonStyle(
+                            foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                                  (Set<MaterialState> states) {
+                                bool currentStepValid;
+                                switch (currentStep) {
+                                  case 0:
+                                    currentStepValid = isBasicInfoValid;
+                                    break;
+                                  case 1:
+                                    currentStepValid = isLocationValid;
+                                    break;
+                                  case 2:
+                                    currentStepValid = true;
+                                    break;
+                                  case 3:
+                                    currentStepValid = true;
+                                    break;
+                                  default:
+                                    currentStepValid = true;
+                                }
+
+                                if (!currentStepValid) {
+                                  return Colors.grey;
+                                }
+                                return Theme.of(context).primaryColor;
+                              },
+                            ),
+                          ),
                           child: Text(
                               currentStep == steps.length - 1 ? 'Finish' : 'Next'
                           ),
