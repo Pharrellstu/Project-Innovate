@@ -25,11 +25,14 @@ class _timeAndLocationState extends State<timeAndLocation> {
   final MapController _mapController = MapController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _eventLinkController = TextEditingController();
+  bool _mapVisible = false; // Add this flag
 
   @override
   void initState() {
     super.initState();
     _locationController.text = widget.eventData.locationName ?? '';
+    // Initialize map visibility based on location
+    _mapVisible = widget.eventData.location != null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _checkValidity();
@@ -188,14 +191,20 @@ class _timeAndLocationState extends State<timeAndLocation> {
                 widget.eventData.location = "$lat,$lon";
                 widget.eventData.locationName = displayName;
                 _locationController.text = displayName;
-                _mapController.move(LatLng(lat, lon), 15.0);
+                _mapVisible = true; // Make map visible
+              });
+              // Move map after state update
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _mapController.move(LatLng(lat, lon), 15.0);
+                }
               });
               _checkValidity();
             }
           },
         ),
         const SizedBox(height: 12),
-        if (widget.eventData.location != null)
+        if (_mapVisible)
           AspectRatio(
             aspectRatio: 16 / 9,
             child: ClipRRect(
