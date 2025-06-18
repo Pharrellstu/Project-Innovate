@@ -210,22 +210,21 @@ class _AccountsPageState extends State<AccountsPage> {
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
-                  if (user.nationality?.isNotEmpty == true)
+                  //if (user.nationality?.isNotEmpty == true)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        user.nationality!,
+                        user.nationality ?? 'Nationality Unavailable',
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 14,
                         ),
                       ),
                     ),
-                  if (user.bio?.isNotEmpty == true)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
-                        user.bio!,
+                        user.bio ?? 'No bio',
                         style: const TextStyle(fontSize: 14),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
