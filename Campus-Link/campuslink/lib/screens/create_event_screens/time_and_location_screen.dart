@@ -506,7 +506,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
                 controller: controller,
                 focusNode: focusNode,
                 decoration: InputDecoration(
-                  hintText: 'e.g. University Library',
+                  hintText: 'e.g. NHL Stenden, Emmen',
                   hintStyle: const TextStyle(
                     color: Colors.grey,
                     fontSize: 14,
