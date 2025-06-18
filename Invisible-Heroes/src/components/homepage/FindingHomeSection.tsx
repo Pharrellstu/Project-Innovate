@@ -48,9 +48,8 @@ function FindingHomeSection() {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
   return (
-    <div className="finding-home-section">
+    <div id="finding-home" className="finding-home-section">
       <div className="finding-home-intro">
         <h1>Finding Home</h1>
         <p>

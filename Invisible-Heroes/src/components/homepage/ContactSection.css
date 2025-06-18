@@ -8,7 +8,7 @@
 }
 
 .contact-top-section {
-  max-width: var(--max-width);
+  max-width: calc(var(--max-width) - 80px); /* Reduce width to account for 40px padding on each side */
   margin: 0 auto var(--section-gap, 40px) auto; /* Added margin-bottom, using var or fallback */
   display: flex;
   gap: 0; /* Let children handle their spacing/margin if needed */
@@ -213,17 +213,25 @@
 
 /* Responsive Design */
 @media (max-width: 992px) {
-  /* Adjusted breakpoint for better layout shift */
-  .contact-top-section {
+  /* Adjusted breakpoint for better layout shift */  .contact-top-section {
     flex-direction: column;
-    padding: 20px; /* Maintain padding */
+    padding: 0; /* Remove padding on mobile */
+    margin: 0 auto 40px auto; /* Add bottom margin for spacing with map */
     gap: 0; /* Remove gap, right section margin will handle spacing */
   }
 
   .contact-left-section {
+    flex: 1; /* Take full width on mobile */
     padding: 30px; /* Adjust padding */
     text-align: center; /* Center text for stacked view */
   }
+  
+  .contact-right-section {
+    flex: 1; /* Take full width on mobile */
+    padding: 30px; /* Adjust padding */
+    margin: 20px 0 0 0; /* Margin top only when stacked */
+  }
+  
   .social-information-section {
     grid-template-columns: 1fr; /* Stack social info */
     text-align: left; /* Align text left within social info */
@@ -231,18 +239,18 @@
   .social-icons {
     justify-content: flex-start; /* Align icons to the left */
   }
-
-  .contact-right-section {
-    padding: 30px; /* Adjust padding */
-    margin: 20px 0 0 0; /* Margin top only when stacked */
+  .location-map-image {
+    object-fit: cover; /* Zoom in while maintaining aspect ratio */
+    object-position: center; /* Center the cropped area */
+    min-height: 350px; /* Increased minimum height for more zoom */
+    width: 100%; /* Ensure it stays within container */
+    max-width: 100%; /* Prevent overflow */
   }
 }
 
-@media (max-width: 480px) {
-  .contact-top-section {
-    margin-left: 10px;
-    margin-right: 10px;
-    padding: 15px;
+@media (max-width: 480px) {  .contact-top-section {
+    margin: 0 auto 30px auto; /* Add bottom margin for spacing with map */
+    padding: 0; /* Remove padding */
   }
   .contact-left-section {
     padding: 20px;
@@ -256,5 +264,12 @@
   }
   .contact-right-section h2 {
     font-size: clamp(1rem, 5vw, 1.5rem); /* Smaller h2 on mobile */
+  }
+    .location-map-image {
+    min-height: 300px; /* Increased minimum height for more zoom */
+    object-fit: cover; /* Maintain zoom effect */
+    object-position: center; /* Keep centered cropping */
+    width: 100%; /* Ensure it stays within container */
+    max-width: 100%; /* Prevent overflow */
   }
 }

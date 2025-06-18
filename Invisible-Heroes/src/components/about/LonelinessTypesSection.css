@@ -3,242 +3,217 @@
 
 /* Loneliness Types Section */
 .loneliness-types-section {
-  padding: var(--section-padding) 0;
+  padding: 0 var(--section-padding);
+  margin-bottom: var(--section-spacing);
 }
 
-.loneliness-types-section h3 {
-  font-family: var(--font-heading);
-  font-weight: var(--font-weight-bold);
-  font-size: clamp(1.8rem, 4vw, 2.5rem);
-  margin-bottom: clamp(1rem, 2vw, 1.5rem);
-  color: var(--color-text);
+.loneliness-types-intro {
+  max-width: var(--max-width);
+  margin: 0 auto 3rem;
   text-align: center;
 }
 
-.loneliness-types-section p {
+.loneliness-types-intro h1 {
   font-family: var(--font-heading);
-  font-size: clamp(1rem, 2vw, 1.125rem);
-  line-height: 1.6;
+  font-size: var(--fs-h1);
   color: var(--color-text);
-  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+  margin-bottom: 1rem;
+  font-weight: var(--font-weight-bold);
 }
 
-.interaction-hint {
-  font-style: italic;
-  color: var(--color-text-secondary);
-  font-size: clamp(0.9rem, 1.8vw, 1rem);
+.loneliness-types-intro p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.loneliness-cards {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: clamp(1rem, 2vw, 1.5rem);
-  margin-top: clamp(2rem, 4vw, 3rem);
-}
-
-.loneliness-card {
-  background: linear-gradient(
-    180deg,
-    var(--color-primary) 0%,
-    var(--color-dark) 100%
-  );
-  border-radius: clamp(1rem, 2vw, 1.5rem);
-  padding: clamp(1.5rem, 3vw, 2rem);
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: visible;
-  min-height: 320px;
+.loneliness-types-contents {
+  max-width: var(--max-width);
+  margin: 0 auto 3rem;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
+}
+
+.loneliness-type {
+  background: var(--color-white);
+  border: none;
+  border-radius: var(--border-radius-small);
+  transition: all 0.4s ease;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.loneliness-type:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.loneliness-type.active {
+  border: 2px solid var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 95, 169, 0.2);
+}
+
+.loneliness-type-header {
+  padding: 1.5rem 2rem;
+  cursor: pointer;
+  display: flex;
   justify-content: space-between;
-}
-
-/* First row: 3 cards each spanning 2 columns */
-.loneliness-card:nth-child(1) {
-  grid-column: 1 / 3;
-}
-
-.loneliness-card:nth-child(2) {
-  grid-column: 3 / 5;
-}
-
-.loneliness-card:nth-child(3) {
-  grid-column: 5 / 7;
-}
-
-/* Second row: 2 cards centered, each spanning 2 columns with 1 column gap on each side */
-.loneliness-card:nth-child(4) {
-  grid-column: 2 / 4;
-  grid-row: 2;
-}
-
-.loneliness-card:nth-child(5) {
-  grid-column: 4 / 6;
-  grid-row: 2;
-}
-
-.loneliness-card h4 {
-  font-family: var(--font-heading);
-  font-weight: var(--font-weight-bold);
-  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
-  margin-bottom: 1rem;
-  color: white;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  transition: all 0.3s ease 0.3s;
-  width: 100%;
-  text-align: center;
-}
-
-.card-content {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.3s ease 0.2s;
-  position: absolute;
-  top: clamp(3.5rem, 7vw, 4.5rem);
-  left: clamp(1.5rem, 3vw, 2rem);
-  right: clamp(1.5rem, 3vw, 2rem);
-  bottom: clamp(1rem, 2vw, 1.5rem);
-}
-
-.loneliness-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.loneliness-card:hover h4 {
-  top: clamp(1.5rem, 3vw, 2rem);
-  transform: translate(-50%, 0);
+  align-items: center;
   transition: all 0.3s ease;
 }
 
-.loneliness-card:hover .card-content {
-  opacity: 1;
-  transform: translateY(0);
-  transition: all 0.3s ease 0.2s;
+.loneliness-type-header:hover {
+  background: rgba(0, 95, 169, 0.05);
 }
 
-.card-content p {
+.loneliness-type.active .loneliness-type-header {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.loneliness-type h2 {
   font-family: var(--font-heading);
-  font-size: clamp(0.85rem, 1.6vw, 0.95rem);
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 0.6rem 0;
+  font-size: var(--fs-h2);
+  color: inherit;
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+  transition: color 0.3s ease;
 }
 
-.card-content ul {
-  list-style: none;
-  padding: 0;
+.accordion-icon {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loneliness-type.active .accordion-icon {
+  transform: rotate(180deg);
+}
+
+.loneliness-type-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #fafafa;
+}
+
+.loneliness-type.active .loneliness-type-content {
+  max-height: 400px;
+}
+
+.loneliness-type-content p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body-small);
+  color: var(--color-text);
+  line-height: 1.6;
+  margin: 0;
+  padding: 1.5rem 2rem;
+}
+
+.loneliness-type-content ul {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.loneliness-type-content li {
+  font-family: var(--font-body);
+  font-size: var(--fs-body-small);
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.loneliness-support {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  background: var(--color-white);
+  border: none;
+  border-radius: var(--border-radius-small);
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.4s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.loneliness-support:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.loneliness-support h2 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h1);
+  color: var(--color-dark);
+  margin-bottom: 1rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.loneliness-support p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  line-height: 1.6;
   margin: 0;
 }
 
-.card-content li {
-  font-family: var(--font-heading);
-  font-size: clamp(0.8rem, 1.4vw, 0.88rem);
-  line-height: 1.3;
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 0.4rem;
-  padding-left: 1rem;
-  position: relative;
-}
-
-.card-content li:before {
-  content: "•";
-  color: rgba(255, 255, 255, 0.7);
-  position: absolute;
-  left: 0;
-}
-
-/* Mobile responsive */
+/* Responsive Design */
 @media (max-width: 768px) {
-  .loneliness-cards {
-    grid-template-columns: 1fr; /* Stack items in a single column */
-    grid-template-rows: auto; /* Rows will size based on content */
-    gap: clamp(0.8rem, 2vw, 1rem);
+  .loneliness-types-contents {
+    gap: 0.5rem;
   }
-
-  .loneliness-card {
-    grid-column: auto !important; /* Ensure cards occupy the single column, overriding desktop spans */
-    grid-row: auto !important; /* Ensure cards flow naturally in rows, overriding desktop row placement */
-    min-height: auto;
-    padding: clamp(1rem, 2.5vw, 1.2rem);
-    transition: all 0.3s ease;
-    overflow: hidden;
+  
+  .loneliness-type-header {
+    padding: 1.25rem 1.5rem;
   }
+  
+  .loneliness-type-content p {
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .loneliness-support {
+    padding: 1.5rem;
+  }
+}
 
-  .loneliness-card h4 {
-    position: relative;
-    top: auto;
-    left: auto;
+@media (max-width: 480px) {
+  .loneliness-types-section {
+    padding: calc(var(--section-padding) * 0.7);
+  }
+  
+  .loneliness-types-contents {
+    gap: 0.25rem;
+  }
+  
+  .loneliness-type-header {
+    padding: 1rem 1.25rem;
+  }
+  
+  .loneliness-type-content p {
+    padding: 1rem 1.25rem;
+  }
+  
+  .loneliness-support {
+    padding: 1.25rem;
+  }
+    /* Disable hover effects on mobile */
+  .loneliness-type:hover {
     transform: none;
-    text-align: left;
-    margin-bottom: 0;
-    transition: all 0.3s ease;
-    padding: 0.5rem 0;
-    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
-
-  .loneliness-card h4:after {
-    content: "▼";
-    float: right;
-    transition: transform 0.3s ease;
-    font-size: 0.8em;
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  .loneliness-card.active h4:after {
-    transform: rotate(180deg);
-  }
-
-  .card-content {
-    opacity: 0;
-    transform: translateY(-10px);
-    max-height: 0;
-    overflow: hidden;
-    transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease; /* Ensure all animated properties are transitioned */
-    position: relative;
-    top: auto;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    padding: 0;
-  }
-
-  .loneliness-card.active .card-content {
-    opacity: 1;
-    transform: translateY(0);
-    max-height: 500px; /* Increased max-height for potentially longer content */
-    padding-top: 0.5rem;
-  }
-
-  /* Disable hover effects on mobile as click is used for interaction */
-  .loneliness-card:hover {
+  
+  .loneliness-type.active {
     transform: none;
-    box-shadow: none;
+    box-shadow: 0 4px 12px rgba(0, 95, 169, 0.15);
   }
-
-  .loneliness-card:hover h4 {
-    /* Explicitly reset properties affected by desktop hover */
-    top: auto;
+  
+  .loneliness-support:hover {
     transform: none;
-  }
-
-  .loneliness-card:not(.active):hover .card-content {
-    /* Ensure content remains hidden on hover if card is not active */
-    opacity: 0;
-    transform: translateY(-10px);
-    max-height: 0;
-  }
-
-  .loneliness-card.active:hover .card-content {
-    /* If card is active, hover should not hide it */
-    opacity: 1;
-    transform: translateY(0);
-    max-height: 500px; /* Keep it open */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
 }

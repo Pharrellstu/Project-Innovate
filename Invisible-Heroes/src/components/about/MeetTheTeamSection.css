@@ -1,3 +1,11 @@
+/* Import CSS Variables */
+@import "../../styles/variables.css";
+
+/* Meet The Team Section */
+.meet-the-team-section {
+  margin-bottom: var(--section-spacing); /* Subtract both top and bottom padding from section spacing */
+}
+
 /* Team Section Styles */
 .section-title {
   font-weight: var(--font-weight-bold);

@@ -1,7 +1,15 @@
 import "./HeroSection.css";
 import Button from "../ui/Button";
 
-const HeroSection = () => (
+const HeroSection = () => {
+  const scrollToFindingHome = () => {
+    const element = document.getElementById('finding-home');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
   <section className="hero-section">
     <svg
       className="hero-bg-svg"
@@ -45,11 +53,11 @@ const HeroSection = () => (
         </p>
         <p>
           Connect with peers, share stories, and keep your academic calendar
-          perfectly synced.
-        </p>
+          perfectly synced.        </p>
         <Button
           variant="filled"
           size="medium"
+          onClick={scrollToFindingHome}
           icon={
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -78,10 +86,10 @@ const HeroSection = () => (
           <li>Find campus events that matter to you</li>
           <li>Connect with like-minded peers</li>
           <li>Keep your academic calendar synced</li>
-        </ul>
-        <Button
+        </ul>        <Button
           variant="filled"
           size="medium"
+          onClick={scrollToFindingHome}
           icon={
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -98,12 +106,12 @@ const HeroSection = () => (
               />
             </svg>
           }
-        >
-          Explore More
+        >          Explore More
         </Button>
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default HeroSection;

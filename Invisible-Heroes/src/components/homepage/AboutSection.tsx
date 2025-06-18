@@ -1,10 +1,22 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import "./AboutSection.css";
 import Button from "../ui/Button";
 
 function AboutSection() {
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
   const hasBeenShown = useRef<Set<HTMLElement>>(new Set());
+  const navigate = useNavigate();
+  const handleAndMoreClick = () => {
+    navigate('/about');
+  };
+
+  const scrollToNextSection = () => {
+    const element = document.getElementById('about-section-3-pannel-1');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     const observerOptions = {
@@ -67,11 +79,10 @@ function AboutSection() {
           </p>
           <ul>
             <li>Find Your People</li>
-            <li>Share Your Story</li>
-            <li>Built by Students, for Students</li>
+            <li>Share Your Story</li>            <li>Built by Students, for Students</li>
           </ul>
-          <Button variant="rounded-hollow">
-            And more
+          <Button variant="rounded-hollow" onClick={handleAndMoreClick}>
+            And More
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="17"
@@ -126,14 +137,13 @@ function AboutSection() {
           </p>
         </div>
         <div id="about-section-2-pannel-3" className="about-slide">
-          <h1>Share Your Story</h1>
-          <p>
+          <h1>Share Your Story</h1>          <p>
             Tell us anonymously about your own struggles or breakthroughs in
             finding friends on campus — your courage will guide others from
             solitude to solidarity.
           </p>
-          <Button variant="rounded-hollow">
-            And more
+          <Button variant="rounded-hollow" onClick={scrollToNextSection}>
+            And More
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="17"

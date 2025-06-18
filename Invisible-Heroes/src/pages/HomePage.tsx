@@ -16,7 +16,7 @@ function HomePage() {
         <HeroSection />
         <section className="about-section">
           <AboutSection />
-        </section>
+        </section>{" "}
         <FeaturesSection />
         <FindingHomeSection />
         <StudentStoriesSection />

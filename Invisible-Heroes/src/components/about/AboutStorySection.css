@@ -6,7 +6,8 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: var(--section-padding) 0;
+  padding: 0; /* Remove extra padding to avoid double spacing */
+  margin-bottom: var(--section-spacing); /* Add consistent section spacing */
   gap: clamp(2rem, 4vw, 4rem);
 }
 

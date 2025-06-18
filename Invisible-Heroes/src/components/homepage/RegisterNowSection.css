@@ -4,8 +4,8 @@
   width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: var(--section-padding) 0;
-  margin-bottom: 14rem; /* Match other sections */
+  padding: 0; /* Remove top/bottom padding to avoid double spacing */
+  margin-bottom: var(--section-spacing); /* Use consistent section spacing */
   text-align: center;
 }
 
@@ -178,10 +178,8 @@
     flex-direction: column; /* Stack H1 and P on mobile */
     align-items: center; /* Center them when stacked */
     text-align: center; /* Center text within H1 and P on mobile */
-  }
-
-  .register-now-intro h1 {
-    font-size: var(--fs-h2); /* Slightly smaller for mobile */
+  }  .register-now-intro h1 {
+    font-size: clamp(2rem, 8vw, 3.5rem); /* Smaller mobile size */
     margin-bottom: 0.5em; /* Add margin back when stacked */
   }
 

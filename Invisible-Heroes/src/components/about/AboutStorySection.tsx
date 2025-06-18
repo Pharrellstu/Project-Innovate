@@ -26,7 +26,7 @@ function AboutStorySection() {
   return (
     <div className="about-story-section">
       <img
-        src="/src/assets/dummy_image_group_photo.jpg"
+        src="/src/assets/team/group-picture.jpg"
         alt="Group photo of the students that brought this project to life"
         className={isExpanded ? "expanded" : ""}
       />

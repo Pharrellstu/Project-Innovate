@@ -2,6 +2,10 @@
 @import "../../styles/variables.css";
 
 /* About Hero Section Styles */
+.about-hero-section {
+  margin-bottom: var(--section-spacing); /* Add consistent section spacing */
+}
+
 .about-hero-section h1 {
   font-family: var(--font-heading);
   font-weight: var(--font-weight-bold);

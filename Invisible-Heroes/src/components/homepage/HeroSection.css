@@ -5,7 +5,7 @@
 .hero-section {
   width: 100%;
   max-width: var(--max-width);
-  height: clamp(600px, 80vh, 800px);
+  height: clamp(500px, 80vh, 650px);
   border-radius: var(--border-radius);
   background: var(--color-dark);
   display: flex;
@@ -13,9 +13,8 @@
   justify-content: start;
   color: var(--color-white);
   text-align: start;
-  padding: var(--section-padding) clamp(50px, 6vw, 80px);
-  position: relative;
-  margin-bottom: 14rem;
+  padding: var(--section-padding) clamp(50px, 6vw, 80px);  position: relative;
+  margin-bottom: var(--section-spacing);
   transition: var(--transition-smooth);
 }
 
@@ -153,5 +152,12 @@
 @media (max-width: 480px) {
   .hero-section {
     margin-bottom: 8rem;
+  }
+}
+
+/* Hide SVG on very small screens */
+@media (max-width: 420px) {
+  .hero-bg-svg {
+    display: none;
   }
 }

@@ -4,8 +4,8 @@
   width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: var(--section-padding) 0;
-  margin-bottom: 14rem; /* Match other sections */
+  padding: 0; /* Remove top/bottom padding to avoid double spacing */
+  margin-bottom: var(--section-spacing); /* Use consistent section spacing */
 }
 
 .student-stories-intro {
@@ -166,20 +166,14 @@
 
 @media (max-width: 768px) {
   .student-stories-intro {
-    flex-direction: column; /* Stack H1, P, and controls on mobile */
-    align-items: center; /* Center them when stacked */
-    text-align: center; /* Center text within H1 and P on mobile */
-    gap: 1.5rem;
-  }
-
-  .student-stories-intro h1 {
-    font-size: var(--fs-h2); /* Slightly smaller for mobile */
-    margin-bottom: 0.5em; /* Add margin back when stacked */
+    /* Keep row layout on mobile - removed flex-direction: column */
+    gap: 1rem; /* Reduce gap for mobile */
+  }  .student-stories-intro h1 {
+    font-size: clamp(2rem, 8vw, 3.5rem); /* Smaller mobile size */
   }
 
   .student-stories-intro p {
     font-size: var(--fs-body-small);
-    max-width: 100%; /* Allow full width when stacked */
   }
 
   /* Ensure white panels have dark text on tablet screens */
@@ -201,6 +195,12 @@
 }
 
 @media (max-width: 480px) {
+  /* Center intro content when carousel controls are hidden */
+  .student-stories-intro {
+    justify-content: center;
+    text-align: center;
+  }
+
   /* Mobile phone view - touch scroll only, no buttons */
   /* Hide carousel controls on mobile phones */
   .carousel-controls {

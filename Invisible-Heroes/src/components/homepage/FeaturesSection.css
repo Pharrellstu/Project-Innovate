@@ -1,281 +1,220 @@
-.headingDiv h1 {
-  color: #1c1a1a;
-  font-family: Syne;
-  font-size: 100px;
-  font-weight: 700;
-}
+/* Import CSS Variables */
+@import "../../styles/variables.css";
 
-.headingDiv {
-  display: flex;
-  max-width: 1240px;
-  width: auto;
-  justify-content: space-between;
-  align-items: center;
-  margin: 100px auto;
-}
-
-.featuresContentDiv {
+/* Features Section - Dark Box */
+.features-section {
   position: relative;
+  width: 100%;
+  max-width: var(--max-width);
+  height: 550px; /* Fixed height instead of dvh */
+  padding: var(--section-padding) 0;
+  margin: 0 auto var(--section-spacing) auto;
   overflow: hidden;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto 1fr 1fr 1fr auto;
-  margin: 0 auto;
-  width: auto;
-  max-width: 1240px;
-  max-height: 1257px;
-  height: 1257px;
-  background-color: #1c1a1a;
-  border-radius: 50px;
-  padding: 50px;
+  background-color: var(--color-dark); /* Dark background */
+  border-radius: var(--border-radius); /* Rounded corners */
 }
 
-.featuresHeading {
-  margin-left: -5px;
+/* Background SVGs */
+.background-svg {
+  pointer-events: none;
+  z-index: 0;
 }
-.featuresContentDiv p {
+
+.svg-top-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: clamp(250px, 15vw, 323px); /* Reduced from 25vw to 15vw for less resizing */
+  height: auto;
+}
+
+.svg-container-bottom-left {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: auto;
+}
+
+.svg-bottom-left {
   position: relative;
-  letter-spacing: 0px;
-  font-size: 20px;
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
-  color: #ffffff;
+  width: clamp(280px, 18vw, 370px); /* Reduced from 30vw to 18vw for less resizing */
 }
 
-.featuresContentDiv h2 {
-  font-size: clamp(24px, 5vw, 40px);
-  color: white;
-}
-
-.stepHeadingDiv {
+/* Main Container */
+.features-content {
+  position: relative;
+  z-index: 2; /* Increase z-index to ensure content appears above SVGs */
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--section-padding);
+  padding-bottom: 4rem; /* Add bottom padding to account for absolute bubbles */
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: center; /* Center content */
+  text-align: center;
+  height: 100%; /* Take full height of parent */
+  justify-content: center; /* Center content vertically */
 }
 
-.stepTextDiv {
-  grid-column: 2 / span 1;
-  margin-bottom: 10rem;
+/* Feature Cards */
+.feature-card {
+  border-radius: var(--border-radius-small);
+  padding: 2rem;
+  transition: var(--transition-smooth);
+  text-align: left;
+  color: var(--color-light); /* Dark text - assuming light text on dark bg */
+  max-width: 500px; /* Or adjust as needed */
+  margin: 0 auto; /* Center card if it's narrower than container */
+  min-height: 200px; /* Set minimum height to create consistent space */
 }
 
-.stepText {
-  z-index: 1;
+.feature-card h3 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-h1); /* Bigger size */
+  font-weight: var(--font-weight-bold); /* Bolder weight */
+  color: var(--color-white); /* White color */
+  margin-bottom: 1.5rem;
 }
 
-.stepHeading {
-  font-size: clamp(
-    24px,
-    5vw,
-    64px
-  ); /* Adjust vw if 800px threshold is too high */
-  margin-right: 5vw;
-  color: white;
+.feature-card ul {
+  list-style: disc; /* Or use custom icons */
+  padding-left: 20px; /* Indent list items */
+  margin: 0;
 }
 
-.joinCommunityDiv p {
-  margin-bottom: 10rem;
+.feature-card li {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--line-height-body);
+  margin-bottom: 0.75rem;
+  color: var(--color-light); /* Use light color for list items */
 }
 
-.joinCommunityDiv h2 {
-  margin-bottom: 20px;
-}
-
-.joinCommunityDiv {
-  margin-bottom: 20px;
-  grid-column: 2 / span 1;
-}
-
-.discoverEventsDiv {
-  grid-column: 2 / span 1;
-}
-
-.discoverEventsDiv p {
-  margin-bottom: 10rem;
-}
-
-.discoverEventsDiv h2 {
-  margin-bottom: 20px;
-}
-
-.getStartedButton {
+/* Pagination Bubbles */
+.pagination-bubbles {
+  position: absolute;
+  bottom: 2rem; /* Fixed distance from bottom of section */
+  left: 50%;
+  transform: translateX(-50%); /* Center horizontally */
   display: flex;
   justify-content: center;
   align-items: center;
-  grid-column: 2 / span 1;
-  border-radius: 25px;
-  max-width: 574px;
-  width: auto;
-  padding: 1rem 2rem;
-  max-height: 74px;
-  color: white;
-  height: auto;
-  background: linear-gradient(
-    85deg,
-    #005fa9 1.59%,
-    rgba(0, 95, 169, 0) 121.45%
-  );
-  border: 0;
+  z-index: 3; /* Ensure bubbles appear above other elements */
 }
 
-.getStartedButton:hover {
-  color: white !important;
+.bubble {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3); /* Semi-transparent white for inactive bubbles */
+  margin: 0 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border: none; /* Remove default button border */
+  padding: 0; /* Remove default button padding */
 }
 
-.arrowImgFeaturesButton {
-  margin-left: 1rem;
-  width: 15px;
-  height: 15px;
+.bubble.active {
+  background-color: var(--color-primary); /* Use primary color for active bubble */
 }
 
-.starLeft {
-  pointer-events: none;
-  z-index: 0;
-  position: absolute;
-  left: -50px;
-  top: 100px;
-  grid-row: 2 / span 1;
-}
-.featuresDivMobile {
-  display: none;
+.bubble:focus {
+  outline: 2px solid var(--color-white); /* Add visible focus outline */
+  outline-offset: 2px;
 }
 
-.starRightTop {
-  position: absolute;
-  right: -50px;
-  top: -130px;
-  grid-row: 2 / span 1;
+/* Header Section - Outside the dark box */
+.features-heading-div {
+  display: flex;
+  width: 100%;
+  max-width: var(--max-width);
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: calc(var(--section-gap) * 2);
 }
 
-.starLeftBottom {
-  /*width: clamp(100px, 25vw, 300px);*/
-  height: auto;
-  top: 1050px;
-  position: absolute;
-  left: -50px;
+.features-heading {
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-size: var(--fs-hero);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
 }
 
-@media screen and (max-width: 768px) {
-  .featuresDiv {
+.features-text {
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  max-width: 400px;
+  text-align: right;
+  margin: 0;
+}
+
+/* Mobile responsive styles for heading section */
+@media (max-width: 768px) {
+  .features-heading-div {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .features-heading {
+    font-size: clamp(2rem, 8vw, 3.5rem); /* Smaller mobile size */
+  }
+  
+  .features-text {
+    max-width: 100%;
+    font-size: var(--fs-body-small); /* Slightly smaller text */
+    text-align: center; /* Center the text on mobile */
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .feature-card {
+    padding: 1.5rem;
+  }
+
+  .feature-card h3 {
+    font-size: var(--fs-h2); /* Use h2 instead of h3 to keep it larger */
+  }
+
+  .feature-card li {
+    font-size: var(--fs-body); /* Keep full body size instead of reducing */
+  }
+  /* Hide only the top-right SVG below 769px, keep bottom-left SVG and tagline */
+  .svg-top-right {
     display: none;
   }
+}
 
-  .featuresDivMobile h2 {
-    font-size: clamp(1.5rem, 3vw, 2.5rem);
-    position: relative;
-    z-index: 2;
-  }
-
-  .featuresDivMobile h1 {
-    font-size: 30px;
-  }
-
-  .featuresDivMobile ul {
-    padding: 0;
-    margin-bottom: 3rem;
-  }
-
-  .featuresDivMobile {
-    width: 100%;
-    display: block;
-    margin-top: 10rem;
+@media (max-width: 480px) {
+  .feature-card {
     padding: 1rem;
   }
+  
+  .feature-card h3 {
+    font-size: var(--fs-h2); /* Keep h2 size even on small screens */
+  }
+  
+  .feature-card li {
+    font-size: var(--fs-body); /* Keep full body size for readability */
+  }
+  
+  .pagination-bubbles {
+    bottom: 1rem; /* Adjust bottom position for smaller screens */
+  }
+  .bubble {
+    width: 10px;
+    height: 10px;
+    margin: 0 4px;
+  }
+}
 
-  .headingDivMobile {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 3rem;
-    font-size: 30px;
-  }
-
-  .featuresContentDivMobile {
-    overflow: hidden;
-    width: auto;
-    position: relative;
-    background-color: #1c1a1a;
-    border-radius: 50px;
-    padding: 5rem;
-  }
-
-  .featuresContentDivMobile h1,
-  h2,
-  p {
-    color: #ffffff;
-  }
-
-  .stepHeadingMobile {
-    display: flex;
-    margin-bottom: 3rem;
-  }
-
-  .stepHeadingMobile h1 {
-    font-size: 30px;
-    margin-right: 1rem;
-  }
-
-  .stepHeadingDivMobile h2 {
-    margin-bottom: 3rem;
-  }
-  .checkListMobile {
-    color: white;
-    list-style: none;
-  }
-
-  .checkListMobile li {
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-  }
-
-  .buttonDivMobile {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .getStartedButtonMobile {
-    border-radius: 25px;
-    width: 100%;
-    padding: 1rem 2rem;
-    max-height: 74px;
-    color: white;
-    height: auto;
-    background: linear-gradient(
-      85deg,
-      #005fa9 1.59%,
-      rgba(0, 95, 169, 0) 121.45%
-    );
-    border: 0;
-  }
-
-  .getStartedButtonMobile:hover {
-    color: white !important;
-  }
-  .starRightTopMobile {
-    pointer-events: none;
-    z-index: 0;
-    position: absolute;
-    right: -50px;
-    top: 100px;
-  }
-  .starLeftMobile {
-    max-height: 200px;
-    height: auto;
-    width: 140px;
-    pointer-events: none;
-    z-index: 0;
-    position: absolute;
-    left: -20px;
-    top: 100px;
-  }
-
-  .starBottomRightMobile {
-    max-height: 200px;
-    height: auto;
-    width: 140px;
-    pointer-events: none;
-    z-index: 0;
-    position: absolute;
-    right: -20px;
-    bottom: -90px;
+@media (max-width: 390px) {
+  .svg-top-right,
+  .svg-bottom-left {
+    display: none; /* Hide SVGs on very small screens if they clutter */
   }
 }

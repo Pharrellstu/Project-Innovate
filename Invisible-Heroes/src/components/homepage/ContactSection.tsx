@@ -14,7 +14,6 @@ function ContactSection() {
           </p>
 
           <div className="social-information-section">
-            {/* basically a 2x2 grid or it can be made with display:flex */}
             <div id="socials-section-1">
               <h2>CONTACT US</h2>
               <p>+31 0591 853 100</p>

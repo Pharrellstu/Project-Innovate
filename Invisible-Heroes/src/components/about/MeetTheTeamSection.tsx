@@ -2,7 +2,7 @@ import "./MeetTheTeamSection.css";
 
 function MeetTheTeamSection() {
   return (
-    <section className="py-5">
+    <section className="meet-the-team-section py-5">
       <div className="container">
         {/* Section Header */}
         <div className="row text-center mb-5">

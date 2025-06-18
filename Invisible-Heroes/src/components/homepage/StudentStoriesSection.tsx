@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import "./StudentStoriesSection.css";
-import dummyAvatar from "../../assets/dummy_image_group_photo.jpg";
+import anonymousAvatar from "../../assets/anonymous-user.png";
 
 function StudentStoriesSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -134,7 +134,7 @@ function StudentStoriesSection() {
               <h2>{story.subject}</h2>
               <p>"{story.story}"</p>{" "}
               <div className="story-author">
-                <img src={dummyAvatar} alt="Anonymous student avatar" />
+                <img src={anonymousAvatar} alt="Anonymous student avatar" />
                 <p>{story.author}</p>
               </div>
             </div>
