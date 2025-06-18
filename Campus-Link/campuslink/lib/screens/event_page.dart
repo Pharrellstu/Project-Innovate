@@ -1,4 +1,3 @@
-import 'package:campuslink/models/comment.dart';
 import 'package:campuslink/screens/user_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/event_service.dart';
@@ -10,7 +9,6 @@ import 'package:intl/intl.dart';
 
 import '../models/eventenrollment.dart';
 import '../models/user.dart';
-import '../services/comment_service.dart';
 import '../services/event_invitation_service.dart';
 
 class EventPage extends StatefulWidget {
@@ -30,8 +28,6 @@ class _EventPageState extends State<EventPage> {
   final ScrollController _locationController = ScrollController();
   final ScrollController _creatorController = ScrollController();
   UserObject? _creator;
-  final TextEditingController _commentController = TextEditingController();
-  late Future<List<CommentModel>> _commentsFuture;
 
   // Add this helper method in _EventPageState
   bool get _isCreator {
@@ -46,7 +42,6 @@ class _EventPageState extends State<EventPage> {
     super.initState();
     _fetchEvent();
     _getCurrentUserAccountId();
-    _commentsFuture = CommentService.getCommentsForEvent(widget.eventId);
 
     // Start auto-scrolling for location and creator name
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -90,7 +85,6 @@ class _EventPageState extends State<EventPage> {
   void dispose() {
     _locationController.dispose();
     _creatorController.dispose();
-    _commentController.dispose();
     super.dispose();
   }
 
@@ -186,42 +180,6 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
-  Future<void> _postComment() async {
-    if (_commentController.text.isEmpty || _currentUserAccountId == null)
-      return;
-
-    try {
-      await CommentService.postComment(
-        widget.eventId,
-        _currentUserAccountId!,
-        _commentController.text,
-      );
-      _commentController.clear();
-      // Refresh comments
-      setState(() {
-        _commentsFuture = CommentService.getCommentsForEvent(widget.eventId);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to post comment: ${e.toString()}')),
-      );
-    }
-  }
-
-  Future<void> _deleteComment(int commentId) async {
-    try {
-      await CommentService.deleteComment(commentId);
-      // Refresh comments
-      setState(() {
-        _commentsFuture = CommentService.getCommentsForEvent(widget.eventId);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete comment: ${e.toString()}')),
-      );
-    }
-  }
-
   Future<void> _editEvent() async {
     // Navigate to edit screen with event data
     /*Navigator.push(
@@ -287,7 +245,7 @@ class _EventPageState extends State<EventPage> {
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
-        title: const Text('Post'),
+        title: const Text('Event'),
         actions: [
           if (_isCreator)
             IconButton(icon: const Icon(Icons.edit), onPressed: _editEvent),
@@ -321,12 +279,8 @@ class _EventPageState extends State<EventPage> {
             _buildAttendanceSection(),
             const SizedBox(height: 24),
 
-            // Comment Input
-            if (_currentUserAccountId != null) _buildCommentInput(),
-            const SizedBox(height: 20),
-
-            // Comments List
-            _buildCommentsList(),
+            // Join/Leave Button
+            _buildJoinButton(),
           ],
         ),
       ),
@@ -564,130 +518,84 @@ class _EventPageState extends State<EventPage> {
     );
   }
 
-  Widget _buildCommentInput() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE6F2FB),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF0091FF)),
-      ),
-      child: TextField(
-        controller: _commentController,
-        decoration: InputDecoration(
-          hintText: 'New comment...',
-          hintStyle: const TextStyle(color: Color(0xFFBBBBBB)),
-          border: InputBorder.none,
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.send, color: Color(0xFF0091FF)),
-            onPressed: _postComment,
-          ),
-        ),
-        onSubmitted: (value) => _postComment(),
-      ),
-    );
-  }
-
-  Widget _buildCommentsList() {
-    return FutureBuilder<List<CommentModel>>(
-      future: _commentsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-        final comments = snapshot.data ?? [];
-        if (comments.isEmpty) {
-          return const Center(child: Text('No comments yet.'));
-        }
-
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: comments.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-            final comment = comments[index];
-            return _buildCommentItem(comment);
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildCommentItem(CommentModel comment) {
-    final bool canDelete =
-        _currentUserAccountId == comment.accountId || _isCreator;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundImage:
-              comment.user?.profilePictureUrl != null
-                  ? NetworkImage(comment.user!.profilePictureUrl!)
-                      as ImageProvider
-                  : const AssetImage('resources/icons/profile_placeholder.png'),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    comment.user?.username ?? 'Unknown User',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () {
-                      if (comment.user != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => UserProfilePage(
-                                  userId: comment.user!.accountId!,
-                                  currentUserAccountId:
-                                      _currentUserAccountId ?? 0,
-                                ),
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text(
-                      'See profile',
-                      style: TextStyle(color: Color(0xFF0074CE), fontSize: 12),
-                    ),
-                  ),
-                ],
+  Widget _buildJoinButton() {
+    // Creator sees edit/delete buttons
+    if (_isCreator) {
+      return Row(
+        children: [
+          // Edit Button
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _editEvent(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              const SizedBox(height: 4),
-              Text(
-                comment.commentText,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
+              child: const Text(
+                'Edit Event',
+                style: TextStyle(fontSize: 18, color: Colors.white),
               ),
-            ],
+            ),
           ),
+          const SizedBox(width: 16),
+          // Delete Button
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _deleteEvent(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: const Text(
+                'Delete Event',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Non-creator sees regular join button
+    if (_currentUserAccountId == null) {
+      return ElevatedButton(
+        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 16),
         ),
-        if (canDelete)
-          IconButton(
-            icon: const Icon(Icons.delete, size: 20, color: Colors.grey),
-            onPressed: () => _deleteComment(comment.commentId),
-          ),
-      ],
-    );
+        child: const Text(
+          'Login to Join',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
+      );
+    }
+
+    if (_isEnrolled) {
+      return ElevatedButton(
+        onPressed: _unEnrollInEvent,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFD30E26),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: const Text(
+          'Leave Event',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
+      );
+    } else {
+      return ElevatedButton(
+        onPressed: _enrollInEvent,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: const Text(
+          'Join Event',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
+      );
+    }
   }
 
   Widget _buildMetadataItem(IconData icon, String text) {
