@@ -23,6 +23,7 @@ class EventService {
       }
     }
 
+    // Add search functionality to fetchEvents
     final payload = data.toMap(creatorId);
 
     payload['eventcreatorid_uuid'] = creatorId;
@@ -61,17 +62,31 @@ class EventService {
 
   static Future<List<EventModel>> fetchEvents({
     int page = 1,
-    int perPage = 10
+    int perPage = 10,
+    String? searchTerm,
   }) async {
     final from = (page - 1) * perPage;
     final to = from + perPage - 1;
 
     try {
-      final response = await _supabase
+      // Create base query
+      var query = _supabase
           .from('event')
-          .select()
+          .select();
+
+      if (searchTerm != null && searchTerm.isNotEmpty) {
+        if (searchTerm.length == 1) {
+
+          query = query.ilike('eventname', '${searchTerm[0]}%');
+        } else {
+
+          query = query.ilike('eventname', '$searchTerm%');
+        }
+      }
+
+      final response = await query
           .order('startdate', ascending: true)
-          .range(from, to); // Add range filter here
+          .range(from, to);
 
       return (response as List<dynamic>)
           .map((r) => EventModel.fromMap(r as Map<String, dynamic>))

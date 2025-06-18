@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
+import 'dart:async';
 
 import '../screens/event_page.dart';
 
@@ -21,6 +22,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final List<EventModel> _events = [];
   final int _perPage = 10; // Number of events to load per page
 
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
+
   @override
   void initState() {
     super.initState();
@@ -30,7 +34,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _searchController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -57,6 +62,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       return await EventService.fetchEvents(
         page: page,
         perPage: _perPage,
+        searchTerm: _searchController.text.trim(),
       );
     } catch (e) {
       // Handle error
@@ -131,6 +137,50 @@ class _ExploreScreenState extends State<ExploreScreen> {
       child: CustomScrollView(
         controller: _scrollController,
         slivers: [
+          SliverAppBar(
+            pinned: true,
+            floating: true,
+            expandedHeight: 0,
+            toolbarHeight: 60,
+            titleSpacing: 12,
+            title: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search events...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    _refreshEvents();
+                    setState(() {});
+                  },
+                )
+                    : null,
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              onChanged: (value) {
+                setState(() {});
+
+                if (_debounceTimer?.isActive ?? false) {
+                  _debounceTimer!.cancel();
+                }
+
+                _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+                  if (mounted) {
+                    _refreshEvents();
+                  }
+                });
+              },
+            ),
+          ),
           SliverPadding(
             padding: const EdgeInsets.all(12),
             sliver: _events.isEmpty
