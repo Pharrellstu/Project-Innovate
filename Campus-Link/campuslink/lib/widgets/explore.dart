@@ -36,29 +36,32 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void dispose() {
     _searchController.dispose();
     _debounceTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _loadInitialEvents() async {
     try {
       final initialEvents = await _fetchEvents(page: 1);
-      setState(() {
-        _events.addAll(initialEvents);
-        _isInitialLoading = false;
-        // If we got less than requested, there are no more events
-        if (initialEvents.length < _perPage) {
-          _hasMoreData = false;
-        }
-      });
+      if(mounted) {
+        setState(() {
+          _events.addAll(initialEvents);
+          _isInitialLoading = false;
+          if (initialEvents.length < _perPage) {
+            _hasMoreData = false;
+          }
+        });
+      }
     } catch (e) {
-      setState(() => _isInitialLoading = false);
+      if(mounted) {
+        setState(() => _isInitialLoading = false);
+      }
       // Handle error
     }
   }
 
   Future<List<EventModel>> _fetchEvents({int page = 1}) async {
     try {
-      // Add pagination parameters to your service method
       return await EventService.fetchEvents(
         page: page,
         perPage: _perPage,
@@ -87,20 +90,23 @@ class _ExploreScreenState extends State<ExploreScreen> {
     try {
       final newEvents = await _fetchEvents(page: _currentPage + 1);
 
-      if (newEvents.isEmpty) {
-        setState(() => _hasMoreData = false);
-      } else {
-        setState(() {
-          _events.addAll(newEvents);
-          _currentPage++;
-          // If we got less than requested, there are no more events
-          if (newEvents.length < _perPage) {
-            _hasMoreData = false;
-          }
-        });
+      if(mounted) {
+        if (newEvents.isEmpty) {
+          setState(() => _hasMoreData = false);
+        } else {
+          setState(() {
+            _events.addAll(newEvents);
+            _currentPage++;
+            if (newEvents.length < _perPage) {
+              _hasMoreData = false;
+            }
+          });
+        }
       }
     } finally {
-      setState(() => _isLoadingMore = false);
+      if(mounted) {
+        setState(() => _isLoadingMore = false);
+      }
     }
   }
 
@@ -109,29 +115,31 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _currentPage = 1;
       _hasMoreData = true;
       _isLoadingMore = false;
+      _isInitialLoading = true;
     });
 
     try {
       final refreshedEvents = await _fetchEvents(page: 1);
-      setState(() {
-        _events.clear();
-        _events.addAll(refreshedEvents);
-        // If we got less than requested, there are no more events
-        if (refreshedEvents.length < _perPage) {
-          _hasMoreData = false;
-        }
-      });
+      if(mounted) {
+        setState(() {
+          _events.clear();
+          _events.addAll(refreshedEvents);
+          if (refreshedEvents.length < _perPage) {
+            _hasMoreData = false;
+          }
+        });
+      }
     } catch (e) {
       // Handle error
+    } finally {
+      if(mounted) {
+        setState(() => _isInitialLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isInitialLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return RefreshIndicator(
       onRefresh: _refreshEvents,
       child: CustomScrollView(
@@ -181,23 +189,27 @@ class _ExploreScreenState extends State<ExploreScreen> {
               },
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(12),
-            sliver: _events.isEmpty
-                ? SliverFillRemaining(
-              child: Center(
-                child: Text(
-                  'No events found',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+          _isInitialLoading
+              ? const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()))
+              : _events.isEmpty
+              ? SliverFillRemaining(
+            child: Center(
+              child: Text(
+                'No events found',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-            )
-                : SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            ),
+          )
+              : SliverPadding(
+            padding: const EdgeInsets.all(12),
+            sliver: SliverGrid(
+              gridDelegate:
+              const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.75, // Reset to original ratio
+                childAspectRatio: 0.75,
               ),
               delegate: SliverChildBuilderDelegate(
                     (context, index) => EventCard(
@@ -206,7 +218,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => EventPage(eventId: _events[index].eventId),
+                        builder: (context) =>
+                            EventPage(eventId: _events[index].eventId),
                       ),
                     );
                   },
@@ -235,7 +248,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 }
 
-
 class EventCard extends StatelessWidget {
   final EventModel event;
   final VoidCallback onTap;
@@ -253,106 +265,102 @@ class EventCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: IntrinsicHeight( // Make card adjust to content height
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: onTap,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // Important for dynamic height
-                children: [
-                  // Flexible image section
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                    child: event.eventImageUrl != null && event.eventImageUrl!.isNotEmpty
-                        ? Image.network(
-                      event.eventImageUrl!,
-                      height: constraints.maxWidth * 0.75, // Height based on card width
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          _buildImagePlaceholder(constraints.maxWidth * 0.75),
-                    )
-                        : _buildImagePlaceholder(constraints.maxWidth * 0.75),
-                  ),
-                  // Flexible content section
-                  Flexible(
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            event.eventName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${event.eventDate!.day}/${event.eventDate!.month}/${event.eventDate!.year}',
-                                style: const TextStyle(fontSize: 11, color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.location_pin, size: 12, color: Colors.grey),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  event.locationName!,
-                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (event.maxnumberofpeople != null) ...[
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.people, size: 12, color: Colors.grey),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${event.maxnumberofpeople} spots',
-                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Stack(
+          children: [
+            _buildImageWithGradient(),
+            _buildEventInfo(context),
+          ],
         ),
       ),
     );
   }
 
+  Widget _buildImageWithGradient() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        event.eventImageUrl != null && event.eventImageUrl!.isNotEmpty
+            ? Image.network(
+          event.eventImageUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) =>
+              _buildImagePlaceholder(),
+        )
+            : _buildImagePlaceholder(),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: const [0.5, 1.0],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-  Widget _buildImagePlaceholder(double height) {
+  Widget _buildEventInfo(BuildContext context) {
+    return Positioned(
+      bottom: 10,
+      left: 10,
+      right: 10,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            event.eventName,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.white,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          _buildInfoRow(
+            Icons.calendar_today,
+            '${event.eventDate!.day}/${event.eventDate!.month}/${event.eventDate!.year}',
+          ),
+          const SizedBox(height: 4),
+          _buildInfoRow(Icons.location_pin, event.locationName ?? 'No location'),
+          if (event.maxnumberofpeople != null) ...[
+            const SizedBox(height: 4),
+            _buildInfoRow(Icons.people, '${event.maxnumberofpeople} spots'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 12, color: Colors.white70),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: Colors.white70),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
     return Container(
-      height: height, // Use parameterized height
-      color: Colors.grey[200],
+      color: Colors.grey[300],
       child: const Center(
-        child: Icon(Icons.event, size: 40, color: Colors.grey),
+        child: Icon(Icons.event, size: 50, color: Colors.grey),
       ),
     );
   }
