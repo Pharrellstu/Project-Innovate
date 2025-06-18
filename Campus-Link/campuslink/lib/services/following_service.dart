@@ -1,4 +1,6 @@
 // following_service.dart
+import 'dart:developer';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/models/following.dart';
 
@@ -54,6 +56,18 @@ class FollowingService {
     return (rows as List).isNotEmpty;
   }
 
+  /// Get the list of account IDs that a user is following
+  static Future<List<int>> getFollowingIds(int followerId) async {
+    final response = await _supabase
+        .from(_table)
+        .select('followingpersonid')
+        .eq('followepersonid', followerId);
+
+    return (response as List)
+        .map<int>((record) => record['followingpersonid'] as int)
+        .toList();
+  }
+
   /// Delete a follow record by primary key
   static Future<bool> delete(int id) async {
     final rows = await _supabase
@@ -88,5 +102,42 @@ class FollowingService {
         .delete()
         .eq('followepersonid', followerId)
         .eq('followingpersonid', followingId);
+  }
+
+  static Future<int> getFollowingCount(int followerId) async {
+    try {
+      final response = await _supabase
+          .from(_table)
+          .select()
+          .eq('followepersonid', followerId);
+
+      return response.length;
+    } catch (e) {
+      log('Error fetching following count: $e');
+      return 0;
+    }
+  }
+
+  /// Get the list of account IDs that are following a user
+  static Future<List<int>> getFollowerIds(int userId) async {
+    final response = await _supabase
+        .from(_table)
+        .select('followepersonid')
+        .eq('followingpersonid', userId);
+
+    return (response as List)
+        .map<int>((record) => record['followepersonid'] as int)
+        .toList();
+  }
+
+  /// Follow a user
+  static Future<void> follow({
+    required int followerId,
+    required int followingId,
+  }) async {
+    await _supabase.from(_table).insert({
+      'followepersonid': followerId,
+      'followingpersonid': followingId,
+    });
   }
 }

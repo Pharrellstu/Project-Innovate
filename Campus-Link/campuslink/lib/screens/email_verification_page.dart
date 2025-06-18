@@ -14,7 +14,8 @@ class EmailVerificationPage extends StatefulWidget {
   State<EmailVerificationPage> createState() => _EmailVerificationPageState();
 }
 
-class _EmailVerificationPageState extends State<EmailVerificationPage> {
+class _EmailVerificationPageState extends State<EmailVerificationPage>
+    with WidgetsBindingObserver {
   final _otpController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
@@ -23,18 +24,51 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     if (widget.postRegistrationContext) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Verification email sent to ${widget.email}. Please check your inbox.',
+                'Verification email sent to ${widget.email}. Please check your inbox and click the link to verify.',
               ),
             ),
           );
         }
       });
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // When app resumes (like from clicking magic link), refresh auth state
+      _checkAuthStatus();
+    }
+  }
+
+  Future<void> _checkAuthStatus() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null && user.emailConfirmedAt != null) {
+        // Email is now confirmed, the AuthGate StreamBuilder will handle navigation
+        if (mounted) {
+          setState(() {
+            _successMessage = 'Email verified successfully! Redirecting...';
+          });
+        }
+      }
+    } catch (e) {
+      print('Error checking auth status: $e');
     }
   }
 
@@ -70,13 +104,11 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 
       if (mounted) {
         setState(() {
-          _isLoading = false; // Stop loading indicator
+          _isLoading = false;
           _successMessage = 'Email successfully verified! Redirecting...';
         });
 
-        // After successful verification, this page has done its job.
-        // Pop it after a short delay so the user can see the success message.
-        // AuthGate will then ensure the correct page (e.g., HomePage) is shown.
+        // AuthGate will handle navigation automatically
         Future.delayed(const Duration(milliseconds: 400), () {
           if (mounted) {
             Navigator.of(context).pop();
@@ -86,24 +118,21 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     } on AuthException catch (e) {
       if (mounted) {
         String errorMessage = e.message;
-        // Log specific token errors for debugging, but show user the Supabase message
         if (e.message.toLowerCase().contains("token") &&
             (e.message.toLowerCase().contains("expired") ||
                 e.message.toLowerCase().contains("invalid"))) {
-          print(
-            'EmailVerificationPage: Caught \'Token expired/invalid\' error. Message: ${e.message}',
-          );
+          print('EmailVerificationPage: Token error: ${e.message}');
         }
         setState(() {
           _errorMessage = errorMessage;
-          _isLoading = false; // Stop loading indicator on error
+          _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _errorMessage = 'An unexpected error occurred: ${e.toString()}';
-          _isLoading = false; // Stop loading indicator on error
+          _isLoading = false;
         });
       }
     }
@@ -115,15 +144,17 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
       _errorMessage = null;
       _successMessage = null;
     });
+
     try {
-      await Supabase.instance.client.auth.resend(
-        type:
-            OtpType.signup, // Match the type used in registration/verification
+      // Use magic link for resend
+      await Supabase.instance.client.auth.signInWithOtp(
         email: widget.email,
+        emailRedirectTo: 'campuslink://email-confirmed',
       );
+
       setState(() {
         _successMessage =
-            'Verification email resent successfully. Please check your inbox.';
+            'New verification email sent! Please check your inbox and click the link to verify.';
         _isLoading = false;
       });
     } on AuthException catch (e) {
@@ -148,13 +179,13 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
         leading:
             !widget.postRegistrationContext
                 ? IconButton(
-                  icon: Icon(Icons.arrow_back, color: Colors.black),
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
                   onPressed: () => Navigator.of(context).pop(),
                 )
                 : null,
         backgroundColor: Colors.white,
         elevation: 0,
-        titleTextStyle: TextStyle(
+        titleTextStyle: const TextStyle(
           color: Colors.black,
           fontSize: 20,
           fontWeight: FontWeight.w500,
@@ -191,32 +222,37 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                 children: <Widget>[
                   Image.asset("resources/img/logo.jpeg", height: 100),
                   const SizedBox(height: 20),
-                  Text(
+                  const Text(
                     'Verify Your Email',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A verification code has been sent to:',
+                    'A verification email has been sent to:',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                   ),
                   Text(
-                    '${widget.email}',
+                    widget.email,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[850], fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[850],
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  const SizedBox(height: 10),
                   Text(
-                    'Please enter it below.',
+                    'Click the link in your email to verify, or enter the 6-digit code below.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 25),
                   TextField(
                     controller: _otpController,
                     decoration: InputDecoration(
-                      labelText: 'Verification Code',
+                      labelText: 'Verification Code (Optional)',
                       hintText: 'Enter 6-digit code',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.0),
@@ -233,55 +269,57 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       ),
                       filled: true,
                       fillColor: Colors.grey[50],
-                      counterText: "", // Hide the default counter
+                      counterText: "",
                     ),
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20,
                       letterSpacing: 5,
                       fontWeight: FontWeight.bold,
                     ),
                     maxLength: 6,
                   ),
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 15),
                   if (_isLoading)
                     const CircularProgressIndicator()
                   else
-                    ElevatedButton(
-                      onPressed: _verifyOtp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 50,
-                          vertical: 15,
+                    Column(
+                      children: [
+                        ElevatedButton(
+                          onPressed: _verifyOtp,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 50,
+                              vertical: 15,
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          child: const Text('VERIFY CODE'),
                         ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed:
+                              _isLoading ? null : _resendVerificationEmail,
+                          child: Text(
+                            'Resend Verification Email',
+                            style: TextStyle(
+                              color: Theme.of(context).primaryColor,
+                              fontSize: 15,
+                            ),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        minimumSize: Size(
-                          double.infinity,
-                          50,
-                        ), // Make button wider
-                      ),
-                      child: const Text('VERIFY'),
+                      ],
                     ),
-                  const SizedBox(height: 15),
-                  TextButton(
-                    onPressed: _isLoading ? null : _resendVerificationEmail,
-                    child: Text(
-                      'Resend Verification Email',
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
                   if (_errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 20.0),
