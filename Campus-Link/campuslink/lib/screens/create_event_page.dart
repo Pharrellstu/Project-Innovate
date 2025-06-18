@@ -26,7 +26,6 @@ class CreateEventPage extends StatelessWidget {
         backgroundColor: Colors.white,
       ),
       body: createEventPage(),
-      bottomNavigationBar: NavBar(),
     );
   }
 
@@ -156,6 +155,8 @@ class _createEventPageState extends State<createEventPage> {
                         if (currentStep > 0)
                           TextButton(onPressed: prevStep, child: Text('Back')),
                         // In CreateEventPage's build method:
+                        // In create_event_page.dart
+// Update the Next button in the build method:
                         TextButton(
                           onPressed: () async {
                             final isLastStep = currentStep == steps.length - 1;
@@ -169,36 +170,51 @@ class _createEventPageState extends State<createEventPage> {
                                 currentStepValid = isLocationValid;
                                 break;
                               case 2:
-                                currentStepValid = true; // Event form page is always valid
+                                currentStepValid = true;
                                 break;
                               case 3:
-                                currentStepValid = true; // Overview page is always valid
+                                currentStepValid = true;
                                 break;
                               default:
                                 currentStepValid = true;
                             }
-                            //return currentStepValid ? nextStep : null;
+
                             if (!currentStepValid) return;
 
                             if (isLastStep) {
-                              // Attempt to create the event in Supabase
-                              //final success = await EventService.createEvent(_eventData);
-                              /*if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Event created successfully!')),
-                                );
-                                Navigator.of(context).pop();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Failed to create event.')),
-                                );
-                              }*/
-
                               await _createEventAndInvitations();
                             } else {
                               nextStep();
                             }
                           },
+                          style: ButtonStyle(
+                            foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                                  (Set<MaterialState> states) {
+                                bool currentStepValid;
+                                switch (currentStep) {
+                                  case 0:
+                                    currentStepValid = isBasicInfoValid;
+                                    break;
+                                  case 1:
+                                    currentStepValid = isLocationValid;
+                                    break;
+                                  case 2:
+                                    currentStepValid = true;
+                                    break;
+                                  case 3:
+                                    currentStepValid = true;
+                                    break;
+                                  default:
+                                    currentStepValid = true;
+                                }
+
+                                if (!currentStepValid) {
+                                  return Colors.grey;
+                                }
+                                return Theme.of(context).primaryColor;
+                              },
+                            ),
+                          ),
                           child: Text(
                               currentStep == steps.length - 1 ? 'Finish' : 'Next'
                           ),
