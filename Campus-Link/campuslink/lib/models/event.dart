@@ -19,6 +19,7 @@ class EventModel {
   //final bool offerBadge;
   final String? eventCreatorUUID;
   final String? eventImageUrl;
+  final DateTime? createdAt;
 
   EventModel({
     required this.eventId,
@@ -38,6 +39,7 @@ class EventModel {
     this.eventImageUrl,
     //required this.offerBadge,
     required this.eventCreatorUUID,
+    required this.createdAt,
   });
 
   factory EventModel.fromMap(Map<String, dynamic> map) {
@@ -80,6 +82,7 @@ class EventModel {
           : null,
       eventCreatorUUID: map['eventcreatorid_uuid'] as String?,
       eventImageUrl: map['eventimageurl'] as String?,
+      createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
 }

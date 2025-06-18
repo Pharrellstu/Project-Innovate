@@ -201,4 +201,22 @@ class EventService {
       return [];
     }
   }
+
+  static Future<DateTime?> getEventCreationTime(int eventId) async {
+    try {
+      final response = await _supabase
+          .from('event')
+          .select('created_at')
+          .eq('event_id', eventId)
+          .single();
+
+      if (response['created_at'] != null) {
+        return DateTime.parse(response['created_at'] as String);
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching creation time: $e');
+      return null;
+    }
+  }
 }
