@@ -28,7 +28,6 @@ class CreateEventPage extends StatelessWidget {
       body: createEventPage(),
     );
   }
-
 }
 
 class createEventPage extends StatefulWidget {
@@ -39,7 +38,6 @@ class createEventPage extends StatefulWidget {
 }
 
 class _createEventPageState extends State<createEventPage> {
-
   int currentStep = 0;
   bool isBasicInfoValid = false;
   bool isLocationValid = false;
@@ -53,17 +51,19 @@ class _createEventPageState extends State<createEventPage> {
   List<Widget> get steps => [
     basicInputInfo(
       eventData: _eventData,
-      onValidityChanged: (isValid) => setState(() => isBasicInfoValid = isValid),
+      onValidityChanged: (isValid) =>
+          setState(() => isBasicInfoValid = isValid),
     ),
     timeAndLocation(
       eventData: _eventData,
-      onValidityChanged: (isValid) => setState(() => isLocationValid = isValid),
+      onValidityChanged: (isValid) =>
+          setState(() => isLocationValid = isValid),
     ),
     eventFormPage(
       eventData: _eventData,
-      onValidityChanged: (isValid) => setState(() => isPrivacyValid = isValid),
+      onValidityChanged: (isValid) =>
+          setState(() => isPrivacyValid = isValid),
     ),
-    // Add your OverviewPage here
     OverviewPage(eventData: _eventData),
   ];
 
@@ -79,7 +79,6 @@ class _createEventPageState extends State<createEventPage> {
     }
   }
 
-// In create_event_page.dart
   Future<void> _createEventAndInvitations() async {
     showDialog(
       context: context,
@@ -94,7 +93,8 @@ class _createEventPageState extends State<createEventPage> {
       final currentUserId = AuthGate.getCurrentUserId();
       if (currentUserId == null) throw Exception('User not authenticated');
 
-      final currentAccountId = await userService.getAccountIdByAuthUserId(currentUserId);
+      final currentAccountId =
+      await userService.getAccountIdByAuthUserId(currentUserId);
       if (currentAccountId == null) throw Exception('Account not found');
 
       if (_eventData.invitedUsers.isNotEmpty) {
@@ -154,9 +154,6 @@ class _createEventPageState extends State<createEventPage> {
                       children: [
                         if (currentStep > 0)
                           TextButton(onPressed: prevStep, child: Text('Back')),
-                        // In CreateEventPage's build method:
-                        // In create_event_page.dart
-// Update the Next button in the build method:
                         TextButton(
                           onPressed: () async {
                             final isLastStep = currentStep == steps.length - 1;
@@ -178,7 +175,7 @@ class _createEventPageState extends State<createEventPage> {
                               default:
                                 currentStepValid = true;
                             }
-
+                            
                             if (!currentStepValid) return;
 
                             if (isLastStep) {
@@ -265,7 +262,7 @@ class StepIndicator extends StatelessWidget {
   }
 
   Widget _stepIndicator(int value) {
-    if(value == 0) {
+    if (value == 0) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -276,7 +273,7 @@ class StepIndicator extends StatelessWidget {
           _stepBox(false, '3'),
         ],
       );
-    } else if(value == 1) {
+    } else if (value == 1) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -287,7 +284,7 @@ class StepIndicator extends StatelessWidget {
           _stepBox(false, '3'),
         ],
       );
-    } else if(value == 2) {
+    } else if (value == 2) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -335,8 +332,6 @@ class EventData {
   String? category;
   String description = '';
   bool isOnline = false;
-
-  // Add other fields from other steps as needed
   DateTime? eventDate;
   String? location;
   TimeOfDay? eventTime;
@@ -344,22 +339,18 @@ class EventData {
   bool repeatEvent = false;
   List<bool> repeatDays = [false, false, false, false, false, false, false];
   int repeatEveryWeeks = 1;
-  //LatLng? locationLatLng;
   String? locationName;
-// You can also add badges, limits, privacy, etc.
-
   bool isPublic = true;
   int? maxAttendees;
   DateTime? signUpDeadline;
   bool offerBadge = true;
   List<String> invitedUserIds = [];
   List<UserObject> invitedUsers = [];
-
   File? eventImageFile;
   String? eventImageUrl;
   String? get imagePath => eventImageFile?.path;
+  DateTime? createdAt;
 
-  // Add this to EventData class
   String get invitedUsersDisplay {
     if (invitedUsers.isEmpty) return 'No invited users';
 
@@ -372,33 +363,30 @@ class EventData {
     return '${names.take(3).join(', ')} +${names.length - 3} more';
   }
 
-
-    Map<String, dynamic> toMap(String creatorAccountId) {
-      // 1) Format Date part
-      String? formattedDate = eventDate
-          ?.toIso8601String()
-          .split('T')
-          .first; // yyyy-MM-dd
-
-      // 2) Format Time part
-      String? formattedTime;
-      if (eventTime != null) {
-        final twoDigit = (int v) => v.toString().padLeft(2, '0');
-        formattedTime =
-        '${twoDigit(eventTime!.hour)}:${twoDigit(eventTime!.minute)}:00';
-      }
-      return {
-        'eventname'           : eventName,
-        'eventdescription'    : description,
-        'isPhysical'          : !isOnline,
-        'startdate'           : formattedDate,
-        'eventTime'           : formattedTime,
-        'locationName'        : locationName,
-        'locationLatLng'      : location,
-        'eventcategory'       : category,
-        'maxnumberofpeople'   : maxAttendees,
-        'eventcreatorid_uuid' : creatorAccountId,
-        'eventimageurl': eventImageUrl,
-      };
+  Map<String, dynamic> toMap(String creatorAccountId) {
+    DateTime? startDateTime;
+    if (eventDate != null && eventTime != null) {
+      startDateTime = DateTime(
+        eventDate!.year,
+        eventDate!.month,
+        eventDate!.day,
+        eventTime!.hour,
+        eventTime!.minute,
+      );
     }
+
+    return {
+      'eventname': eventName,
+      'eventdescription': description,
+      'isPhysical': !isOnline,
+      'startdate': startDateTime?.toIso8601String(),
+      'locationName': locationName,
+      'locationLatLng': location,
+      'eventcategory': category,
+      'maxnumberofpeople': maxAttendees,
+      'eventcreatorid_uuid': creatorAccountId,
+      'eventimageurl': eventImageUrl,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+  }
 }

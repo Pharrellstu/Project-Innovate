@@ -31,6 +31,7 @@ class _EventPageState extends State<EventPage> {
   final ScrollController _creatorController = ScrollController();
   late Future<UserObject?> _creatorFuture;
   UserObject? _creator;
+  DateTime? _creationTime;
 
   // Add this helper method in _EventPageState
   bool get _isCreator {
@@ -40,11 +41,17 @@ class _EventPageState extends State<EventPage> {
         event!.eventCreatorUUID == currentUserId;
   }
 
+  Future<void> _fetchCreationTime() async {
+    final time = await EventService.getEventCreationTime(widget.eventId);
+    setState(() => _creationTime = time);
+  }
+
   @override
   void initState() {
     super.initState();
     _eventFuture = _fetchEvent();
     _getCurrentUserAccountId();
+    _fetchCreationTime();
 
     // Start auto-scrolling for location and creator name
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -390,9 +397,9 @@ class _EventPageState extends State<EventPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        event != null
-                            ? 'Event date: ${DateFormat('MMM dd, yyyy').format(event!.eventDate!)}'
-                            : '',
+                        event != null && event!.eventDate != null
+                            ? 'Created: ${DateFormat('MMM dd, yyyy, HH:mm').format(_creationTime!)}'
+                            : 'Event date: Not specified',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade600,
