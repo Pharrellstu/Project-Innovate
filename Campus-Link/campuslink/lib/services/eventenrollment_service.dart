@@ -52,4 +52,20 @@ class EventEnrollmentService {
       return [];
     }
   }
+
+  /// unroll user from an event
+
+  static Future<void> unEnrollToEvent(int eventId, int accountId) async {
+    try {
+      await _supabase.from(_table)
+        .delete()
+        .eq('eventid', eventId)
+        .eq('accountid', accountId);
+
+    } catch (e) {
+      print('Error enrolling to event: $e');
+      rethrow;
+    }
+  }
+
 }

@@ -156,6 +156,25 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
+  Future<void> _unEnrollInEvent() async {
+    if (_currentUserAccountId == null) return;
+
+    try {
+      await EventEnrollmentService.unEnrollToEvent(
+        widget.eventId,
+        _currentUserAccountId!,
+      );
+      setState(() => _isEnrolled = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Successfully left the event')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to leave: ${e.toString()}')),
+      );
+    }
+  }
+
   Future<void> _editEvent() async {
     // Navigate to edit screen with event data
     /*Navigator.push(
@@ -249,20 +268,31 @@ class _EventPageState extends State<EventPage> {
       );
     }
 
-    return ElevatedButton(
-      onPressed: _isEnrolled ? null : _enrollInEvent,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _isEnrolled ? Colors.grey : Theme.of(context).primaryColor,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-      ),
-      child: Text(
-        _isEnrolled ? 'Already Joined' : 'Join Event',
-        style: TextStyle(
-          fontSize: 18,
-          color: _isEnrolled ? Colors.black87 : Colors.white,
+    if(_isEnrolled) {
+      return ElevatedButton(
+        onPressed: _unEnrollInEvent,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFD30E26),
+          padding: const EdgeInsets.symmetric(vertical: 16),
         ),
-      ),
-    );
+        child: const Text(
+          'Leave Event',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
+      );
+    } else {
+      return ElevatedButton(
+        onPressed: _enrollInEvent,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: const Text(
+          'Join Event',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
+      );
+    }
   }
 
   Widget _buildAutoScrollingText(String text, ScrollController controller) {
@@ -361,7 +391,7 @@ class _EventPageState extends State<EventPage> {
                       ),
                       Text(
                         event != null
-                            ? 'Created ${DateFormat('MMM dd').format(event!.eventDate!)}'
+                            ? 'Event date: ${DateFormat('MMM dd, yyyy').format(event!.eventDate!)}'
                             : '',
                         style: TextStyle(
                           fontSize: 14,
@@ -421,7 +451,7 @@ class _EventPageState extends State<EventPage> {
                   children: [
                     // Event date - top line
                     Text(
-                      DateFormat('EEEE, MMM d').format(event!.eventDate!).toUpperCase(),
+                      DateFormat('EEEE, MMM d, yyy').format(event!.eventDate!).toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
