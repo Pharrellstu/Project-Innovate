@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:campuslink/screens/create_event_page.dart';
 import 'package:campuslink/screens/event_page.dart';
 
+/// A page displaying events on an interactive map with filtering capabilities
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
   final String title = "Map Page";
@@ -21,38 +22,44 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
+  // Panel control variables
   double _panelHeightFraction = 0.2;
   late double _dragStartY;
   late double _startHeightFraction;
 
+  // Event data management
   List<EventModel> _allEvents = [];
   Future<List<EventModel>>? _filteredEventsFuture;
 
+  // Search functionality
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // Location and map controls
   LatLng? _currentLocation;
   final MapController _mapController = MapController();
 
+  // Event highlighting system
   final Map<int, GlobalKey> _eventItemKeys = {};
   int? _highlightedEventId;
   Timer? _highlightTimer;
 
+  // Filter states
   String _categoryFilter = 'All';
   String _locationTypeFilter = 'All';
 
   @override
   void initState() {
     super.initState();
-    debugPrint('[MapPage] initState called. Time: ${DateTime.now()}');
-
     _fetchAndFilterEvents();
     _searchController.addListener(_onSearchChanged);
 
+    // Initialize map position
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _mapController.move(LatLng(52.785805, 6.897585), 13.0);
     });
 
+    // Attempt to get current location
     _getCurrentLocation().then((loc) {
       if (mounted) {
         setState(() {
@@ -69,6 +76,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     });
   }
 
+  /// Handles changes to the search query
   void _onSearchChanged() {
     if (mounted) {
       setState(() {
@@ -87,6 +95,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  /// Retrieves the device's current location with proper permission checks
   Future<LatLng> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -114,6 +123,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     return LatLng(position.latitude, position.longitude);
   }
 
+  /// Shows a dialog for filtering events by category and location type
   void _showFilterDialog() {
     String tempCategoryFilter = _categoryFilter;
     String tempLocationTypeFilter = _locationTypeFilter;
@@ -212,6 +222,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     );
   }
 
+  /// Fetches events from the service and applies current filters
   Future<void> _fetchAndFilterEvents() async {
     try {
       final fetchedEvents = await EventService.fetchEvents();
@@ -234,6 +245,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     }
   }
 
+  /// Applies all current filters to the event list
   void _applyAndSetFilteredEvents() {
     if (mounted) {
       setState(() {
@@ -247,23 +259,22 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     }
   }
 
+  /// Static method for applying filters in an isolate
   static List<EventModel> _applyFiltersStatic(Map<String, dynamic> args) {
     final List<EventModel> events = args['events'];
     final String categoryFilter = args['categoryFilter'];
     final String searchQuery = args['searchQuery'];
     final String locationTypeFilter = args['locationTypeFilter'];
 
-    final filteredList = events.where((event) {
+    return events.where((event) {
       bool keepEvent = true;
 
-      // Category Filter
       if (keepEvent && categoryFilter != 'All') {
         if (event.category == null || event.category!.toLowerCase() != categoryFilter.toLowerCase()) {
           keepEvent = false;
         }
       }
 
-      // Location Type Filter
       if (keepEvent && locationTypeFilter != 'All') {
         final isOnlineEvent = event.locationName?.toLowerCase() == 'online';
         if (locationTypeFilter == 'Online' && !isOnlineEvent) {
@@ -273,7 +284,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
         }
       }
 
-      // Search Filter
       if (keepEvent && searchQuery.isNotEmpty) {
         final lowerCaseQuery = searchQuery.toLowerCase();
         final String eventName = event.eventName.toLowerCase();
@@ -291,65 +301,63 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
       return keepEvent;
     }).toList();
-
-    return filteredList;
   }
 
- void _onListEventTap(EventModel event) {
-  if (event.locationLat != null && event.locationLng != null) {
-    final targetLatLng = LatLng(event.locationLat!, event.locationLng!);
-    _mapController.move(targetLatLng, _mapController.zoom);
+  /// Handles tapping on an event in the list
+  void _onListEventTap(EventModel event) {
+    if (event.locationLat != null && event.locationLng != null) {
+      final targetLatLng = LatLng(event.locationLat!, event.locationLng!);
+      _mapController.move(targetLatLng, _mapController.zoom);
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EventPage(eventId: event.eventId),
+      ),
+    );
+    
+    _triggerHighlightAndScroll(event);
   }
-  
-  // Add navigation to EventPage
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => EventPage(eventId: event.eventId),
-    ),
-  );
-  
-  _triggerHighlightAndScroll(event);
-}
 
+  /// Handles tapping on a map marker
   void _onMarkerTap(EventModel event) {
     _triggerHighlightAndScroll(event);
   }
 
+  /// Highlights an event and scrolls to it in the list
   void _triggerHighlightAndScroll(EventModel event) {
-    if (mounted) {
-      _highlightTimer?.cancel();
+    _highlightTimer?.cancel();
 
+    setState(() {
+      _highlightedEventId = event.eventId;
+    });
+
+    if (_panelHeightFraction < 0.3) {
       setState(() {
-        _highlightedEventId = event.eventId;
-      });
-
-      if (_panelHeightFraction < 0.3) {
-        setState(() {
-          _panelHeightFraction = 0.5;
-        });
-      }
-
-      Future.delayed(const Duration(milliseconds: 100), () {
-        final key = _eventItemKeys[event.eventId];
-        if (key != null && key.currentContext != null) {
-          Scrollable.ensureVisible(
-            key.currentContext!,
-            alignment: 0.5,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
-        }
-      });
-
-      _highlightTimer = Timer(const Duration(seconds: 1), () {
-        if (mounted) {
-          setState(() {
-            _highlightedEventId = null;
-          });
-        }
+        _panelHeightFraction = 0.5;
       });
     }
+
+    Future.delayed(const Duration(milliseconds: 100), () {
+      final key = _eventItemKeys[event.eventId];
+      if (key != null && key.currentContext != null) {
+        Scrollable.ensureVisible(
+          key.currentContext!,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+
+    _highlightTimer = Timer(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _highlightedEventId = null;
+        });
+      }
+    });
   }
 
   @override
@@ -383,6 +391,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       ),
       body: Stack(
         children: [
+          // Main map display
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -447,6 +456,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ],
           ),
 
+          // Map control buttons
           Positioned(
             top: 100,
             right: 16,
@@ -482,8 +492,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               child: const Icon(Icons.add, color: Colors.black),
               onPressed: () {
                 final currentZoom = _mapController.zoom;
-                final newZoom = currentZoom + 1;
-                _mapController.move(_mapController.center, newZoom);
+                _mapController.move(_mapController.center, currentZoom + 1);
               },
             ),
           ),
@@ -496,12 +505,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               child: const Icon(Icons.remove, color: Colors.black),
               onPressed: () {
                 final currentZoom = _mapController.zoom;
-                final newZoom = currentZoom - 1;
-                _mapController.move(_mapController.center, newZoom);
+                _mapController.move(_mapController.center, currentZoom - 1);
               },
             ),
           ),
 
+          // Search bar
           Positioned(
             left: 12,
             right: 12,
@@ -534,6 +543,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
           ),
 
+          // Draggable events panel
           Positioned(
             left: 0,
             right: 0,
@@ -547,6 +557,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               ),
               child: Column(
                 children: [
+                  // Panel drag handle
                   GestureDetector(
                     behavior: HitTestBehavior.translucent,
                     onVerticalDragStart: (details) {
@@ -570,6 +581,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(3)),
                     ),
                   ),
+                  // Events list
                   Expanded(
                     child: FutureBuilder<List<EventModel>>(
                       future: _filteredEventsFuture,
@@ -617,6 +629,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      // Event image
                                       Container(
                                         width: 50,
                                         height: 50,
@@ -650,6 +663,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                 ),
                                         ),
                                       ),
+                                      // Event details
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -734,6 +748,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
           ),
 
+          // Bottom navigation bar
           const Positioned(
             left: 0,
             right: 0,
@@ -746,6 +761,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   }
 }
 
+/// Custom widget for displaying event markers on the map
 class EventMarker extends StatelessWidget {
   final String imagePath;
   final bool isNetworkImage;
@@ -765,6 +781,7 @@ class EventMarker extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
+          // Marker pointer triangle
           Positioned(
             bottom: 0,
             child: CustomPaint(
@@ -777,6 +794,7 @@ class EventMarker extends StatelessWidget {
               ),
             ),
           ),
+          // Circular marker with event image
           Container(
             width: 50,
             height: 50,
@@ -822,6 +840,7 @@ class EventMarker extends StatelessWidget {
   }
 }
 
+/// Custom painter for the marker's pointer triangle
 class _TrianglePainter extends CustomPainter {
   final Color color;
 
