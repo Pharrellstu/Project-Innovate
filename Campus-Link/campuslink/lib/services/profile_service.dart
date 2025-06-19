@@ -39,6 +39,7 @@ class ProfileService {
   static const String _badgeOwnershipTable = 'badgeownership';
   static const String _badgeTable = 'badge';
   static const String _profilePicturesBucket = 'accountimage';
+  static const String _profilePicturesBucket = 'accountimages';
 
   static String? getCurrentAuthUserId() {
     return _supabase.auth.currentUser?.id;
