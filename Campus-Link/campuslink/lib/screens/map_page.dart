@@ -21,7 +21,7 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
-  double _panelHeightFraction = 0.1;
+  double _panelHeightFraction = 0.2;
   late double _dragStartY;
   late double _startHeightFraction;
 
@@ -141,11 +141,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       },
                       items: <String>[
                         'All',
+                        'Drinks',
+                        'Party',
                         'Sports',
-                        'Culture',
-                        'Academic',
-                        'Social',
-                        'Workshop',
+                        'Gaming',
+                        'Food',
                         'Other'
                       ].map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
