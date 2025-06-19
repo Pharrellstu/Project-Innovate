@@ -6,6 +6,7 @@ import 'package:campuslink/services/eventenrollment_service.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:intl/intl.dart';
+import 'package:campuslink/screens/edit_event.dart';
 
 import '../models/eventenrollment.dart';
 import '../models/user.dart';
@@ -188,8 +189,19 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
-  Future<void> _editEvent() async {
-    // Navigate to edit screen
+Future<void> _editEvent() async {
+    if (event != null) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditEventPage(eventId: event!.eventId),
+        ),
+      );
+      // Refresh event data if edit was successful
+      if (result == true && mounted) {
+        await _fetchData();
+      }
+    }
   }
 
   Future<void> _deleteEvent() async {
