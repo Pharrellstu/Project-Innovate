@@ -277,25 +277,72 @@ class _UserSelectionDialogState extends State<UserSelectionDialog> {
   }
 
   Widget _buildProfileAvatar(UserObject user) {
-    if (user.profilePictureUrl != null && user.profilePictureUrl!.isNotEmpty) {
-      return CircleAvatar(
-        backgroundImage: NetworkImage(user.profilePictureUrl!),
-        onBackgroundImageError: (exception, stackTrace) {
-          // Handle image loading errors
-        },
-        child: const Icon(Icons.person), // Fallback icon if image fails
-      );
-    }
+    // Avatar size for the dialog
+    const double avatarSize = 25;
 
-    // Show initials if no profile picture
-    return CircleAvatar(
-      backgroundColor: Colors.blue.shade100,
-      child: Text(
-        user.username?.isNotEmpty == true
-            ? user.username![0].toUpperCase()
-            : '?',
-        style: const TextStyle(color: Colors.white),
-      ),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Add gradient border for verified users
+        if (user.isVerified == true)
+          Container(
+            padding: const EdgeInsets.all(1.5),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [Colors.blue, Colors.purple],
+              ),
+            ),
+            child: Container(
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
+              child: CircleAvatar(
+                radius: avatarSize,
+                backgroundImage: user.profilePictureUrl != null &&
+                    user.profilePictureUrl!.isNotEmpty
+                    ? NetworkImage(user.profilePictureUrl!)
+                    : null,
+                child: user.profilePictureUrl == null ||
+                    user.profilePictureUrl!.isEmpty
+                    ? const Icon(Icons.person, size: avatarSize)
+                    : null,
+              ),
+            ),
+          )
+        else
+          CircleAvatar(
+            radius: avatarSize,
+            backgroundImage: user.profilePictureUrl != null &&
+                user.profilePictureUrl!.isNotEmpty
+                ? NetworkImage(user.profilePictureUrl!)
+                : null,
+            child: user.profilePictureUrl == null ||
+                user.profilePictureUrl!.isEmpty
+                ? const Icon(Icons.person, size: avatarSize)
+                : null,
+          ),
+
+        // Add verification badge for verified users
+        if (user.isVerified == true)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(
+                color: Colors.blue,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.verified,
+                color: Colors.white,
+                size: 13,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
