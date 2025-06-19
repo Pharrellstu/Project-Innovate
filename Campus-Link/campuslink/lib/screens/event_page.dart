@@ -188,8 +188,19 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
-  Future<void> _editEvent() async {
-    // Navigate to edit screen
+Future<void> _editEvent() async {
+    if (event != null) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditEventPage(eventId: event!.eventId),
+        ),
+      );
+      // Refresh event data if edit was successful
+      if (result == true && mounted) {
+        await _fetchData();
+      }
+    }
   }
 
   Future<void> _deleteEvent() async {
