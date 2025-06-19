@@ -240,4 +240,47 @@ class EventService {
     }
   }
 
+  static Future<bool> updateEvent(EventModel event) async {
+    try {
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        print('No authenticated user.');
+        return false;
+      }
+      // Prepare update data with correct DB field names
+      final updateData = <String, dynamic>{
+        'eventname': event.eventName,
+        'eventcategory': event.category,
+        'eventdescription': event.description,
+        'isPhysical': !event.isOnline,
+        'startdate': event.eventDate?.toIso8601String().split('T')[0],
+        'eventTime': event.eventTime,
+        'duration': event.eventDuration,
+        'locationName': event.locationName,
+        'locationLatLng': (event.locationLat != null && event.locationLng != null) ? "${event.locationLat},${event.locationLng}" : null,
+        'isPublic': event.isPublic,
+        'maxnumberofpeople': event.maxnumberofpeople,
+        'eventimageurl': event.eventImageUrl,
+      };
+      updateData.removeWhere((k, v) => v == null);
+      print('[EventService] updateEvent: eventId=${event.eventId}, data=$updateData');
+      final response = await _supabase
+          .from('event')
+          .update(updateData)
+          .eq('event_id', event.eventId)
+          .eq('eventcreatorid_uuid', currentUserId)
+          .select('event_id');
+      if (response.isNotEmpty) {
+        print('[EventService] Update successful.');
+        return true;
+      } else {
+        print('[EventService] Update failed. RLS or permission issue?');
+        return false;
+      }
+    } catch (e) {
+      print('[EventService] Exception during update: $e');
+      return false;
+    }
+  }
+
 }

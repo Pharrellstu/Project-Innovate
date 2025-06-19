@@ -261,6 +261,7 @@ class _EditEventPageState extends State<EditEventPage> {
         signUpDeadline: _eventData!.signUpDeadline,
         eventCreatorUUID: _eventData!.eventCreatorUUID,
         eventImageUrl: imageUrl,
+        createdAt: _eventData!.createdAt,
       );
 
       // Save to database
