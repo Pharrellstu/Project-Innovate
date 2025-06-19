@@ -118,16 +118,67 @@ class _AccountsPageState extends State<AccountsPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundImage: user.profilePictureUrl != null &&
-                          user.profilePictureUrl!.isNotEmpty
-                          ? NetworkImage(user.profilePictureUrl!)
-                          : null,
-                      child: user.profilePictureUrl == null ||
-                          user.profilePictureUrl!.isEmpty
-                          ? const Icon(Icons.person, size: 40)
-                          : null,
+                    // Add verification effect around profile picture
+                    Stack(
+                      children: [
+                        // Add gradient border for verified users
+                        if (user.isVerified == true)
+                          Container(
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [Colors.blue, Colors.purple],
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: 40,
+                              backgroundColor: Colors.white,
+                              child: CircleAvatar(
+                                radius: 38,
+                                backgroundImage: user.profilePictureUrl != null &&
+                                    user.profilePictureUrl!.isNotEmpty
+                                    ? NetworkImage(user.profilePictureUrl!)
+                                    : null,
+                                child: user.profilePictureUrl == null ||
+                                    user.profilePictureUrl!.isEmpty
+                                    ? const Icon(Icons.person, size: 40)
+                                    : null,
+                              ),
+                            ),
+                          )
+                        else
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundImage: user.profilePictureUrl != null &&
+                                user.profilePictureUrl!.isNotEmpty
+                                ? NetworkImage(user.profilePictureUrl!)
+                                : null,
+                            child: user.profilePictureUrl == null ||
+                                user.profilePictureUrl!.isEmpty
+                                ? const Icon(Icons.person, size: 40)
+                                : null,
+                          ),
+
+                        // Add verification badge for verified users
+                        if (user.isVerified == true)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: const BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.verified,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Text(

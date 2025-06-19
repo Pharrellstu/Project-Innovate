@@ -276,6 +276,29 @@ class _UserSelectionDialogState extends State<UserSelectionDialog> {
     });
   }
 
+  Widget _buildProfileAvatar(UserObject user) {
+    if (user.profilePictureUrl != null && user.profilePictureUrl!.isNotEmpty) {
+      return CircleAvatar(
+        backgroundImage: NetworkImage(user.profilePictureUrl!),
+        onBackgroundImageError: (exception, stackTrace) {
+          // Handle image loading errors
+        },
+        child: const Icon(Icons.person), // Fallback icon if image fails
+      );
+    }
+
+    // Show initials if no profile picture
+    return CircleAvatar(
+      backgroundColor: Colors.blue.shade100,
+      child: Text(
+        user.username?.isNotEmpty == true
+            ? user.username![0].toUpperCase()
+            : '?',
+        style: const TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -312,9 +335,7 @@ class _UserSelectionDialogState extends State<UserSelectionDialog> {
                       });
                     },
                     title: Text(user.username ?? 'Unknown'),
-                    secondary: CircleAvatar(
-                      child: Text(user.username?[0].toUpperCase() ?? '?'),
-                    ),
+                    secondary: _buildProfileAvatar(user),
                   );
                 },
               ),
