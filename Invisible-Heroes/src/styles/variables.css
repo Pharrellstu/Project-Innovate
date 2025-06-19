@@ -35,6 +35,7 @@
   /* Layout */
   --section-padding: clamp(30px, 8vw, 100px);
   --section-gap: clamp(20px, 4vw, 40px);
+  --section-spacing: 14rem; /* Consistent spacing between sections */
   --button-height: clamp(60px, 8vw, 70px);
 
   /* Transitions */
@@ -44,12 +45,11 @@
   /* Shadows */
   --shadow-button: 0 4px 12px rgba(0, 95, 169, 0.3);
   --shadow-nav: 0 2px 10px rgba(0, 0, 0, 0.1);
-
   /* Gradients */
   --gradient-button: linear-gradient(
-    85deg,
-    #005fa9 1.59%,
-    rgba(0, 95, 169, 0) 121.45%
+    to right,
+    var(--color-primary),
+    var(--color-secondary)
   );
   --gradient-bg: linear-gradient(180deg, #094676 0%, rgba(9, 70, 118, 0) 100%);
 }

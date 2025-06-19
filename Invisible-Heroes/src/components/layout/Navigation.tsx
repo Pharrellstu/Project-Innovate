@@ -1,82 +1,124 @@
 import { Fragment } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import Button from "./Button";
-import "./css/Navigation.css";
+import Button from "../ui/Button";
+import "./Navigation.css";
 
 function Navigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const handleFeaturesClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    
+
     // If we're already on the homepage, just scroll to the features section
-    if (location.pathname === '/') {
-      const featuresSection = document.getElementById('features');
+    if (location.pathname === "/") {
+      const featuresSection = document.getElementById("features");
       if (featuresSection) {
-        featuresSection.scrollIntoView({ 
-          behavior: 'smooth',
-          block: 'start'
+        featuresSection.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
         });
       }
     } else {
       // If we're on another page, navigate to homepage first, then scroll
-      navigate('/');
+      navigate("/");
       // Small delay to allow the page to load before scrolling
       setTimeout(() => {
-        const featuresSection = document.getElementById('features');
+        const featuresSection = document.getElementById("features");
         if (featuresSection) {
-          featuresSection.scrollIntoView({ 
-            behavior: 'smooth',
-            block: 'start'
+          featuresSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }      }, 100);
+    }
+  };
+
+  const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+
+    // If we're already on the homepage, just scroll to the contact section
+    if (location.pathname === "/") {
+      const contactSection = document.getElementById("contact");
+      if (contactSection) {
+        contactSection.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    } else {
+      // If we're on another page, navigate to homepage first, then scroll
+      navigate("/");
+      // Small delay to allow the page to load before scrolling
+      setTimeout(() => {
+        const contactSection = document.getElementById("contact");
+        if (contactSection) {
+          contactSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
           });
         }
       }, 100);
     }
   };
+
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    
+
     // If we're already on the homepage, just scroll to the top
-    if (location.pathname === '/') {
-      window.scrollTo({ 
-        top: 0, 
-        behavior: 'smooth' 
+    if (location.pathname === "/") {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
       });
     } else {
       // If we're on another page, navigate to homepage (will scroll to top automatically)
-      navigate('/');
+      navigate("/");
     }
   };
   const handleDownloadClick = () => {
-    navigate('/download');
+    navigate("/download");
   };
 
   const handleSignInClick = () => {
-    navigate('/signin');
+    navigate("/signin");
   };
 
   return (
     <Fragment>
       <nav className="navigation">
-        <div className="contentDiv">          <h1 className="logo">
-            <a href="/" onClick={handleLogoClick}>CampusLink</a>
+        <div className="contentDiv">
+          {" "}
+          <h1 className="logo">
+            <a href="/" onClick={handleLogoClick}>
+              CampusLink
+            </a>
           </h1>
-
           <div className="navRight">
             <ul className="listNavBar">
               <li className="listNavBarElement">
                 <Link to="/about">About</Link>
-              </li>              <li className="listNavBarElement">
-                <a href="#features" onClick={handleFeaturesClick}>Features</a>
-              </li>
+              </li>{" "}
               <li className="listNavBarElement">
-                <a href="">Contact</a>
+                <a href="#features" onClick={handleFeaturesClick}>
+                  Features
+                </a>
+              </li>              <li className="listNavBarElement">
+                <a href="#contact" onClick={handleContactClick}>
+                  Contact
+                </a>
               </li>
-            </ul>            <Button variant="hollow" size="medium" className="nav-sign-button" onClick={handleSignInClick}>
+            </ul>{" "}
+            <Button
+              variant="hollow"
+              size="medium"
+              className="nav-sign-button"
+              onClick={handleSignInClick}
+            >
               Sign in
-            </Button><Button 
-              variant="filled" 
-              size="medium" 
+            </Button>
+            <Button
+              variant="filled"
+              size="medium"
               className="nav-download-button"
               onClick={handleDownloadClick}
               icon={
@@ -104,21 +146,36 @@ function Navigation() {
 
       {/* Mobile */}
       <nav className="navigationMobile">
-        <div className="contentMobileDiv">          <h1 className="logoMobile">
-            <a href="/" onClick={handleLogoClick}>CampusLink</a>
+        <div className="contentMobileDiv">
+          {" "}
+          <h1 className="logoMobile">
+            <a href="/" onClick={handleLogoClick}>
+              CampusLink
+            </a>
           </h1>
-
           <input type="checkbox" id="nav-toggle" className="nav-toggle" />
           <label htmlFor="nav-toggle" className="nav-toggle-label">
             <span></span>
-          </label>          <div className="mobileMenu">
+          </label>{" "}
+          <div className="mobileMenu">
             <Link to="/about">About</Link>
-            <a href="#features" onClick={handleFeaturesClick}>Features</a>
-            <a href="#">Contact</a>            <Button variant="hollow" size="medium" className="nav-sign-button-mobile" onClick={handleSignInClick}>
+            <a href="#features" onClick={handleFeaturesClick}>
+              Features
+            </a>
+            <a href="#contact" onClick={handleContactClick}>
+              Contact
+            </a>{" "}
+            <Button
+              variant="hollow"
+              size="medium"
+              className="nav-sign-button-mobile"
+              onClick={handleSignInClick}
+            >
               Sign in
-            </Button><Button 
-              variant="filled" 
-              size="medium" 
+            </Button>
+            <Button
+              variant="filled"
+              size="medium"
               className="nav-download-button-mobile"
               onClick={handleDownloadClick}
               icon={

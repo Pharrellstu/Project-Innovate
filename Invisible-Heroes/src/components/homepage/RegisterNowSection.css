@@ -1,0 +1,235 @@
+@import "../../styles/variables.css";
+
+.register-now-section {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0; /* Remove top/bottom padding to avoid double spacing */
+  margin-bottom: var(--section-spacing); /* Use consistent section spacing */
+  text-align: center;
+}
+
+.register-now-intro {
+  display: flex;
+  flex-direction: row; /* Arrange H1 and P side-by-side */
+  align-items: baseline; /* Align their text baselines */
+  justify-content: space-between; /* Space between H1 and P */
+  margin-bottom: calc(var(--section-gap) * 2);
+  text-align: left; /* Align text within H1 and P to the left */
+}
+
+.register-now-intro h1 {
+  font-family: var(--font-heading);
+  font-size: var(--fs-hero);
+  color: var(--color-text);
+  margin-bottom: 0; /* Remove bottom margin for row layout */
+  flex-shrink: 0; /* Prevent H1 from shrinking if P is long */
+  font-weight: var(--font-weight-bold);
+}
+
+.register-now-intro p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  margin: 0;
+  opacity: 0.8;
+  max-width: 30ch; /* Limit width of paragraph for readability in a row */
+  line-height: 1.4;
+}
+
+.register-now-timer-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+  background: var(--color-dark);
+  padding: 5rem; /* Consistent 5rem padding on all sides */
+  border-radius: var(--border-radius);
+  min-height: 400px;
+  overflow: hidden; /* Keep hidden for container bounds */
+  position: relative;
+}
+
+.timer-left-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2rem;
+  flex: 1; /* Takes up available space in the flex container */
+  position: relative; /* Ensure this section can have a z-index */
+  z-index: 2; /* Higher z-index to appear above the SVG container */
+}
+
+.timer-header-text {
+  font-family: var(--font-body);
+  font-size: var(--fs-body); /* Made smaller */
+  color: rgba(255, 255, 255, 0.7); /* Less white, more subtle */
+  margin: 0;
+  font-weight: var(--font-weight-normal); /* Slimmer weight */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timer-right-section {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1; /* Below the timer-left-section */
+  pointer-events: none; /* Allows clicks to pass through to elements behind it if necessary */
+}
+
+/* New wrapper for better rotation control */
+.svg-rotation-wrapper {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  width: clamp(250px, 30vw, 450px);
+  height: clamp(250px, 30vw, 450px); /* Make it a perfect square */
+  opacity: 0.8;
+  z-index: 1;
+  pointer-events: auto;
+  /* 
+  TWEAKING OPTIONS - Try different values:
+  
+  For fine-tuning rotation center:
+  transform-origin: center center; (default)
+  transform-origin: 50% 45%; (slightly up)
+  transform-origin: 55% 50%; (slightly right)
+  
+  For visual debugging, add a border:
+  border: 2px solid red;
+  */
+  transform-origin: 48% 52%;
+  /* border: 2px solid red; Debugging border - remove when satisfied */
+}
+
+.starburst-svg {
+  width: 100%;
+  height: 100%; /* Fill the square container completely */
+  object-fit: contain; /* Maintain aspect ratio while filling the container */
+  /* Remove previous positioning since wrapper handles it */
+}
+
+.timer-display {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: nowrap; /* Prevent timer from wrapping to a new line */
+  justify-content: flex-start; /* Left-align the timer */
+}
+
+.register-now-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timer-number {
+  font-family: var(--font-heading);
+  font-size: clamp(4rem, 8vw, 8rem);
+  font-weight: 200; /* Ultra thin/light weight */
+  color: var(--color-white); /* Change to white for dark background */
+  line-height: 0.9;
+  min-width: 2ch;
+  display: block;
+}
+
+.timer-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-tiny); /* Made smaller */
+  color: rgba(255, 255, 255, 0.6); /* Less white, more subtle */
+  font-weight: var(--font-weight-light); /* Slimmer weight */
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.timer-separator {
+  font-family: var(--font-heading);
+  font-size: clamp(3rem, 6vw, 6rem);
+  font-weight: 200;
+  color: var(--color-primary);
+  line-height: 0.9;
+  opacity: 0.6;
+  margin: 0 0.5rem;
+}
+
+/* Animation for number changes */
+.timer-number {
+  transition: all 0.3s ease;
+}
+
+.timer-number:hover {
+  color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .register-now-section {
+    padding: calc(var(--section-padding) * 0.75) 0;
+    margin-bottom: 10rem;
+  }
+
+  .register-now-intro {
+    flex-direction: column; /* Stack H1 and P on mobile */
+    align-items: center; /* Center them when stacked */
+    text-align: center; /* Center text within H1 and P on mobile */
+  }  .register-now-intro h1 {
+    font-size: clamp(2rem, 8vw, 3.5rem); /* Smaller mobile size */
+    margin-bottom: 0.5em; /* Add margin back when stacked */
+  }
+
+  .register-now-intro p {
+    font-size: var(--fs-body-small);
+    max-width: 100%; /* Allow full width when stacked */
+  }
+  .register-now-timer-container {
+    padding: 3rem 2rem;
+    min-height: auto;
+  }
+
+  .timer-left-section {
+    align-items: center; /* Center content of left section on mobile */
+    width: 100%; /* Explicitly take full width as right section is out of flow */
+  }
+
+  .timer-header-text {
+    text-align: center;
+  }
+
+  .timer-display {
+    justify-content: center; /* Center timer on mobile */
+  }
+  .starburst-svg {
+    display: none; /* Hide SVG on screens 768px and below */
+  }
+
+  .svg-rotation-wrapper {
+    display: none; /* Also hide the wrapper on mobile */
+  }
+
+  .timer-separator {
+    margin: 0 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .timer-display {
+    gap: 0.5rem;
+  }
+
+  .timer-separator {
+    display: none; /* Hide separators on very small screens for cleaner look */
+  }
+
+  .register-now-timer {
+    min-width: 80px; /* Ensure consistent width */
+  }
+  .timer-label {
+    font-size: var(--fs-tiny);
+  }
+}

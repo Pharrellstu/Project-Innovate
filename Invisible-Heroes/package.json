@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
     "bootstrap": "^5.2.3",
     "gsap": "^3.13.0",
     "react": "^19.1.0",

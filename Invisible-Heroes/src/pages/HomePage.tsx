@@ -1,8 +1,12 @@
-import Navigation from "../components/Navigation";
-import HeroSection from "../components/HeroSection";
-import AboutSection from "../components/AboutSection";
-import FeaturesSection from "../components/FeaturesSection";
-import Footer from "../components/Footer";
+import Navigation from "../components/layout/Navigation";
+import HeroSection from "../components/homepage/HeroSection";
+import AboutSection from "../components/homepage/AboutSection";
+import FeaturesSection from "../components/homepage/FeaturesSection";
+import FindingHomeSection from "../components/homepage/FindingHomeSection";
+import StudentStoriesSection from "../components/homepage/StudentStoriesSection";
+import RegisterNowSection from "../components/homepage/RegisterNowSection";
+import ContactSection from "../components/homepage/ContactSection";
+import Footer from "../components/layout/Footer";
 
 function HomePage() {
   return (
@@ -12,8 +16,12 @@ function HomePage() {
         <HeroSection />
         <section className="about-section">
           <AboutSection />
-        </section>
+        </section>{" "}
         <FeaturesSection />
+        <FindingHomeSection />
+        <StudentStoriesSection />
+        <RegisterNowSection />
+        <ContactSection />
       </div>
       <Footer />
     </>
