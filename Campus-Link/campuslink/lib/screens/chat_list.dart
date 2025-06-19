@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/chat_page.dart';
 import 'package:campuslink/widgets/top_bar.dart';
@@ -79,4 +79,4 @@ class _ChatListState extends State<ChatList> {
       ),
     );
   }
-}
+}  */

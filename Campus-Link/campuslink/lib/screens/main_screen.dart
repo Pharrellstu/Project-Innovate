@@ -1,4 +1,5 @@
 // lib/screens/main_screen.dart
+import 'package:campuslink/screens/chat_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/map_page.dart';
@@ -42,7 +43,7 @@ class _MainScreenState extends State<MainScreen> {
         children: const <Widget>[
           HomePage(),
           MapPage(),
-          ChatList(),
+          ChatListPage(),
           ProfilePage(),
         ],
       ),
