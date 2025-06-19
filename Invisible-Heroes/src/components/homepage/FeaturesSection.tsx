@@ -44,7 +44,7 @@ function FeaturesSection() {
   };  return (
     <>
       {/* Header Section - Outside the dark box */}
-      <div className="features-heading-div">
+      <div id="features" className="features-heading-div">
         <h1 className="features-heading">Features</h1>
         <p className="features-text">
           Explore the features that make CampusLink the ultimate campus

@@ -4,7 +4,7 @@ import UniversityLocationMap from "../../assets/UniversityLocation.png"; // Impo
 
 function ContactSection() {
   return (
-    <div className="contact-section">
+    <div id="contact" className="contact-section">
       <div className="contact-top-section">
         <div className="contact-left-section">
           <h1>We're Here To Connect And Assist You</h1>

@@ -29,10 +29,38 @@ function Navigation() {
             behavior: "smooth",
             block: "start",
           });
+        }      }, 100);
+    }
+  };
+
+  const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+
+    // If we're already on the homepage, just scroll to the contact section
+    if (location.pathname === "/") {
+      const contactSection = document.getElementById("contact");
+      if (contactSection) {
+        contactSection.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    } else {
+      // If we're on another page, navigate to homepage first, then scroll
+      navigate("/");
+      // Small delay to allow the page to load before scrolling
+      setTimeout(() => {
+        const contactSection = document.getElementById("contact");
+        if (contactSection) {
+          contactSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         }
       }, 100);
     }
   };
+
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
 
@@ -74,9 +102,10 @@ function Navigation() {
                 <a href="#features" onClick={handleFeaturesClick}>
                   Features
                 </a>
-              </li>
-              <li className="listNavBarElement">
-                <a href="">Contact</a>
+              </li>              <li className="listNavBarElement">
+                <a href="#contact" onClick={handleContactClick}>
+                  Contact
+                </a>
               </li>
             </ul>{" "}
             <Button
@@ -133,7 +162,9 @@ function Navigation() {
             <a href="#features" onClick={handleFeaturesClick}>
               Features
             </a>
-            <a href="#">Contact</a>{" "}
+            <a href="#contact" onClick={handleContactClick}>
+              Contact
+            </a>{" "}
             <Button
               variant="hollow"
               size="medium"
