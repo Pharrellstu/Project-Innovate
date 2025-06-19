@@ -424,7 +424,6 @@ Future<void> _editEvent() async {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Updated to show enrollment count
         Text(
           'Attendance (${_enrollmentCount}${event!.maxnumberofpeople != null ? "/${event!.maxnumberofpeople}" : ""})',
           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
@@ -452,35 +451,50 @@ Future<void> _editEvent() async {
                     future: UserService().getUserByAccountId(accountId),
                     builder: (context, userSnapshot) {
                       final user = userSnapshot.data;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 14.0),
-                        child: Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 32,
-                              backgroundImage:
-                              user?.profilePictureUrl != null
-                                  ? NetworkImage(user!.profilePictureUrl!)
-                              as ImageProvider
-                                  : const AssetImage(
-                                'resources/icons/profile_placeholder.png',
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            SizedBox(
-                              width: 64,
-                              child: Text(
-                                user?.username ?? 'Loading...',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
+                      return GestureDetector(
+                        onTap: () {
+                          if (user != null && user.accountId != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => UserProfilePage(
+                                  userId: user.accountId!,
+                                  currentUserAccountId: _currentUserAccountId ?? 0,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                            );
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 14.0),
+                          child: Column(
+                            children: [
+                              CircleAvatar(
+                                radius: 32,
+                                backgroundImage:
+                                user?.profilePictureUrl != null
+                                    ? NetworkImage(user!.profilePictureUrl!)
+                                as ImageProvider
+                                    : const AssetImage(
+                                  'resources/icons/profile_placeholder.png',
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              SizedBox(
+                                width: 64,
+                                child: Text(
+                                  user?.username ?? 'Loading...',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
