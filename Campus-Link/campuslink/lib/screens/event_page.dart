@@ -6,6 +6,7 @@ import 'package:campuslink/services/eventenrollment_service.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:intl/intl.dart';
+import 'package:campuslink/screens/edit_event.dart';
 
 import '../models/eventenrollment.dart';
 import '../models/user.dart';
