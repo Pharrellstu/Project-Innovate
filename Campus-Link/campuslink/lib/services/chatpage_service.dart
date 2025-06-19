@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/models/message.dart';
 
@@ -22,12 +23,17 @@ class ChatPageService {
     return null;
   }
 
-  /// Fetch messages for a chat, ordered oldest → newest
+  /// Fetch messages for a chat, ordered oldest → newest, including attachment URL
   static Future<List<MessageModel>> fetchMessages(int chatId) async {
     try {
       final response = await _supabase
           .from('message')
-          .select()
+          .select(r'''
+        *,
+        messageattachment:attachment_id (
+          fileurl
+        )
+      ''')
           .eq('chat_id', chatId)
           .order('createdat', ascending: true);
 
@@ -40,6 +46,31 @@ class ChatPageService {
       return [];
     }
   }
+
+
+  /// Picked file → storage upload → messageattachment row → return its ID & URL.
+  static Future<Map<String, dynamic>> uploadAndRegisterAttachment(File file) async {
+    // 1) Upload binary to Supabase Storage
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split("/").last}';
+    await _supabase
+        .storage
+        .from('chat-attachments')
+        .upload(fileName, file);
+    final publicUrl = _supabase
+        .storage
+        .from('chat-attachments')
+        .getPublicUrl(fileName);
+
+    // 2) Insert into messageattachment table
+    final insertRes = await _supabase
+        .from('messageattachment')
+        .insert({ 'fileurl': publicUrl })
+        .select('messageattachment_id, fileurl')
+        .single();
+
+    return insertRes as Map<String, dynamic>; // { 'messageattachment_id': 42, 'fileurl': '…' }
+  }
+
 
   /// Insert a new chat message
   static Future<void> insertMessage({

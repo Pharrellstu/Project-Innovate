@@ -5,6 +5,7 @@ class MessageModel {
   final String? messageContent;
   final DateTime? createdAt;
   final int? attachmentId;
+  final String? attachmentUrl;
 
   MessageModel({
     required this.messageId,
@@ -13,6 +14,7 @@ class MessageModel {
     this.messageContent,
     this.createdAt,
     this.attachmentId,
+    this.attachmentUrl,
   });
 
   factory MessageModel.fromMap(Map<String, dynamic> m) {
@@ -25,6 +27,9 @@ class MessageModel {
           ? DateTime.parse(m['createdat'] as String)
           : null,
       attachmentId:     m['attachment_id']    as int?,
+      attachmentUrl:  (m['messageattachment'] != null)
+          ? (m['messageattachment']['fileurl'] as String)
+          : null,
     );
   }
 
