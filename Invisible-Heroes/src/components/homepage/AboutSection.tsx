@@ -4,16 +4,156 @@ import { storyService } from "../../lib/supabase";
 import "./AboutSection.css";
 import Button from "../ui/Button";
 
+// Security utilities
+const sanitizeInput = (input: string): string => {
+  // Remove potential XSS characters and SQL injection attempts
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+    .replace(/<[^>]*>/g, '') // Remove all HTML tags
+    .replace(/javascript:/gi, '') // Remove javascript: protocols
+    .replace(/on\w+\s*=/gi, '') // Remove event handlers
+    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+    .replace(/['";\\]/g, '') // Remove potentially dangerous characters
+    .trim();
+};
+
+const validateInput = (input: string, maxLength: number = 1000): { isValid: boolean; error?: string } => {
+  if (!input || input.trim().length === 0) {
+    return { isValid: false, error: "Field cannot be empty" };
+  }
+  
+  if (input.length > maxLength) {
+    return { isValid: false, error: `Text must be less than ${maxLength} characters` };
+  }
+  
+  // Check for suspicious patterns
+  const suspiciousPatterns = [
+    /drop\s+table/i,
+    /delete\s+from/i,
+    /update\s+.*set/i,
+    /insert\s+into/i,
+    /select\s+.*from/i,
+    /union\s+select/i,
+    /exec\s*\(/i,
+    /script\s*>/i,
+    /javascript\s*:/i,
+    /vbscript\s*:/i,
+    /data\s*:/i,
+    /base64/i
+  ];
+  
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(input)) {
+      return { isValid: false, error: "Invalid content detected" };
+    }
+  }
+  
+  return { isValid: true };
+};
+
+const validateSubject = (subject: string): { isValid: boolean; error?: string } => {
+  const basicValidation = validateInput(subject, 50); // Shorter limit for subject
+  if (!basicValidation.isValid) {
+    return basicValidation;
+  }
+  
+  // Count words (split by whitespace and filter empty strings)
+  const words = subject.trim().split(/\s+/).filter(word => word.length > 0);
+  
+  if (words.length < 3) {
+    return { isValid: false, error: "Subject must be at least 3 words" };
+  }
+  
+  if (words.length > 5) {
+    return { isValid: false, error: "Subject must be no more than 5 words" };
+  }
+  
+  return { isValid: true };
+};
+
+// Rate limiting
+const RATE_LIMIT_KEY = 'story_submissions';
+const MAX_SUBMISSIONS = 3; // Max 3 submissions per hour
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
+
+const checkRateLimit = (): { allowed: boolean; remaining?: number } => {
+  const now = Date.now();
+  const stored = localStorage.getItem(RATE_LIMIT_KEY);
+  
+  if (!stored) {
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify([now]));
+    return { allowed: true, remaining: MAX_SUBMISSIONS - 1 };
+  }
+  
+  try {
+    const submissions: number[] = JSON.parse(stored);
+    // Filter out submissions older than the rate limit window
+    const recentSubmissions = submissions.filter(time => now - time < RATE_LIMIT_WINDOW);
+    
+    if (recentSubmissions.length >= MAX_SUBMISSIONS) {
+      return { allowed: false, remaining: 0 };
+    }
+    
+    // Add current submission and update storage
+    recentSubmissions.push(now);
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(recentSubmissions));
+    
+    return { allowed: true, remaining: MAX_SUBMISSIONS - recentSubmissions.length };
+  } catch {
+    // If parsing fails, reset
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify([now]));
+    return { allowed: true, remaining: MAX_SUBMISSIONS - 1 };
+  }
+};
+
 function AboutSection() {
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
   const hasBeenShown = useRef<Set<HTMLElement>>(new Set());
   const navigate = useNavigate();
-  
-  // Form state
+    // Form state
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{subject?: string; message?: string}>({});
+  // Real-time input handlers with validation
+  const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSubject(value);
+    
+    // Clear any existing field errors
+    setFieldErrors(prev => ({ ...prev, subject: undefined }));
+    
+    // Count words
+    const words = value.trim().split(/\s+/).filter(word => word.length > 0);
+    const wordCount = value.trim() === '' ? 0 : words.length;
+    
+    // Show word count feedback
+    if (wordCount < 3) {
+      setFieldErrors(prev => ({ ...prev, subject: `${wordCount}/3-5 words (need ${3 - wordCount} more)` }));
+    } else if (wordCount > 5) {
+      setFieldErrors(prev => ({ ...prev, subject: `${wordCount}/3-5 words (${wordCount - 5} too many)` }));
+    } else {
+      setFieldErrors(prev => ({ ...prev, subject: `${wordCount}/3-5 words ✓` }));
+    }
+  };
+
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setMessage(value);
+    
+    // Clear any existing field errors
+    setFieldErrors(prev => ({ ...prev, message: undefined }));
+    
+    // Show character count feedback (target ~280 chars like example)
+    if (value.length > 350) {
+      setFieldErrors(prev => ({ ...prev, message: `${value.length}/350 characters (${value.length - 350} too many)` }));
+    } else if (value.length > 280) {
+      setFieldErrors(prev => ({ ...prev, message: `${value.length}/350 characters (consider shortening)` }));
+    } else if (value.length > 0) {
+      setFieldErrors(prev => ({ ...prev, message: `${value.length}/350 characters` }));
+    }
+  };
 
   const handleAndMoreClick = () => {
     navigate('/about');
@@ -24,12 +164,40 @@ function AboutSection() {
       element.scrollIntoView({ behavior: 'smooth' });
     }
   };
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Basic validation
     if (!subject.trim() || !message.trim()) {
       setSubmitMessage("Please fill in all fields");
+      return;
+    }
+
+    // Rate limiting check
+    const rateLimitCheck = checkRateLimit();
+    if (!rateLimitCheck.allowed) {
+      setSubmitMessage("Too many submissions. Please try again later.");
+      return;
+    }    // Input validation and sanitization
+    const subjectValidation = validateSubject(subject); // Use new subject validator
+    if (!subjectValidation.isValid) {
+      setSubmitMessage(`Subject: ${subjectValidation.error}`);
+      return;
+    }
+
+    const messageValidation = validateInput(message, 350); // 350 char limit for message
+    if (!messageValidation.isValid) {
+      setSubmitMessage(`Message: ${messageValidation.error}`);
+      return;
+    }
+
+    // Sanitize inputs
+    const cleanSubject = sanitizeInput(subject.trim());
+    const cleanMessage = sanitizeInput(message.trim());
+
+    // Double-check after sanitization
+    if (!cleanSubject || !cleanMessage) {
+      setSubmitMessage("Invalid content detected. Please check your input.");
       return;
     }
 
@@ -38,8 +206,8 @@ function AboutSection() {
 
     try {
       await storyService.createStory({
-        subject: subject.trim(),
-        message: message.trim(),
+        subject: cleanSubject,
+        message: cleanMessage,
         status: 'pending',
         submitted_at: new Date().toISOString()
       });
@@ -215,31 +383,45 @@ function AboutSection() {
             <div className={`submit-message ${submitMessage.includes('successfully') ? 'success' : 'error'}`}>
               {submitMessage}
             </div>
-          )}
-          
-          <form onSubmit={handleFormSubmit}>
-            <input 
-              type="text" 
-              name="subject" 
-              placeholder="Subject" 
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              disabled={isSubmitting}
-              required 
-            />
-            <textarea
-              name="message"
-              placeholder="Share your story..."
-              rows={6}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              disabled={isSubmitting}
-              required
-            ></textarea>
+          )}          <form onSubmit={handleFormSubmit}>
+            <div className="form-field">
+              <input 
+                type="text" 
+                name="subject" 
+                placeholder="Subject (up to 5 words)" 
+                value={subject}
+                onChange={handleSubjectChange}
+                disabled={isSubmitting}
+                maxLength={50}
+                required 
+              />
+              {fieldErrors.subject && (
+                <div className={`field-error ${fieldErrors.subject.includes('✓') ? 'field-success' : ''}`}>
+                  {fieldErrors.subject}
+                </div>
+              )}
+            </div>
+            
+            <div className="form-field">
+              <textarea
+                name="message"
+                placeholder="Share your story briefly... (about ~250 characters)"
+                rows={4}
+                value={message}
+                onChange={handleMessageChange}
+                disabled={isSubmitting}
+                maxLength={350}
+                required
+              ></textarea>
+              {fieldErrors.message && (
+                <div className="field-error">{fieldErrors.message}</div>
+              )}
+            </div>
+            
             <Button 
               variant="rounded-hollow" 
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || subject.length === 0 || message.length === 0}
             >
               {isSubmitting ? "Submitting..." : "Submit Story"}
             </Button>
