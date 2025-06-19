@@ -1,3 +1,4 @@
+import 'package:campuslink/screens/user_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
@@ -5,6 +6,7 @@ import 'package:campuslink/services/eventenrollment_service.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:intl/intl.dart';
+import 'package:campuslink/screens/edit_event.dart';
 
 import '../models/eventenrollment.dart';
 import '../models/user.dart';
@@ -26,11 +28,13 @@ class _EventPageState extends State<EventPage> {
   bool _isLoading = true;
   EventModel? event;
   int? _currentUserAccountId;
-  final ScrollController _locationController = ScrollController();
-  final ScrollController _creatorController = ScrollController();
   UserObject? _creator;
+  DateTime? _creationTime;
 
-  // Add this helper method in _EventPageState
+  // Add enrollment count and full status
+  int _enrollmentCount = 0;
+  bool _isFull = false;
+
   bool get _isCreator {
     final currentUserId = AuthGate.getCurrentUserId();
     return currentUserId != null &&
@@ -41,74 +45,75 @@ class _EventPageState extends State<EventPage> {
   @override
   void initState() {
     super.initState();
-    _eventFuture = _fetchEvent();
-    _getCurrentUserAccountId();
-
-    // Start auto-scrolling for location and creator name
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startAutoScroll(_locationController);
-      _startAutoScroll(_creatorController);
-    });
+    _fetchData();
   }
 
-  void _startAutoScroll(ScrollController controller) {
-    if (controller.hasClients) {
-      // Only scroll if content overflows
-      if (controller.position.maxScrollExtent > 0) {
-        Future.delayed(const Duration(seconds: 2), () {
-          controller.animateTo(
-            controller.position.maxScrollExtent,
-            duration: Duration(seconds: controller.position.maxScrollExtent ~/ 20),
-            curve: Curves.linear,
-          ).then((_) {
-            Future.delayed(const Duration(seconds: 1), () {
-              controller.animateTo(
-                0,
-                duration: Duration(seconds: controller.position.maxScrollExtent ~/ 20),
-                curve: Curves.linear,
-              ).then((_) => _startAutoScroll(controller));
-            });
-          });
-        });
-      }
+  Future<void> _fetchData() async {
+    await _fetchEvent();
+    await _getCurrentUserAccountId();
+    await _fetchCreationTime();
+    await _fetchEnrollmentCount(); // Add enrollment count fetch
+  }
+
+  // Add enrollment count fetch method
+  Future<void> _fetchEnrollmentCount() async {
+    try {
+      final count = await EventEnrollmentService.getEnrollmentCountForEvent(widget.eventId);
+      setState(() {
+        _enrollmentCount = count;
+        _updateFullStatus();
+      });
+    } catch (e) {
+      print('Error fetching enrollment count: $e');
     }
   }
 
-  @override
-  void dispose() {
-    _locationController.dispose();
-    _creatorController.dispose();
-    super.dispose();
+  // Add helper to update full status
+  void _updateFullStatus() {
+    if (event != null && event!.maxnumberofpeople != null) {
+      setState(() {
+        _isFull = _enrollmentCount >= event!.maxnumberofpeople!;
+      });
+    }
   }
 
-  Future<EventModel?> _fetchEvent() async {
+  Future<void> _fetchEvent() async {
     try {
       final eventData = await EventService.getEventById(widget.eventId);
-      if (eventData != null) {
-        // Fetch creator information
-        if (eventData.eventCreatorUUID != null) {
-          final creator = await UserService().getUserByAuthUserId(eventData.eventCreatorUUID!);
-          setState(() => _creator = creator);
+      if (mounted) {
+        UserObject? creator;
+        if (eventData != null && eventData.eventCreatorUUID != null) {
+          creator =
+          await UserService().getUserByAuthUserId(eventData.eventCreatorUUID!);
         }
-
         setState(() {
           event = eventData;
+          _creator = creator;
           _isLoading = false;
         });
-        return eventData;
+        _updateFullStatus(); // Update full status after event load
       }
     } catch (e) {
       print('Error fetching event: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    setState(() => _isLoading = false);
-    return null;
+  }
+
+  Future<void> _fetchCreationTime() async {
+    if (event == null) return;
+    final time = await EventService.getEventCreationTime(widget.eventId);
+    if (mounted) {
+      setState(() => _creationTime = time);
+    }
   }
 
   Future<void> _getCurrentUserAccountId() async {
     final userId = AuthGate.getCurrentUserId();
     if (userId != null) {
       final accountId = await UserService().getAccountIdByAuthUserId(userId);
-      if (accountId != null) {
+      if (mounted && accountId != null) {
         setState(() => _currentUserAccountId = accountId);
         _checkEnrollmentStatus(accountId);
       }
@@ -120,19 +125,30 @@ class _EventPageState extends State<EventPage> {
       widget.eventId,
       accountId,
     );
-    setState(() => _isEnrolled = isEnrolled);
+    if (mounted) {
+      setState(() => _isEnrolled = isEnrolled);
+    }
   }
 
   Future<void> _enrollInEvent() async {
     if (_currentUserAccountId == null) return;
+
+    // Add capacity check
+    if (event != null && event!.maxnumberofpeople != null) {
+      final currentCount = await EventEnrollmentService.getEnrollmentCountForEvent(widget.eventId);
+      if (currentCount >= event!.maxnumberofpeople!) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This event is full. Cannot join.')),
+        );
+        return;
+      }
+    }
 
     try {
       await EventEnrollmentService.enrollToEvent(
         widget.eventId,
         _currentUserAccountId!,
       );
-
-      // Add this block to update invitation status
       try {
         await EventInvitationService.acceptInvitationByEventAndReceiver(
           widget.eventId,
@@ -141,8 +157,9 @@ class _EventPageState extends State<EventPage> {
       } catch (e) {
         print("No invitation found to update: $e");
       }
-
       setState(() => _isEnrolled = true);
+      // Refresh enrollment count after joining
+      await _fetchEnrollmentCount();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Successfully joined the event!')),
       );
@@ -153,14 +170,38 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
-  Future<void> _editEvent() async {
-    // Navigate to edit screen with event data
-    /*Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CreateEventPage(),
-      ),
-    );*/
+  Future<void> _unEnrollInEvent() async {
+    if (_currentUserAccountId == null) return;
+    try {
+      await EventEnrollmentService.unEnrollToEvent(widget.eventId,
+        _currentUserAccountId!,
+      );
+      setState(() => _isEnrolled = false);
+      // Refresh enrollment count after leaving
+      await _fetchEnrollmentCount();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Successfully left the event')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to leave: ${e.toString()}')),
+      );
+    }
+  }
+
+Future<void> _editEvent() async {
+    if (event != null) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditEventPage(eventId: event!.eventId),
+        ),
+      );
+      // Refresh event data if edit was successful
+      if (result == true && mounted) {
+        await _fetchData();
+      }
+    }
   }
 
   Future<void> _deleteEvent() async {
@@ -168,7 +209,7 @@ class _EventPageState extends State<EventPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Event?'),
-        content: const Text('This action cannot be undone'),
+        content: const Text('This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -179,7 +220,7 @@ class _EventPageState extends State<EventPage> {
               Navigator.pop(context);
               try {
                 await EventService.deleteEvent(event!.eventId);
-                Navigator.pop(context); // Close event page after deletion
+                Navigator.pop(context); // Close event page
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Deletion failed: ${e.toString()}')),
@@ -193,37 +234,293 @@ class _EventPageState extends State<EventPage> {
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : event == null
+          ? const Center(child: Text('Event not found'))
+          : CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCreatorInfo(),
+                  if (event!.description.isNotEmpty)
+                    const SizedBox(height: 24),
+                  if (event!.description.isNotEmpty)
+                    _buildDescriptionCard(),
+                  const SizedBox(height: 24),
+                  _buildMetadataCard(),
+                  const SizedBox(height: 24),
+                  _buildAttendanceSection(),
+                  const SizedBox(height: 32),
+                  _buildJoinButton(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 250.0,
+      floating: false,
+      pinned: true,
+      stretch: true,
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true,
+        title: Text(
+          event!.eventName,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        background: event?.eventImageUrl != null && event!.eventImageUrl!.isNotEmpty
+            ? Image.network(
+          event!.eventImageUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(),
+        )
+            : _buildImagePlaceholder(),
+        stretchModes: const [StretchMode.zoomBackground],
+      ),
+    );
+  }
+
+  Widget _buildCreatorInfo() {
+    return InkWell(
+      onTap: () {
+        if (_creator != null && _creator!.accountId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserProfilePage(
+                userId: _creator!.accountId!,currentUserAccountId: _currentUserAccountId ?? 0,
+              ),
+            ),
+          );
+        }
+      },
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundImage: _creator?.profilePictureUrl != null
+                ? NetworkImage(_creator!.profilePictureUrl!) as ImageProvider
+                : const AssetImage('resources/icons/profile_placeholder.png'),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _creator?.username ?? 'Unknown Creator',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                if (_creationTime != null)
+                  Text(
+                    'Posted on ${DateFormat('MMM d, yyyy').format(_creationTime!)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDescriptionCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Text(
+              'About this event',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              event!.description,
+              style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetadataCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildMetadataItem(Icons.calendar_today, 'Date', DateFormat('MMMM dd, yyyy').format(event!.eventDate!)),
+            const Divider(height: 24),
+            _buildMetadataItem(Icons.location_on, 'Location', event?.locationName ?? 'Online'),
+            const Divider(height: 24),
+            _buildMetadataItem(Icons.category, 'Category', event?.category ?? 'Not specified'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetadataItem(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 28, color: Theme.of(context).primaryColor),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildAttendanceSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Updated to show enrollment count
+        Text(
+          'Attendance (${_enrollmentCount}${event!.maxnumberofpeople != null ? "/${event!.maxnumberofpeople}" : ""})',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 10),
+        FutureBuilder<List<EventEnrollmentModel>>(
+          future: EventEnrollmentService.getEnrollmentsForEvent(widget.eventId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final enrollments = snapshot.data ?? [];
+            if (enrollments.isEmpty) {
+              return const Text('No attendees yet.');
+            }
+            return SizedBox(
+              height: 90,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: enrollments.length,
+                itemBuilder: (context, index) {
+                  final accountId = enrollments[index].accountId;
+                  if (accountId == null) return const SizedBox.shrink();
+                  return FutureBuilder<UserObject?>(
+                    future: UserService().getUserByAccountId(accountId),
+                    builder: (context, userSnapshot) {
+                      final user = userSnapshot.data;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 14.0),
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundImage:
+                              user?.profilePictureUrl != null
+                                  ? NetworkImage(user!.profilePictureUrl!)
+                              as ImageProvider
+                                  : const AssetImage(
+                                'resources/icons/profile_placeholder.png',
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            SizedBox(
+                              width: 64,
+                              child: Text(
+                                user?.username ?? 'Loading...',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildJoinButton() {
-    // Creator sees edit/delete buttons
     if (_isCreator) {
       return Row(
         children: [
-          // Edit Button
           Expanded(
-            child: ElevatedButton(
-              onPressed: () => _editEvent(),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.edit, color: Colors.white,),
+              label: const Text('Edit', style: TextStyle(color: Colors.white)),
+              onPressed: _editEvent,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text(
-                'Edit Event',
-                style: TextStyle(fontSize: 18, color: Colors.white),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
           const SizedBox(width: 16),
-          // Delete Button
           Expanded(
-            child: ElevatedButton(
-              onPressed: () => _deleteEvent(),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.delete),
+              label: const Text('Delete'),
+              onPressed: _deleteEvent,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text(
-                'Delete Event',
-                style: TextStyle(fontSize: 18, color: Colors.white),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
@@ -231,324 +528,70 @@ class _EventPageState extends State<EventPage> {
       );
     }
 
-    // Non-creator sees regular join button
     if (_currentUserAccountId == null) {
-      return ElevatedButton(
-        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: const Text(
-          'Login to Join',
-          style: TextStyle(fontSize: 18, color: Colors.white),
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+          child: const Text('Login to Join'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
       );
     }
 
-    return ElevatedButton(
-      onPressed: _isEnrolled ? null : _enrollInEvent,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _isEnrolled ? Colors.grey : Theme.of(context).primaryColor,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-      ),
-      child: Text(
-        _isEnrolled ? 'Already Joined' : 'Join Event',
-        style: TextStyle(
-          fontSize: 18,
-          color: _isEnrolled ? Colors.black87 : Colors.white,
+    // Updated button with full event check
+    if (_isEnrolled) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _unEnrollInEvent,
+          child: const Text('Leave Event', style: TextStyle(fontSize: 18)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
-      ),
-    );
-  }
+      );
+    } else {
+      final isFull = event != null &&
+          event!.maxnumberofpeople != null &&
+          _enrollmentCount >= event!.maxnumberofpeople!;
 
-  Widget _buildAutoScrollingText(String text, ScrollController controller) {
-    return SingleChildScrollView(
-      controller: controller,
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Row(
-        children: [
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.visible,
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: isFull ? null : _enrollInEvent,
+          child: Text(
+              isFull ? 'Event Full' : 'Join Event',
+              style: const TextStyle(fontSize: 18)
           ),
-          // Add extra space for looping effect
-          if (controller.hasClients && controller.position.maxScrollExtent > 0)
-            Text(
-              "  •••  $text",
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.visible,
-            ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(child: CircularProgressIndicator()),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isFull
+                ? Colors.grey
+                : Theme.of(context).primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
       );
     }
-
-    if (event == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(child: Text('Event not found')),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        leading: const BackButton(),
-        title: const Text('Event Details'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Creator info with profile picture and name
-          // event_page.dart - In the build method
-          FutureBuilder<UserObject?>(
-            future: event?.eventCreatorUUID != null
-                ? UserService().getUserByAuthUserId(event!.eventCreatorUUID!)
-                : Future.value(null),
-            builder: (context, snapshot) {
-              final creator = snapshot.data;
-              return Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundImage: creator?.profilePictureUrl != null
-                        ? NetworkImage(creator!.profilePictureUrl!) as ImageProvider
-                        : AssetImage('resources/icons/profile_placeholder.png'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          creator?.username ?? 'Unknown Creator',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Created ${DateFormat('MMM dd').format(event!.eventDate!)}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          // Event image with overlay text
-          Stack(
-            children: [
-              // Event image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: event?.eventImageUrl != null && event!.eventImageUrl!.isNotEmpty
-                    ? Image.network(
-                  event!.eventImageUrl!,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      _buildImagePlaceholder(),
-                )
-                    : _buildImagePlaceholder(),
-              ),
-
-              // Dark overlay for text readability
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.7),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-
-              // Event details overlay
-              Positioned(
-                left: 16,
-                bottom: 16,
-                right: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Event date - top line
-                    Text(
-                      DateFormat('EEEE, MMM d').format(event!.eventDate!).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Event title - large and bold
-                    Text(
-                      event!.eventName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Location - auto-scrolling
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, size: 16, color: Colors.white70),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: _buildAutoScrollingText(
-                            event!.locationName ?? 'Online Event',
-                            _locationController,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Description
-          Text(
-            'Description',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            event!.description,
-            style: const TextStyle(fontSize: 16, height: 1.5),
-          ),
-          const SizedBox(height: 24),
-
-          // Event metadata row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildMetadataItem(Icons.category, event?.category ?? 'No Category'),
-              //_buildMetadataItem(Icons.person, _creator?.username ?? 'Unknown Creator'),
-              _buildMetadataItem(Icons.calendar_today,
-                  DateFormat('MM/dd').format(event!.eventDate!)),
-              _buildMetadataItem(Icons.location_on, event?.locationName ?? 'Online'),
-            ],
-          ),
-          const SizedBox(height: 32),
-
-          // Join button
-          _buildJoinButton(),
-          const SizedBox(height: 32),
-
-          // Attendance section
-          FutureBuilder<List<EventEnrollmentModel>>(
-            future: EventEnrollmentService.getEnrollmentsForEvent(widget.eventId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final enrollments = snapshot.data ?? [];
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Attendees (${enrollments.length})',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (enrollments.isEmpty)
-                    const Text('No attendees yet')
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: enrollments
-                          .map((e) => CircleAvatar(
-                        radius: 24,
-                        backgroundImage: AssetImage('resources/icons/profile_placeholder.png'),
-                        child: Text(e.accountId.toString(), style: const TextStyle(color: Colors.white)),
-                      ))
-                          .toList(),
-                    ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetadataItem(IconData icon, String text) {
-    return SizedBox(
-      width: 80,
-      child: Column(
-        children: [
-          Icon(icon, size: 28, color: Theme.of(context).primaryColor),
-          const SizedBox(height: 8),
-          Text(
-            text,
-            style: const TextStyle(fontSize: 12),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildImagePlaceholder() {
     return Container(
-      height: 200,
-      color: Colors.grey.shade200,
+      color: Colors.grey.shade300,
       child: const Center(
-        child: Icon(Icons.event, size: 60, color: Colors.grey),
+        child: Icon(
+          Icons.event,
+          size: 80,
+          color: Colors.white,
+        ),
       ),
     );
   }

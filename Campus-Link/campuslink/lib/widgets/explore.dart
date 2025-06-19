@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
+import 'dart:async';
 
 import '../screens/event_page.dart';
 
@@ -21,6 +22,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final List<EventModel> _events = [];
   final int _perPage = 10; // Number of events to load per page
 
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +34,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   void dispose() {
+    _searchController.dispose();
+    _debounceTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -37,26 +43,29 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Future<void> _loadInitialEvents() async {
     try {
       final initialEvents = await _fetchEvents(page: 1);
-      setState(() {
-        _events.addAll(initialEvents);
-        _isInitialLoading = false;
-        // If we got less than requested, there are no more events
-        if (initialEvents.length < _perPage) {
-          _hasMoreData = false;
-        }
-      });
+      if(mounted) {
+        setState(() {
+          _events.addAll(initialEvents);
+          _isInitialLoading = false;
+          if (initialEvents.length < _perPage) {
+            _hasMoreData = false;
+          }
+        });
+      }
     } catch (e) {
-      setState(() => _isInitialLoading = false);
+      if(mounted) {
+        setState(() => _isInitialLoading = false);
+      }
       // Handle error
     }
   }
 
   Future<List<EventModel>> _fetchEvents({int page = 1}) async {
     try {
-      // Add pagination parameters to your service method
       return await EventService.fetchEvents(
         page: page,
         perPage: _perPage,
+        searchTerm: _searchController.text.trim(),
       );
     } catch (e) {
       // Handle error
@@ -81,20 +90,23 @@ class _ExploreScreenState extends State<ExploreScreen> {
     try {
       final newEvents = await _fetchEvents(page: _currentPage + 1);
 
-      if (newEvents.isEmpty) {
-        setState(() => _hasMoreData = false);
-      } else {
-        setState(() {
-          _events.addAll(newEvents);
-          _currentPage++;
-          // If we got less than requested, there are no more events
-          if (newEvents.length < _perPage) {
-            _hasMoreData = false;
-          }
-        });
+      if(mounted) {
+        if (newEvents.isEmpty) {
+          setState(() => _hasMoreData = false);
+        } else {
+          setState(() {
+            _events.addAll(newEvents);
+            _currentPage++;
+            if (newEvents.length < _perPage) {
+              _hasMoreData = false;
+            }
+          });
+        }
       }
     } finally {
-      setState(() => _isLoadingMore = false);
+      if(mounted) {
+        setState(() => _isLoadingMore = false);
+      }
     }
   }
 
@@ -103,47 +115,97 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _currentPage = 1;
       _hasMoreData = true;
       _isLoadingMore = false;
+      _isInitialLoading = true;
     });
 
     try {
       final refreshedEvents = await _fetchEvents(page: 1);
-      setState(() {
-        _events.clear();
-        _events.addAll(refreshedEvents);
-        // If we got less than requested, there are no more events
-        if (refreshedEvents.length < _perPage) {
-          _hasMoreData = false;
-        }
-      });
+      if(mounted) {
+        setState(() {
+          _events.clear();
+          _events.addAll(refreshedEvents);
+          if (refreshedEvents.length < _perPage) {
+            _hasMoreData = false;
+          }
+        });
+      }
     } catch (e) {
       // Handle error
+    } finally {
+      if(mounted) {
+        setState(() => _isInitialLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isInitialLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return RefreshIndicator(
       onRefresh: _refreshEvents,
       child: CustomScrollView(
         controller: _scrollController,
         slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.all(12),
-            sliver: _events.isEmpty
-                ? SliverFillRemaining(
-              child: Center(
-                child: Text(
-                  'No events found',
-                  style: Theme.of(context).textTheme.titleMedium,
+          SliverAppBar(
+            pinned: true,
+            floating: true,
+            expandedHeight: 0,
+            toolbarHeight: 60,
+            titleSpacing: 12,
+            title: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search events...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    _refreshEvents();
+                    setState(() {});
+                  },
+                )
+                    : null,
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               ),
-            )
-                : SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              onChanged: (value) {
+                setState(() {});
+
+                if (_debounceTimer?.isActive ?? false) {
+                  _debounceTimer!.cancel();
+                }
+
+                _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+                  if (mounted) {
+                    _refreshEvents();
+                  }
+                });
+              },
+            ),
+          ),
+          _isInitialLoading
+              ? const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()))
+              : _events.isEmpty
+              ? SliverFillRemaining(
+            child: Center(
+              child: Text(
+                'No events found',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          )
+              : SliverPadding(
+            padding: const EdgeInsets.all(12),
+            sliver: SliverGrid(
+              gridDelegate:
+              const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
@@ -156,7 +218,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => EventPage(eventId: _events[index].eventId),
+                        builder: (context) =>
+                            EventPage(eventId: _events[index].eventId),
                       ),
                     );
                   },
@@ -185,7 +248,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 }
 
-
 class EventCard extends StatelessWidget {
   final EventModel event;
   final VoidCallback onTap;
@@ -203,95 +265,102 @@ class EventCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: SingleChildScrollView(
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Event image - FIXED HERE
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: event.eventImageUrl != null && event.eventImageUrl!.isNotEmpty
-                    ? Image.network(
-                  event.eventImageUrl!,
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(),
-                )
-                    : _buildImagePlaceholder(),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event.eventName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(
-                          // Format date properly
-                          '${event.eventDate!.day}/${event.eventDate!.month}/${event.eventDate!.year}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_pin, size: 14, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            event.locationName!,
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if(event.maxnumberofpeople != null)
-                      Row(
-                        children: [
-                          const Icon(Icons.people, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${event.maxnumberofpeople} spots',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Stack(
+          children: [
+            _buildImageWithGradient(),
+            _buildEventInfo(context),
+          ],
         ),
       ),
     );
   }
 
+  Widget _buildImageWithGradient() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        event.eventImageUrl != null && event.eventImageUrl!.isNotEmpty
+            ? Image.network(
+          event.eventImageUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) =>
+              _buildImagePlaceholder(),
+        )
+            : _buildImagePlaceholder(),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: const [0.5, 1.0],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEventInfo(BuildContext context) {
+    return Positioned(
+      bottom: 10,
+      left: 10,
+      right: 10,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            event.eventName,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.white,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          _buildInfoRow(
+            Icons.calendar_today,
+            '${event.eventDate!.day}/${event.eventDate!.month}/${event.eventDate!.year}',
+          ),
+          const SizedBox(height: 4),
+          _buildInfoRow(Icons.location_pin, event.locationName ?? 'No location'),
+          if (event.maxnumberofpeople != null) ...[
+            const SizedBox(height: 4),
+            _buildInfoRow(Icons.people, '${event.maxnumberofpeople} spots'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 12, color: Colors.white70),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: Colors.white70),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildImagePlaceholder() {
     return Container(
-      height: 150,
-      color: Colors.grey[200],
+      color: Colors.grey[300],
       child: const Center(
-        child: Icon(Icons.event, size: 40, color: Colors.grey),
+        child: Icon(Icons.event, size: 50, color: Colors.grey),
       ),
     );
   }

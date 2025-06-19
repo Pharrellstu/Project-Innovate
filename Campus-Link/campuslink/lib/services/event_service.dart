@@ -23,6 +23,7 @@ class EventService {
       }
     }
 
+    // Add search functionality to fetchEvents
     final payload = data.toMap(creatorId);
 
     payload['eventcreatorid_uuid'] = creatorId;
@@ -61,17 +62,31 @@ class EventService {
 
   static Future<List<EventModel>> fetchEvents({
     int page = 1,
-    int perPage = 10
+    int perPage = 10,
+    String? searchTerm,
   }) async {
     final from = (page - 1) * perPage;
     final to = from + perPage - 1;
 
     try {
-      final response = await _supabase
+      // Create base query
+      var query = _supabase
           .from('event')
-          .select()
+          .select();
+
+      if (searchTerm != null && searchTerm.isNotEmpty) {
+        if (searchTerm.length == 1) {
+
+          query = query.ilike('eventname', '${searchTerm[0]}%');
+        } else {
+
+          query = query.ilike('eventname', '$searchTerm%');
+        }
+      }
+
+      final response = await query
           .order('startdate', ascending: true)
-          .range(from, to); // Add range filter here
+          .range(from, to);
 
       return (response as List<dynamic>)
           .map((r) => EventModel.fromMap(r as Map<String, dynamic>))
@@ -127,10 +142,7 @@ class EventService {
 
   static Future<void> deleteEvent(int eventId) async {
     try {
-      await _supabase
-          .from('event')
-          .delete()
-          .eq('event_id', eventId);
+      await _supabase.rpc('delete_event', params: {'target_event_id': eventId});
     } catch (e) {
       print('Event deletion error: $e');
       rethrow;
@@ -189,4 +201,86 @@ class EventService {
       return [];
     }
   }
+
+  static Future<DateTime?> getEventCreationTime(int eventId) async {
+    try {
+      final response = await _supabase
+          .from('event')
+          .select('created_at')
+          .eq('event_id', eventId)
+          .single();
+
+      if (response['created_at'] != null) {
+        return DateTime.parse(response['created_at'] as String);
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching creation time: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> isEventFull(int eventId) async {
+    try {
+      // Fetch event to get max capacity
+      final event = await getEventById(eventId);
+      if (event == null || event.maxnumberofpeople == null) return false;
+
+      // Get current enrollment count
+      final countResponse = await _supabase
+          .from('eventenrollment')
+          .select('eventid')
+          .eq('eventid', eventId);
+      final enrollmentCount = (countResponse as List).length;
+
+      return enrollmentCount >= event.maxnumberofpeople!;
+    } catch (e) {
+      print('Error checking event capacity: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> updateEvent(EventModel event) async {
+    try {
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        print('No authenticated user.');
+        return false;
+      }
+      // Prepare update data with correct DB field names
+      final updateData = <String, dynamic>{
+        'eventname': event.eventName,
+        'eventcategory': event.category,
+        'eventdescription': event.description,
+        'isPhysical': !event.isOnline,
+        'startdate': event.eventDate?.toIso8601String().split('T')[0],
+        'eventTime': event.eventTime,
+        'duration': event.eventDuration,
+        'locationName': event.locationName,
+        'locationLatLng': (event.locationLat != null && event.locationLng != null) ? "${event.locationLat},${event.locationLng}" : null,
+        'isPublic': event.isPublic,
+        'maxnumberofpeople': event.maxnumberofpeople,
+        'eventimageurl': event.eventImageUrl,
+      };
+      updateData.removeWhere((k, v) => v == null);
+      print('[EventService] updateEvent: eventId=${event.eventId}, data=$updateData');
+      final response = await _supabase
+          .from('event')
+          .update(updateData)
+          .eq('event_id', event.eventId)
+          .eq('eventcreatorid_uuid', currentUserId)
+          .select('event_id');
+      if (response.isNotEmpty) {
+        print('[EventService] Update successful.');
+        return true;
+      } else {
+        print('[EventService] Update failed. RLS or permission issue?');
+        return false;
+      }
+    } catch (e) {
+      print('[EventService] Exception during update: $e');
+      return false;
+    }
+  }
+
 }
