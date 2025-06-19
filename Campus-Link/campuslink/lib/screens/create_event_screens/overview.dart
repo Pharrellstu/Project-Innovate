@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../create_event_page.dart';
-import 'package:campuslink/models/user.dart'; // Import user model
 import 'package:intl/intl.dart';
+import '../create_event_page.dart';
 
 class OverviewPage extends StatelessWidget {
   final EventData eventData;
@@ -11,135 +10,99 @@ class OverviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-          child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader('Event Details'),
-            _buildDetailRow('Event Name', eventData.eventName),
-            _buildDetailRow('Category', eventData.category ?? 'Not specified'),
-            _buildDetailRow('Description', eventData.description),
-            _buildDetailRow('Type', eventData.isOnline ? 'Online' : 'In-person'),
-
-            if (!eventData.isOnline) ...[
-              _buildDetailRow('Location', eventData.locationName ?? 'Not specified'),
-            ],
-
-            const SizedBox(height: 24),
-            _buildSectionHeader('Date & Time'),
-            _buildDetailRow('Date', _formatDate(eventData.eventDate)),
-            _buildDetailRow('Time', _formatTime(eventData.eventTime)),
-            _buildDetailRow('Duration', _formatDuration(eventData.eventDuration)),
-
-            if (eventData.repeatEvent) ...[
-              _buildDetailRow('Repeats', 'Every ${eventData.repeatEveryWeeks} week(s)'),
-              _buildDetailRow('On days', _formatRepeatDays(eventData.repeatDays)),
-            ],
-
-            const SizedBox(height: 24),
-            _buildSectionHeader('Settings'),
-            _buildDetailRow('Event Type', eventData.isPublic ? 'Public' : 'Private'),
-            _buildDetailRow('Max Attendees', eventData.maxAttendees?.toString() ?? 'No limit'),
-            _buildDetailRow('Sign-up Deadline', _formatDate(eventData.signUpDeadline)),
-            _buildDetailRow('Offer Badge', eventData.offerBadge ? 'Yes' : 'No'),
-
-            const SizedBox(height: 24),
-            _buildSectionHeader('Invited Users'),
-            _buildInvitedUsersSection(),
-          ],
-          )
-        );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.blue,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 150,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
+          if (eventData.eventImageFile != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12.0),
+              child: Image.file(
+                eventData.eventImageFile!,
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
               ),
             ),
+            const SizedBox(height: 16),
+          ],
+          Text(
+            eventData.eventName,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                color: Colors.grey[700],
-              ),
+          const SizedBox(height: 8),
+          _buildInfoChip(
+              eventData.category ?? 'No Category', Icons.category_outlined),
+          const SizedBox(height: 16),
+          _buildSectionCard(
+            'Date & Time',
+            [
+              _buildDetailRow('Date', _formatDate(eventData.eventDate),
+                  Icons.calendar_today_rounded),
+              _buildDetailRow(
+                  'Time', _formatTime(eventData.eventTime, context),
+                  Icons.access_time_rounded),
+              // Add duration row here
+              _buildDetailRow(
+                  'Duration',
+                  _formatDuration(eventData.eventDuration),
+                  Icons.timer_rounded),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSectionCard(
+            'Location & Details',
+            [
+              _buildDetailRow(
+                  'Type',
+                  eventData.isOnline ? 'Online Event' : 'In-Person Event',
+                  eventData.isOnline
+                      ? Icons.link_rounded
+                      : Icons.location_on_rounded),
+              if (!eventData.isOnline)
+                _buildDetailRow(
+                    'Venue',
+                    eventData.locationName ?? 'Not specified',
+                    Icons.pin_drop_rounded),
+              _buildDetailRow(
+                  'Privacy',
+                  eventData.isPublic ? 'Public' : 'Private',
+                  eventData.isPublic
+                      ? Icons.public_rounded
+                      : Icons.lock_rounded),
+              _buildDetailRow(
+                  'Max Attendees',
+                  eventData.maxAttendees?.toString() ?? 'No limit',
+                  Icons.group_rounded),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (eventData.invitedUsers.isNotEmpty)
+            _buildSectionCard(
+              'Invited Guests (${eventData.invitedUsers.length})',
+              [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: eventData.invitedUsers.map((user) {
+                      return Chip(
+                        avatar: CircleAvatar(
+                          child: Text(user.username![0].toUpperCase()),
+                        ),
+                        label: Text(user.username!),
+                      );
+                    }).toList(),
+                  ),
+                )
+              ],
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildInvitedUsersSection() {
-    if (eventData.invitedUsers.isEmpty) {
-      return const Text('No users invited');
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${eventData.invitedUsers.length} invited users:',
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: eventData.invitedUsers.map((user) {
-            return Chip(
-              avatar: CircleAvatar(
-                backgroundColor: Colors.blue[100],
-                child: Text(
-                  user.username!.isNotEmpty
-                      ? user.username![0].toUpperCase()
-                      : '?',
-                  style: TextStyle(color: Colors.blue[800]),
-                ),
-              ),
-              label: Text(user.username!),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  String _formatDate(DateTime? date) {
-    return date != null
-        ? DateFormat.yMMMMd().format(date)
-        : 'Not specified';
-  }
-
-  String _formatTime(TimeOfDay? time) {
-    return time != null
-        ? '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'
-        : 'Not specified';
-  }
-
+  // Add duration formatting method
   String _formatDuration(Duration? duration) {
     if (duration == null) return 'Not specified';
 
@@ -147,38 +110,88 @@ class OverviewPage extends StatelessWidget {
     final minutes = duration.inMinutes.remainder(60);
 
     if (hours > 0 && minutes > 0) {
-      return '$hours hours $minutes minutes';
+      return '$hours hours ${minutes}m';
     } else if (hours > 0) {
       return '$hours hours';
-    } else {
+    } else if (minutes > 0) {
       return '$minutes minutes';
+    } else {
+      return 'Not specified';
     }
   }
 
-  String _formatRepeatDays(List<bool> days) {
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final selectedDays = <String>[];
-
-    for (int i = 0; i < days.length; i++) {
-      if (days[i]) {
-        selectedDays.add(dayNames[i]);
-      }
-    }
-
-    return selectedDays.isNotEmpty
-        ? selectedDays.join(', ')
-        : 'No days selected';
-  }
-
-  void _submitEvent(BuildContext context) {
-    // Your submission logic here
-    // Access invited user IDs via:
-    //   final invitedIds = eventData.invitedUsers.map((u) => u.accountId).toList();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Event created successfully!')),
+  // Existing methods remain the same...
+  Widget _buildSectionCard(String title, List<Widget> children) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: Colors.grey.shade200, width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const Divider(),
+          ...children,
+        ],
+      ),
     );
-
-    Navigator.pop(context);
   }
+
+  Widget _buildDetailRow(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: Colors.grey.shade600, size: 20),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(width: 16),
+                Flexible(
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                        color: Colors.grey.shade800,
+                        fontWeight: FontWeight.bold
+                    ),
+                    textAlign: TextAlign.end,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoChip(String label, IconData icon) {
+    return Chip(
+      label: Text(label),
+      avatar: Icon(icon, size: 16),
+      backgroundColor: Colors.blue.shade50,
+      labelStyle: TextStyle(
+          color: Colors.blue.shade800, fontWeight: FontWeight.bold),
+    );
+  }
+
+  String _formatDate(DateTime? date) =>
+      date != null ? DateFormat.yMMMMd().format(date) : 'Not specified';
+
+  String _formatTime(TimeOfDay? time, BuildContext context) =>
+      time?.format(context) ?? 'Not specified';
 }

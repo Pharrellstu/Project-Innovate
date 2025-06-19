@@ -30,11 +30,13 @@ class _EventPageState extends State<EventPage> {
   int? _currentUserAccountId;
   final ScrollController _locationController = ScrollController();
   final ScrollController _creatorController = ScrollController();
-  late Future<UserObject?> _creatorFuture;
   UserObject? _creator;
   DateTime? _creationTime;
 
-  // Add this helper method in _EventPageState
+  // New state variables
+  int _enrollmentCount = 0;
+  bool _isFull = false;
+
   bool get _isCreator {
     final currentUserId = AuthGate.getCurrentUserId();
     return currentUserId != null &&
@@ -53,8 +55,8 @@ class _EventPageState extends State<EventPage> {
     _eventFuture = _fetchEvent();
     _getCurrentUserAccountId();
     _fetchCreationTime();
+    _fetchEnrollmentCount();
 
-    // Start auto-scrolling for location and creator name
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startAutoScroll(_locationController);
       _startAutoScroll(_creatorController);
@@ -63,7 +65,6 @@ class _EventPageState extends State<EventPage> {
 
   void _startAutoScroll(ScrollController controller) {
     if (controller.hasClients) {
-      // Only scroll if content overflows
       if (controller.position.maxScrollExtent > 0) {
         Future.delayed(const Duration(seconds: 2), () {
           controller.animateTo(
@@ -96,16 +97,18 @@ class _EventPageState extends State<EventPage> {
       final eventData = await EventService.getEventById(widget.eventId);
       if (eventData != null) {
         UserObject? creator;
-        // Fetch creator information
         if (eventData.eventCreatorUUID != null) {
           creator = await UserService().getUserByAuthUserId(eventData.eventCreatorUUID!);
         }
 
         setState(() {
           event = eventData;
-          _creator = creator; // Set creator here
+          _creator = creator;
           _isLoading = false;
         });
+
+        // Update full status after loading event
+        _updateFullStatus();
         return eventData;
       }
     } catch (e) {
@@ -134,16 +137,48 @@ class _EventPageState extends State<EventPage> {
     setState(() => _isEnrolled = isEnrolled);
   }
 
+  // New method to fetch enrollment count
+  Future<void> _fetchEnrollmentCount() async {
+    try {
+      final count = await EventEnrollmentService.getEnrollmentCountForEvent(widget.eventId);
+      setState(() {
+        _enrollmentCount = count;
+        _updateFullStatus();
+      });
+    } catch (e) {
+      print('Error fetching enrollment count: $e');
+    }
+  }
+
+  // Helper to update full status
+  void _updateFullStatus() {
+    if (event != null && event!.maxnumberofpeople != null) {
+      setState(() {
+        _isFull = _enrollmentCount >= event!.maxnumberofpeople!;
+      });
+    }
+  }
+
   Future<void> _enrollInEvent() async {
     if (_currentUserAccountId == null) return;
 
     try {
+      // Get latest count directly from database
+      final currentCount = await EventEnrollmentService.getEnrollmentCountForEvent(widget.eventId);
+      if (event != null &&
+          event!.maxnumberofpeople != null &&
+          currentCount >= event!.maxnumberofpeople!) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This event is full. Cannot join.')),
+        );
+        return;
+      }
+
       await EventEnrollmentService.enrollToEvent(
         widget.eventId,
         _currentUserAccountId!,
       );
 
-      // Add this block to update invitation status
       try {
         await EventInvitationService.acceptInvitationByEventAndReceiver(
           widget.eventId,
@@ -154,6 +189,8 @@ class _EventPageState extends State<EventPage> {
       }
 
       setState(() => _isEnrolled = true);
+      // Refresh enrollment count after joining
+      await _fetchEnrollmentCount();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Successfully joined the event!')),
       );
@@ -173,6 +210,8 @@ class _EventPageState extends State<EventPage> {
         _currentUserAccountId!,
       );
       setState(() => _isEnrolled = false);
+      // Refresh enrollment count after leaving
+      await _fetchEnrollmentCount();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Successfully left the event')),
       );
@@ -233,6 +272,11 @@ class _EventPageState extends State<EventPage> {
   }
 
   Widget _buildJoinButton() {
+    // Calculate if event is full
+    final isFull = event != null &&
+        event!.maxnumberofpeople != null &&
+        _enrollmentCount >= event!.maxnumberofpeople!;
+
     // Creator sees edit/delete buttons
     if (_isCreator) {
       return Row(
@@ -299,14 +343,23 @@ class _EventPageState extends State<EventPage> {
       );
     } else {
       return ElevatedButton(
-        onPressed: _enrollInEvent,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+        onPressed: isFull ? null : _enrollInEvent,
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                (Set<MaterialState> states) {
+              return isFull ? Colors.grey[500]! : Theme.of(context).primaryColor;
+            },
+          ),
+          padding: MaterialStateProperty.all<EdgeInsets>(
+            const EdgeInsets.symmetric(vertical: 16),
+          ),
         ),
-        child: const Text(
-          'Join Event',
-          style: TextStyle(fontSize: 18, color: Colors.white),
+        child: Text(
+          isFull ? 'Event Full' : 'Join Event',
+          style: const TextStyle(
+            fontSize: 18,
+            color: Colors.white,
+          ),
         ),
       );
     }
@@ -328,7 +381,6 @@ class _EventPageState extends State<EventPage> {
             maxLines: 1,
             overflow: TextOverflow.visible,
           ),
-          // Add extra space for looping effect
           if (controller.hasClients && controller.position.maxScrollExtent > 0)
             Text(
               "  •••  $text",
@@ -368,8 +420,6 @@ class _EventPageState extends State<EventPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Creator info with profile picture and name
-          // event_page.dart - In the build method
           InkWell(
             onTap: () {
               if (_creator != null && _creator!.accountId != null) {
@@ -424,10 +474,8 @@ class _EventPageState extends State<EventPage> {
 
           const SizedBox(height: 20),
 
-          // Event image with overlay text
           Stack(
             children: [
-              // Event image
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: event?.eventImageUrl != null && event!.eventImageUrl!.isNotEmpty
@@ -441,8 +489,6 @@ class _EventPageState extends State<EventPage> {
                 )
                     : _buildImagePlaceholder(),
               ),
-
-              // Dark overlay for text readability
               Container(
                 height: 200,
                 decoration: BoxDecoration(
@@ -457,8 +503,6 @@ class _EventPageState extends State<EventPage> {
                   ),
                 ),
               ),
-
-              // Event details overlay
               Positioned(
                 left: 16,
                 bottom: 16,
@@ -466,7 +510,6 @@ class _EventPageState extends State<EventPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Event date - top line
                     Text(
                       DateFormat('EEEE, MMM d, yyy').format(event!.eventDate!).toUpperCase(),
                       style: const TextStyle(
@@ -476,8 +519,6 @@ class _EventPageState extends State<EventPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-
-                    // Event title - large and bold
                     Text(
                       event!.eventName,
                       style: const TextStyle(
@@ -487,8 +528,6 @@ class _EventPageState extends State<EventPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-
-                    // Location - auto-scrolling
                     Row(
                       children: [
                         const Icon(Icons.location_on, size: 16, color: Colors.white70),
@@ -508,7 +547,6 @@ class _EventPageState extends State<EventPage> {
           ),
           const SizedBox(height: 24),
 
-          // Description
           Text(
             'Description',
             style: TextStyle(
@@ -524,12 +562,10 @@ class _EventPageState extends State<EventPage> {
           ),
           const SizedBox(height: 24),
 
-          // Event metadata row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildMetadataItem(Icons.category, event?.category ?? 'No Category'),
-              //_buildMetadataItem(Icons.person, _creator?.username ?? 'Unknown Creator'),
               _buildMetadataItem(Icons.calendar_today,
                   DateFormat('MM/dd').format(event!.eventDate!)),
               _buildMetadataItem(Icons.location_on, event?.locationName ?? 'Online'),
@@ -537,11 +573,9 @@ class _EventPageState extends State<EventPage> {
           ),
           const SizedBox(height: 32),
 
-          // Join button
           _buildJoinButton(),
           const SizedBox(height: 32),
 
-          // Attendance section
           FutureBuilder<List<EventEnrollmentModel>>(
             future: EventEnrollmentService.getEnrollmentsForEvent(widget.eventId),
             builder: (context, snapshot) {
@@ -554,7 +588,7 @@ class _EventPageState extends State<EventPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Attendees (${enrollments.length})',
+                    'Attendees (${enrollments.length}${event!.maxnumberofpeople != null ? "/${event!.maxnumberofpeople}" : ""})',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

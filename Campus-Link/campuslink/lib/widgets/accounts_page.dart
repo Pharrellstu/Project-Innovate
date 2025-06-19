@@ -143,7 +143,7 @@ class _AccountsPageState extends State<AccountsPage> {
                     Text(
                       user.bio ?? 'No bio available',
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
