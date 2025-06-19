@@ -38,7 +38,7 @@ class ProfileService {
   static const String _followingTable = 'following';
   static const String _badgeOwnershipTable = 'badgeownership';
   static const String _badgeTable = 'badge';
-  static const String _profilePicturesBucket = 'profile_pictures';
+  static const String _profilePicturesBucket = 'accountimage';
 
   static String? getCurrentAuthUserId() {
     return _supabase.auth.currentUser?.id;
@@ -131,13 +131,19 @@ class ProfileService {
 
   // Upload a profile image and return its public URL.
   static Future<String?> uploadProfileImage(File imageFile, int accountId) async {
+    log('DEBUG: Starting uploadProfileImage for accountId: $accountId, file: '+imageFile.path+'');
     try {
       final fileName = 'user_${accountId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final path = fileName;
-      await _supabase.storage.from(_profilePicturesBucket).upload(path, imageFile);
-      return _supabase.storage.from(_profilePicturesBucket).getPublicUrl(path);
-    } catch (e) {
-      log('❌ ProfileService: Error uploading profile image: $e');
+      log('DEBUG: Generated fileName: ' + fileName);
+      final bytes = await imageFile.readAsBytes();
+      log('DEBUG: Read file as bytes, length: ' + bytes.length.toString());
+      final response = await _supabase.storage.from(_profilePicturesBucket).uploadBinary(fileName, bytes);
+      log('DEBUG: Supabase uploadBinary response: ' + response.toString());
+      final url = _supabase.storage.from(_profilePicturesBucket).getPublicUrl(fileName);
+      log('DEBUG: Generated public URL: ' + url);
+      return url;
+    } catch (e, stack) {
+      log('❌ ProfileService: Error uploading profile image: $e\n$stack');
       return null;
     }
   }
