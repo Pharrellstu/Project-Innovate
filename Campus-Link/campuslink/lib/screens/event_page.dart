@@ -30,6 +30,10 @@ class _EventPageState extends State<EventPage> {
   UserObject? _creator;
   DateTime? _creationTime;
 
+  // Add enrollment count and full status
+  int _enrollmentCount = 0;
+  bool _isFull = false;
+
   bool get _isCreator {
     final currentUserId = AuthGate.getCurrentUserId();
     return currentUserId != null &&
@@ -47,6 +51,29 @@ class _EventPageState extends State<EventPage> {
     await _fetchEvent();
     await _getCurrentUserAccountId();
     await _fetchCreationTime();
+    await _fetchEnrollmentCount(); // Add enrollment count fetch
+  }
+
+  // Add enrollment count fetch method
+  Future<void> _fetchEnrollmentCount() async {
+    try {
+      final count = await EventEnrollmentService.getEnrollmentCountForEvent(widget.eventId);
+      setState(() {
+        _enrollmentCount = count;
+        _updateFullStatus();
+      });
+    } catch (e) {
+      print('Error fetching enrollment count: $e');
+    }
+  }
+
+  // Add helper to update full status
+  void _updateFullStatus() {
+    if (event != null && event!.maxnumberofpeople != null) {
+      setState(() {
+        _isFull = _enrollmentCount >= event!.maxnumberofpeople!;
+      });
+    }
   }
 
   Future<void> _fetchEvent() async {
@@ -63,6 +90,7 @@ class _EventPageState extends State<EventPage> {
           _creator = creator;
           _isLoading = false;
         });
+        _updateFullStatus(); // Update full status after event load
       }
     } catch (e) {
       print('Error fetching event: $e');
@@ -103,6 +131,18 @@ class _EventPageState extends State<EventPage> {
 
   Future<void> _enrollInEvent() async {
     if (_currentUserAccountId == null) return;
+
+    // Add capacity check
+    if (event != null && event!.maxnumberofpeople != null) {
+      final currentCount = await EventEnrollmentService.getEnrollmentCountForEvent(widget.eventId);
+      if (currentCount >= event!.maxnumberofpeople!) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This event is full. Cannot join.')),
+        );
+        return;
+      }
+    }
+
     try {
       await EventEnrollmentService.enrollToEvent(
         widget.eventId,
@@ -117,6 +157,8 @@ class _EventPageState extends State<EventPage> {
         print("No invitation found to update: $e");
       }
       setState(() => _isEnrolled = true);
+      // Refresh enrollment count after joining
+      await _fetchEnrollmentCount();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Successfully joined the event!')),
       );
@@ -134,6 +176,8 @@ class _EventPageState extends State<EventPage> {
         _currentUserAccountId!,
       );
       setState(() => _isEnrolled = false);
+      // Refresh enrollment count after leaving
+      await _fetchEnrollmentCount();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Successfully left the event')),
       );
@@ -196,13 +240,13 @@ class _EventPageState extends State<EventPage> {
                 children: [
                   _buildCreatorInfo(),
                   if (event!.description.isNotEmpty)
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
                   if (event!.description.isNotEmpty)
-                  _buildDescriptionCard(),
+                    _buildDescriptionCard(),
                   const SizedBox(height: 24),
                   _buildMetadataCard(),
                   const SizedBox(height: 24),
-                  _buildAttendeesSection(),
+                  _buildAttendanceSection(),
                   const SizedBox(height: 32),
                   _buildJoinButton(),
                 ],
@@ -244,18 +288,18 @@ class _EventPageState extends State<EventPage> {
 
   Widget _buildCreatorInfo() {
     return InkWell(
-        onTap: () {
-      if (_creator != null && _creator!.accountId != null) {
-        Navigator.push(
+      onTap: () {
+        if (_creator != null && _creator!.accountId != null) {
+          Navigator.push(
             context,
             MaterialPageRoute(
-            builder: (context) => UserProfilePage(
-            userId: _creator!.accountId!,currentUserAccountId: _currentUserAccountId ?? 0,
+              builder: (context) => UserProfilePage(
+                userId: _creator!.accountId!,currentUserAccountId: _currentUserAccountId ?? 0,
+              ),
             ),
-            ),
-        );
-      }
-        },
+          );
+        }
+      },
       child: Row(
         children: [
           CircleAvatar(
@@ -364,47 +408,76 @@ class _EventPageState extends State<EventPage> {
   }
 
 
-  Widget _buildAttendeesSection() {
+  Widget _buildAttendanceSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-      Text(
-      'Attendees',
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-    ),
-    const SizedBox(height: 12),
-    FutureBuilder<List<EventEnrollmentModel>>(
-    future: EventEnrollmentService.getEnrollmentsForEvent(widget.eventId),
-    builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-    return const Center(child: CircularProgressIndicator());
-    }
-    final enrollments = snapshot.data ?? [];
-    if (enrollments.isEmpty) {
-      return const Text('Be the first to join!');
-    }
-    return SizedBox(
-      height: 60,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: enrollments.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: CircleAvatar(
-              radius: 28,
-              backgroundImage: const AssetImage('resources/icons/profile_placeholder.png'),
-              child: Text(
-                enrollments[index].accountId.toString(),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        // Updated to show enrollment count
+        Text(
+          'Attendance (${_enrollmentCount}${event!.maxnumberofpeople != null ? "/${event!.maxnumberofpeople}" : ""})',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 10),
+        FutureBuilder<List<EventEnrollmentModel>>(
+          future: EventEnrollmentService.getEnrollmentsForEvent(widget.eventId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final enrollments = snapshot.data ?? [];
+            if (enrollments.isEmpty) {
+              return const Text('No attendees yet.');
+            }
+            return SizedBox(
+              height: 90,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: enrollments.length,
+                itemBuilder: (context, index) {
+                  final accountId = enrollments[index].accountId;
+                  if (accountId == null) return const SizedBox.shrink();
+                  return FutureBuilder<UserObject?>(
+                    future: UserService().getUserByAccountId(accountId),
+                    builder: (context, userSnapshot) {
+                      final user = userSnapshot.data;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 14.0),
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundImage:
+                              user?.profilePictureUrl != null
+                                  ? NetworkImage(user!.profilePictureUrl!)
+                              as ImageProvider
+                                  : const AssetImage(
+                                'resources/icons/profile_placeholder.png',
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            SizedBox(
+                              width: 64,
+                              child: Text(
+                                user?.username ?? 'Loading...',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
-            ),
-          );
-        },
-      ),
-    );
-    },
-    ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -457,19 +530,45 @@ class _EventPageState extends State<EventPage> {
       );
     }
 
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isEnrolled ? _unEnrollInEvent : _enrollInEvent,
-        child: Text(_isEnrolled ? 'Leave Event' : 'Join Event', style: const TextStyle(fontSize: 18)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _isEnrolled ? Colors.red : Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    // Updated button with full event check
+    if (_isEnrolled) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _unEnrollInEvent,
+          child: const Text('Leave Event', style: TextStyle(fontSize: 18)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      final isFull = event != null &&
+          event!.maxnumberofpeople != null &&
+          _enrollmentCount >= event!.maxnumberofpeople!;
+
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: isFull ? null : _enrollInEvent,
+          child: Text(
+              isFull ? 'Event Full' : 'Join Event',
+              style: const TextStyle(fontSize: 18)
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isFull
+                ? Colors.grey
+                : Theme.of(context).primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildImagePlaceholder() {
