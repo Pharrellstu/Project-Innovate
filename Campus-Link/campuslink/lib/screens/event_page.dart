@@ -1,4 +1,4 @@
-import 'package:campuslink/screens/user_profile_page.dart';
+
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/models/event.dart';
@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 import '../models/eventenrollment.dart';
 import '../models/user.dart';
 import '../services/event_invitation_service.dart';
-import 'create_event_page.dart';
 import 'edit_event.dart';
 
 class EventPage extends StatefulWidget {
@@ -23,16 +22,12 @@ class EventPage extends StatefulWidget {
 }
 
 class _EventPageState extends State<EventPage> {
-  late Future<EventModel?> _eventFuture;
   bool _isEnrolled = false;
   bool _isLoading = true;
   EventModel? event;
   int? _currentUserAccountId;
   final ScrollController _locationController = ScrollController();
   final ScrollController _creatorController = ScrollController();
-  late Future<UserObject?> _creatorFuture;
-  UserObject? _creator;
-  DateTime? _creationTime;
 
   // Add this helper method in _EventPageState
   bool get _isCreator {
@@ -41,18 +36,11 @@ class _EventPageState extends State<EventPage> {
         event != null &&
         event!.eventCreatorUUID == currentUserId;
   }
-
-  Future<void> _fetchCreationTime() async {
-    final time = await EventService.getEventCreationTime(widget.eventId);
-    setState(() => _creationTime = time);
-  }
-
   @override
   void initState() {
     super.initState();
-    _eventFuture = _fetchEvent();
+    _fetchEvent();
     _getCurrentUserAccountId();
-    _fetchCreationTime();
 
     // Start auto-scrolling for location and creator name
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -94,16 +82,14 @@ class _EventPageState extends State<EventPage> {
   Future<EventModel?> _fetchEvent() async {
     try {
       final eventData = await EventService.getEventById(widget.eventId);
-      if (eventData != null) {
-        UserObject? creator;
-        // Fetch creator information
+      if (eventData != null) {        // Fetch creator information if needed in the future
         if (eventData.eventCreatorUUID != null) {
-          creator = await UserService().getUserByAuthUserId(eventData.eventCreatorUUID!);
+          await UserService().getUserByAuthUserId(eventData.eventCreatorUUID!);
+          // Creator info is fetched but not stored since it's not used elsewhere
         }
 
         setState(() {
           event = eventData;
-          _creator = creator; // Set creator here
           _isLoading = false;
         });
         return eventData;
@@ -163,26 +149,6 @@ class _EventPageState extends State<EventPage> {
       );
     }
   }
-
-  Future<void> _unEnrollInEvent() async {
-    if (_currentUserAccountId == null) return;
-
-    try {
-      await EventEnrollmentService.unEnrollToEvent(
-        widget.eventId,
-        _currentUserAccountId!,
-      );
-      setState(() => _isEnrolled = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Successfully left the event')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to leave: ${e.toString()}')),
-      );
-    }
-  }
-
   Future<void> _editEvent() async {
     // Navigate to edit screen with event data
     if (event != null) {
@@ -192,11 +158,10 @@ class _EventPageState extends State<EventPage> {
           builder: (context) => EditEventPage(eventId: event!.eventId),
         ),
       );
-      
-      // If the edit was successful, refresh the event data
+        // If the edit was successful, refresh the event data
       if (result == true) {
         setState(() {
-          _eventFuture = _fetchEvent();
+          _fetchEvent();
         });
       }
     }
@@ -285,31 +250,20 @@ class _EventPageState extends State<EventPage> {
       );
     }
 
-    if(_isEnrolled) {
-      return ElevatedButton(
-        onPressed: _unEnrollInEvent,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFD30E26),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+    return ElevatedButton(
+      onPressed: _isEnrolled ? null : _enrollInEvent,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _isEnrolled ? Colors.grey : Theme.of(context).primaryColor,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: Text(
+        _isEnrolled ? 'Already Joined' : 'Join Event',
+        style: TextStyle(
+          fontSize: 18,
+          color: _isEnrolled ? Colors.black87 : Colors.white,
         ),
-        child: const Text(
-          'Leave Event',
-          style: TextStyle(fontSize: 18, color: Colors.white),
-        ),
-      );
-    } else {
-      return ElevatedButton(
-        onPressed: _enrollInEvent,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: const Text(
-          'Join Event',
-          style: TextStyle(fontSize: 18, color: Colors.white),
-        ),
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildAutoScrollingText(String text, ScrollController controller) {
@@ -370,56 +324,47 @@ class _EventPageState extends State<EventPage> {
         children: [
           // Creator info with profile picture and name
           // event_page.dart - In the build method
-          InkWell(
-            onTap: () {
-              if (_creator != null && _creator!.accountId != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UserProfilePage(
-                      userId: _creator!.accountId!,
-                      currentUserAccountId: _currentUserAccountId ?? 0,
+          FutureBuilder<UserObject?>(
+            future: event?.eventCreatorUUID != null
+                ? UserService().getUserByAuthUserId(event!.eventCreatorUUID!)
+                : Future.value(null),
+            builder: (context, snapshot) {
+              final creator = snapshot.data;
+              return Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: creator?.profilePictureUrl != null
+                        ? NetworkImage(creator!.profilePictureUrl!) as ImageProvider
+                        : AssetImage('resources/img/default_profile.png'),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          creator?.username ?? 'Unknown Creator',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Created ${DateFormat('MMM dd').format(event!.eventDate!)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              }
+                ],
+              );
             },
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundImage: _creator?.profilePictureUrl != null
-                      ? NetworkImage(_creator!.profilePictureUrl!) as ImageProvider
-                      : AssetImage('resources/icons/profile_placeholder.png'),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _creator?.username ?? 'Unknown Creator',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        event != null && event!.eventDate != null
-                            ? 'Created: ${DateFormat('MMM dd, yyyy, HH:mm').format(_creationTime!)}'
-                            : 'Event date: Not specified',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ),
 
           const SizedBox(height: 20),
@@ -468,7 +413,7 @@ class _EventPageState extends State<EventPage> {
                   children: [
                     // Event date - top line
                     Text(
-                      DateFormat('EEEE, MMM d, yyy').format(event!.eventDate!).toUpperCase(),
+                      DateFormat('EEEE, MMM d').format(event!.eventDate!).toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
@@ -570,7 +515,7 @@ class _EventPageState extends State<EventPage> {
                       children: enrollments
                           .map((e) => CircleAvatar(
                         radius: 24,
-                        backgroundImage: AssetImage('resources/icons/profile_placeholder.png'),
+                        backgroundImage: AssetImage('resources/img/default_profile.png'),
                         child: Text(e.accountId.toString(), style: const TextStyle(color: Colors.white)),
                       ))
                           .toList(),
