@@ -261,4 +261,25 @@ class EventService {
       return false;
     }
   }
+
+  static Future<bool> isEventFull(int eventId) async {
+    try {
+      // Fetch event to get max capacity
+      final event = await getEventById(eventId);
+      if (event == null || event.maxnumberofpeople == null) return false;
+
+      // Get current enrollment count
+      final countResponse = await _supabase
+          .from('eventenrollment')
+          .select('eventid')
+          .eq('eventid', eventId);
+      final enrollmentCount = (countResponse as List).length;
+
+      return enrollmentCount >= event.maxnumberofpeople!;
+    } catch (e) {
+      print('Error checking event capacity: $e');
+      return false;
+    }
+  }
+
 }
