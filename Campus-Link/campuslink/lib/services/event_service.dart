@@ -182,15 +182,18 @@ class EventService {
           .map<int>((e) => e['eventid'] as int)
           .toList();
 
-      // Get current user ID
-      final currentUserId = AuthGate.getCurrentUserId();
+      // Get profile user's authUserId
+      final profileUser = await UserService().getUserByAccountId(accountId);
+      final profileAuthUserId = profileUser?.authUserId;
 
-      // Fetch events excluding those created by current user
+      if (profileAuthUserId == null) return [];
+
+      // Fetch events excluding those created by profile user
       final eventsResponse = await _supabase
           .from('event')
           .select()
           .inFilter('event_id', eventIds)
-          .neq('eventcreatorid_uuid', currentUserId!) // Exclude user's own events
+          .neq('eventcreatorid_uuid', profileAuthUserId) // Use profile user's ID
           .order('startdate', ascending: false);
 
       return (eventsResponse as List<dynamic>)
