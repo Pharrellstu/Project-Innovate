@@ -138,7 +138,7 @@ class _ProfilePageState extends State<ProfilePage> {
           isLogoutBtnVisible: true,
         ),
       ),
-      bottomNavigationBar: const NavBar(),
+
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())

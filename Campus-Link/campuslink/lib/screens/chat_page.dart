@@ -142,7 +142,6 @@ class _ChatPageState extends State<ChatPage> {
           _MessageInputBar(controller: _controller, onSend: _sendText, onCameraTap: _sendImage),
         ],
       ),
-      bottomNavigationBar: const NavBar(),
     );
   }
 

@@ -141,7 +141,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         preferredSize: Size.fromHeight(kToolbarHeight),
         child: TopBar(title: 'Edit Profile'),
       ),
-      bottomNavigationBar: const NavBar(),
+
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
