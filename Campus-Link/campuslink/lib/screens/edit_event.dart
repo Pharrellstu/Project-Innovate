@@ -353,14 +353,8 @@ class _EditEventPageState extends State<EditEventPage> {
             // Description
             _buildTextFormField(
               controller: _descriptionController,
-              label: 'Description',
+              label: 'Description (Optional)',
               maxLines: 3,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter event description';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 16),
             
@@ -415,41 +409,32 @@ class _EditEventPageState extends State<EditEventPage> {
       children: [
         const Text('Event Image', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          height: 200,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+        AspectRatio(
+          aspectRatio: 16 / 9,
+          child: GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _newEventImage != null
+                  ? Image.file(_newEventImage!, fit: BoxFit.cover)
+                  : _currentEventImageUrl != null
+                      ? Image.network(_currentEventImageUrl!, fit: BoxFit.cover)
+                      : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.grey.shade500),
+                              const SizedBox(height: 8),
+                              const Text('Add an event image'),
+                            ],
+                          ),
+                        ),
+            ),
           ),
-          child: _newEventImage != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(_newEventImage!, fit: BoxFit.cover),
-                )
-              : _currentEventImageUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(_currentEventImageUrl!, fit: BoxFit.cover),
-                    )
-                  : const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.image, size: 64, color: Colors.grey),
-                          Text('No image selected'),
-                        ],
-                      ),
-                    ),
-        ),
-        const SizedBox(height: 8),
-        ElevatedButton.icon(
-          onPressed: _pickImage,
-          icon: const Icon(Icons.photo_library),
-          label: Text(_newEventImage != null || _currentEventImageUrl != null 
-              ? 'Change Image' 
-              : 'Select Image'),
         ),
       ],
     );
@@ -735,20 +720,6 @@ class _EditEventPageState extends State<EditEventPage> {
           SizedBox(height: 16),
           Text('Or enter location manually:', style: TextStyle(fontWeight: FontWeight.w500)),
           SizedBox(height: 8),
-          ElevatedButton.icon(
-            onPressed: () {
-              if (locationController.text.trim().isNotEmpty) {
-                // Use geocoding to search for the manually entered location
-                _searchLocation(locationController.text.trim());
-              }
-            },
-            icon: Icon(Icons.search),
-            label: Text('Search Location'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-          ),
         ],
       );
     }
