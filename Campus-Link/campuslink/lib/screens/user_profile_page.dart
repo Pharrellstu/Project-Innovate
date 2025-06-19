@@ -5,7 +5,7 @@ import 'package:campuslink/models/event.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:campuslink/services/event_service.dart';
 import 'package:campuslink/services/following_service.dart';
-import 'package:campuslink/widgets/follow_button.dart'; // Make sure this import is correct
+import 'package:campuslink/widgets/follow_button.dart';
 import 'followers_page.dart';
 import 'following_page.dart';
 import 'event_page.dart';
@@ -133,6 +133,8 @@ class _UserProfilePageState extends State<UserProfilePage>
                   children: [
                     _buildProfileHeader(user),
                     const SizedBox(height: 20),
+                    _buildStatusIndicators(user),
+                    const SizedBox(height: 20),
                     _buildStatsCard(user),
                     const SizedBox(height: 20),
                     _buildFollowButton(user),
@@ -163,22 +165,119 @@ class _UserProfilePageState extends State<UserProfilePage>
     );
   }
 
+  Widget _buildStatusIndicators(UserObject user) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (user.isVerified == true)
+            Container(
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.blue.shade100),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.verified, color: Colors.blue, size: 16),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Verified',
+                    style: TextStyle(
+                      color: Colors.blue.shade800,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (user.isAdmin == true)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.orange.shade100),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.admin_panel_settings, color: Colors.orange, size: 16),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Admin',
+                    style: TextStyle(
+                      color: Colors.orange.shade800,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfileHeader(UserObject user) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
           const SizedBox(height: 20),
-          CircleAvatar(
-            radius: 60,
-            backgroundImage:
-            user.profilePictureUrl != null && user.profilePictureUrl!.isNotEmpty
-                ? NetworkImage(user.profilePictureUrl!)
-                : null,
-            child: user.profilePictureUrl == null ||
-                user.profilePictureUrl!.isEmpty
-                ? const Icon(Icons.person, size: 60, color: Colors.grey)
-                : null,
+          Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: user.isVerified == true
+                      ? const LinearGradient(
+                    colors: [Colors.blue, Colors.purple],
+                  )
+                      : const LinearGradient(
+                    colors: [Colors.grey, Colors.grey],
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.white,
+                  child: CircleAvatar(
+                    radius: 56,
+                    backgroundImage: user.profilePictureUrl != null &&
+                        user.profilePictureUrl!.isNotEmpty
+                        ? NetworkImage(user.profilePictureUrl!)
+                        : null,
+                    child: user.profilePictureUrl == null ||
+                        user.profilePictureUrl!.isEmpty
+                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
+                        : null,
+                  ),
+                ),
+              ),
+              // Add verification badge to profile picture
+              if (user.isVerified == true)
+                Positioned(
+                  bottom: 5,
+                  right: 5,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.verified,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
           Text(
