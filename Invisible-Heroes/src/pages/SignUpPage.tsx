@@ -22,7 +22,7 @@ function SignUpPage() {
                 type="email"
                 id="email"
                 name="email"
-                placeholder="firstname.lastname@student.nhlstenden.com"
+                placeholder="name.surname@student.nhlstenden.com"
                 required
               />
             </div>

@@ -1,57 +1,36 @@
 import { useState, useEffect, useRef } from "react";
+import { storyService } from "../../lib/supabase";
+import type { Story } from "../../lib/supabase";
 import "./StudentStoriesSection.css";
 import anonymousAvatar from "../../assets/anonymous-user.png";
 
 function StudentStoriesSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleStories, setVisibleStories] = useState(3);
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);  // Fetch approved stories from database
+  useEffect(() => {    const fetchStories = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const approvedStories = await storyService.getApprovedStories();
+        setStories(approvedStories);
+      } catch (err) {
+        console.error("Error fetching stories:", err);
+        setError("Failed to load stories");
+        // Fallback to empty array if stories can't be loaded
+        setStories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Sample stories for testing - will be replaced with real data from admin-approved submissions
-  const stories = [
-    {
-      id: 1,
-      subject: "Finding My Voice",
-      story:
-        "Coming to a new country felt overwhelming at first. The language barrier and cultural differences made me feel invisible. But through anonymous storytelling, I found the courage to share my experiences and realized I wasn't alone.",
-      author: "NHL Stenden Student",
-    },
-    {
-      id: 2,
-      subject: "From Isolation to Connection",
-      story:
-        "I spent my first semester eating lunch alone and avoiding social events. Sharing my story anonymously helped me realize others felt the same way. Now I help organize events for other international students.",
-      author: "NHL Stenden Student",
-    },
-    {
-      id: 3,
-      subject: "Breaking the Silence",
-      story:
-        "Homesickness hit me harder than expected. I was embarrassed to admit I was struggling until I read similar stories from other students. It gave me the courage to reach out and ask for help.",
-      author: "NHL Stenden Student",
-    },
-    {
-      id: 4,
-      subject: "Building Confidence",
-      story:
-        "The anonymous platform allowed me to express my fears about making friends without judgment. Reading others' experiences and seeing how they overcame similar challenges inspired me to put myself out there.",
-      author: "NHL Stenden Student",
-    },
-    {
-      id: 5,
-      subject: "Creating Community",
-      story:
-        "After sharing my story about feeling disconnected, I started attending campus events. The platform helped me realize that many students were looking for meaningful connections, just like me.",
-      author: "NHL Stenden Student",
-    },
-    {
-      id: 6,
-      subject: "Overcoming Anxiety",
-      story:
-        "Social anxiety made university life challenging. Through anonymous storytelling, I learned coping strategies from other students and gradually built the confidence to participate in campus activities.",
-      author: "NHL Stenden Student",
-    },
-  ]; // Handle mobile scroll behavior and responsive navigation
+    fetchStories();
+  }, []);
+
+  // Handle mobile scroll behavior and responsive navigation
   useEffect(() => {
     const carousel = carouselRef.current;
 
@@ -82,10 +61,10 @@ function StudentStoriesSection() {
       window.removeEventListener("resize", updateVisibleStories);
     };
   }, []);
-
   const maxIndex = Math.max(0, stories.length - visibleStories);
 
   const handlePrevious = () => {
+    if (stories.length === 0) return;
     setCurrentIndex((prev) => {
       // If at the beginning, wrap to the end
       if (prev === 0) {
@@ -96,6 +75,7 @@ function StudentStoriesSection() {
   };
 
   const handleNext = () => {
+    if (stories.length === 0) return;
     setCurrentIndex((prev) => {
       // If at the end, wrap to the beginning
       if (prev >= maxIndex) {
@@ -107,21 +87,27 @@ function StudentStoriesSection() {
 
   return (
     <div className="student-stories-section">
-      {" "}
-      <div className="student-stories-intro">
+      {" "}      <div className="student-stories-intro">
         <h1>Real Stories</h1>
         <div className="carousel-controls">
-          <button className="carousel-btn" onClick={handlePrevious}>
+          <button 
+            className="carousel-btn" 
+            onClick={handlePrevious}
+            disabled={loading || stories.length === 0}
+          >
             Back
           </button>
-          <button className="carousel-btn" onClick={handleNext}>
+          <button 
+            className="carousel-btn" 
+            onClick={handleNext}
+            disabled={loading || stories.length === 0}
+          >
             Next
           </button>
         </div>
       </div>
       <div className="carousel-container" ref={carouselRef}>
-        {" "}
-        <div
+        {" "}        <div
           className="student-stories-container"
           style={{
             transform: `translateX(-${
@@ -129,16 +115,24 @@ function StudentStoriesSection() {
             }%)`,
           }}
         >
-          {stories.map((story) => (
-            <div key={story.id} className="student-story">
-              <h2>{story.subject}</h2>
-              <p>"{story.story}"</p>{" "}
-              <div className="story-author">
-                <img src={anonymousAvatar} alt="Anonymous student avatar" />
-                <p>{story.author}</p>
+          {loading ? (
+            <div className="loading-message">Loading stories...</div>
+          ) : error ? (
+            <div className="error-message">Unable to load stories at this time.</div>
+          ) : stories.length === 0 ? (
+            <div className="no-stories-message">No stories available yet.</div>
+          ) : (
+            stories.map((story) => (
+              <div key={story.id} className="student-story">
+                <h2>{story.subject}</h2>
+                <p>"{story.message}"</p>{" "}
+                <div className="story-author">
+                  <img src={anonymousAvatar} alt="Anonymous student avatar" />
+                  <p>NHL Stenden Student</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -8,6 +8,8 @@ import SignUpPage from "./pages/SignUpPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import ScrollToTop from "./components/ui/ScrollToTop";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminPanelPage from "./pages/AdminPanelPage";
 
 function App() {
   return (
@@ -18,9 +20,11 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/download" element={<DownloadPage />} />
         <Route path="/signin" element={<SignInPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/signup" element={<SignUpPage />} />{" "}
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/admin-login" element={<AdminLoginPage />} />
+        <Route path="/admin-panel" element={<AdminPanelPage />} />
       </Routes>
     </Router>
   );

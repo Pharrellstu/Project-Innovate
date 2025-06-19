@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { storyService } from "../../lib/supabase";
 import "./AboutSection.css";
 import Button from "../ui/Button";
 
@@ -7,14 +8,50 @@ function AboutSection() {
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
   const hasBeenShown = useRef<Set<HTMLElement>>(new Set());
   const navigate = useNavigate();
+  
+  // Form state
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+
   const handleAndMoreClick = () => {
     navigate('/about');
   };
-
   const scrollToNextSection = () => {
     const element = document.getElementById('about-section-3-pannel-1');
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!subject.trim() || !message.trim()) {
+      setSubmitMessage("Please fill in all fields");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitMessage("");
+
+    try {
+      await storyService.createStory({
+        subject: subject.trim(),
+        message: message.trim(),
+        status: 'pending',
+        submitted_at: new Date().toISOString()
+      });
+
+      setSubmitMessage("Story submitted successfully! It will be reviewed before being published.");
+      setSubject("");
+      setMessage("");
+    } catch (error) {
+      console.error("Error submitting story:", error);
+      setSubmitMessage("Failed to submit story. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -166,25 +203,46 @@ function AboutSection() {
         ref={(el) => {
           panelRefs.current[2] = el;
         }}
-      >
-        <div id="about-section-3-pannel-1" className="about-slide">
+      >        <div id="about-section-3-pannel-1" className="about-slide">
           <h1>Leave your story - Anonymously</h1>
           <p>
             Inspire others that are going through the same struggles you are
             going through. There are always others out there experiencing what
             you are. You are not alone!
           </p>
-          <form action="" method="post">
-            <input type="text" name="subject" placeholder="Subject" required />
+          
+          {submitMessage && (
+            <div className={`submit-message ${submitMessage.includes('successfully') ? 'success' : 'error'}`}>
+              {submitMessage}
+            </div>
+          )}
+          
+          <form onSubmit={handleFormSubmit}>
+            <input 
+              type="text" 
+              name="subject" 
+              placeholder="Subject" 
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              disabled={isSubmitting}
+              required 
+            />
             <textarea
               name="message"
               placeholder="Share your story..."
               rows={6}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              disabled={isSubmitting}
               required
             ></textarea>
-            <Button variant="rounded-hollow" type="submit">
-              Submit Story
-            </Button>{" "}
+            <Button 
+              variant="rounded-hollow" 
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Story"}
+            </Button>
           </form>
         </div>
       </div>
