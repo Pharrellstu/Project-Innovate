@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:campuslink/services/profile_service.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -198,6 +199,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                       textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      elevation: 4.0,
+                      shadowColor: Colors.grey.withOpacity(0.5),
                     ),
                     child: const Text('Save Changes'),
                   ),
@@ -221,22 +224,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          maxLines: maxLines,
-          keyboardType: keyboardType, // Added keyboardType
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+        Material(
+          elevation: 4.0,
+          shadowColor: Colors.grey.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+          child: TextField(
+            controller: controller,
+            maxLines: maxLines,
+            keyboardType: keyboardType, // Added keyboardType
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.blue.shade300, width: 2),
-            ),
-            filled: true,
-            fillColor: Colors.grey.shade50,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
       ],
@@ -252,34 +256,47 @@ class _EditProfilePageState extends State<EditProfilePage> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+        Material(
+          elevation: 4.0,
+          shadowColor: Colors.grey.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+          child: DropdownSearch<String>(
+            popupProps: PopupProps.menu(
+              showSearchBox: true,
+              searchFieldProps: TextFieldProps(
+                decoration: InputDecoration(
+                  hintText: "Search for a nationality",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+              menuProps: MenuProps(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.blue.shade300, width: 2),
+            items: _nationalities,
+            dropdownDecoratorProps: DropDownDecoratorProps(
+              baseStyle: const TextStyle(fontSize: 16),
+              dropdownSearchDecoration: InputDecoration(
+                hintText: "Select Nationality",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // Reduced vertical padding
+              ),
             ),
-            filled: true,
-            fillColor: Colors.grey.shade50,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedNationality = newValue;
+              });
+            },
+            selectedItem: _selectedNationality,
           ),
-          value: _selectedNationality,
-          hint: const Text('Select Nationality'),
-          isExpanded: true,
-          items: _nationalities.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            setState(() {
-              _selectedNationality = newValue;
-            });
-          },
         ),
       ],
     );
