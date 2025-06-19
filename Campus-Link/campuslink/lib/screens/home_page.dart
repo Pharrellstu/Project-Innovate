@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           indicatorColor: Theme.of(context).primaryColor,
         ),
       ),
-      bottomNavigationBar: const NavBar(),
+
       body: TabBarView(
         controller: _tabController,
         children: const [

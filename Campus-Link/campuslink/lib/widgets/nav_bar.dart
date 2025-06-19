@@ -1,6 +1,5 @@
 // lib/widgets/nav_bar.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 
 class NavBar extends StatelessWidget {
   final int currentIndex;
@@ -14,90 +13,126 @@ class NavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.primaryColor;
+    final backgroundColor = theme.cardColor;
+
     return Container(
-      height: 72,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10), // Adjusted padding
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFCBCBCB), width: 1)),
+      height: 80,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 8,
-            offset: Offset(0, -2),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 16,
+            spreadRadius: -2,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _navItem(
-            context,
-            iconPath: "resources/icons/Home.svg",
+          _NavItem(
+            icon: Icons.home_rounded,
             label: 'Home',
             index: 0,
+            isActive: currentIndex == 0,
+            onTap: () => onTap(0),
+            color: primaryColor,
           ),
-          _navItem(
-            context,
-            iconPath: "resources/icons/Map.svg",
-            label: 'Map',
+          _NavItem(
+            icon: Icons.explore_rounded,
+            label: 'Explore',
             index: 1,
+            isActive: currentIndex == 1,
+            onTap: () => onTap(1),
+            color: primaryColor,
           ),
-          _navItem(
-            context,
-            iconPath: "resources/icons/Chat.svg",
+          _NavItem(
+            icon: Icons.forum_rounded,
             label: 'Chat',
             index: 2,
+            isActive: currentIndex == 2,
+            onTap: () => onTap(2),
+            color: primaryColor,
           ),
-          _navItem(
-            context,
-            iconPath: "resources/icons/Profile.svg",
+          _NavItem(
+            icon: Icons.person_rounded,
             label: 'Profile',
             index: 3,
+            isActive: currentIndex == 3,
+            onTap: () => onTap(3),
+            color: primaryColor,
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _navItem(BuildContext context, {required String iconPath, required String label, required int index}) {
-    final bool isActive = currentIndex == index;
-    final Color iconColor = isActive ? Theme.of(context).primaryColor : Colors.grey.shade600;
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  final bool isActive;
+  final VoidCallback onTap;
+  final Color color;
 
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => onTap(index),
-        behavior: HitTestBehavior.translucent,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isActive ? Theme.of(context).primaryColor.withOpacity(0.1) : Colors.transparent,
-                shape: BoxShape.circle,
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.index,
+    required this.isActive,
+    required this.onTap,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.translucent,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              if (isActive)
+                Positioned(
+                  top: -4,
+                  child: Container(
+                    width: 10,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              Icon(
+                icon,
+                size: 28,
+                color: isActive ? color : Colors.grey.shade600,
               ),
-              child: SvgPicture.asset(
-                iconPath,
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                width: 24,
-                height: 24,
-              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              color: isActive ? color : Colors.grey.shade700,
             ),
-            const SizedBox(height: 4),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 300),
-              style: TextStyle(
-                fontSize: 12,
-                color: iconColor,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-              ),
-              child: Text(label),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

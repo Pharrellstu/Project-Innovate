@@ -77,7 +77,6 @@ class _ChatListState extends State<ChatList> {
           );
         },
       ),
-      bottomNavigationBar: const NavBar(),
     );
   }
 }
