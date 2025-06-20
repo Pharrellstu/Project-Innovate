@@ -72,15 +72,14 @@ class _timeAndLocationState extends State<timeAndLocation> {
     }
   }
 
-  // Add duration picker method
   Future<void> _pickDuration() async {
     Duration tempDuration = widget.eventData.eventDuration ?? Duration.zero;
 
     Duration? newDuration = await showDialog<Duration>(
       context: context,
       builder: (context) {
-        return StatefulBuilder(  // Wrap in StatefulBuilder
-            builder: (context, setStateDialog) {  // Local setState for dialog
+        return StatefulBuilder(
+            builder: (context, setStateDialog) {
               return AlertDialog(
                 title: const Text("Select Duration"),
                 content: Row(
@@ -113,7 +112,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
                               .toList(),
                           onChanged: (value) {
                             if (value != null) {
-                              setStateDialog(() => tempDuration = Duration(  // Use setStateDialog
+                              setStateDialog(() => tempDuration = Duration(
                                   hours: tempDuration.inHours, minutes: value));
                             }
                           },
@@ -143,7 +142,6 @@ class _timeAndLocationState extends State<timeAndLocation> {
     }
   }
 
-  // Add event description method
   String get eventDescription {
     if (widget.eventData.eventDate == null ||
         widget.eventData.eventTime == null) {
@@ -186,8 +184,6 @@ class _timeAndLocationState extends State<timeAndLocation> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-
-          // Updated date time picker with duration
           Card(
             elevation: 0,
             color: Colors.grey.shade100,
@@ -262,7 +258,7 @@ class _timeAndLocationState extends State<timeAndLocation> {
     );
   }
 
-  // Add repeat section widget
+  // Add repeat section
   Widget _buildRepeatSection() {
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     return Card(

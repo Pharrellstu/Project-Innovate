@@ -179,15 +179,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   _buildTextField(
                     label: 'Bio',
                     controller: _bioController,
-                    maxLines: 3, // Adjusted maxLines for bio
+                    maxLines: 3, // maxLine for bio
                   ),
                   const SizedBox(height: 24),
                   _buildNationalityDropdown(),
                   const SizedBox(height: 24),
-                  _buildTextField( // Added Age field
+                  _buildTextField(
                     label: 'Age',
                     controller: _ageController,
-                    keyboardType: TextInputType.number, // For age input
+                    keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton(
@@ -224,7 +224,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         TextField(
           controller: controller,
           maxLines: maxLines,
-          keyboardType: keyboardType, // Added keyboardType
+          keyboardType: keyboardType,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

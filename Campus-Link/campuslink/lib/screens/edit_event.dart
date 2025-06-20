@@ -50,8 +50,6 @@ class _EditEventPageState extends State<EditEventPage> {
   // Image handling
   File? _newEventImage;
   String? _currentEventImageUrl;
-
-  // Map-related variables (from time_and_location_screen.dart)
   bool _isEditingLocation = true;
   LatLng? _selectedLocation;
   MapController _mapController = MapController();
@@ -103,7 +101,7 @@ class _EditEventPageState extends State<EditEventPage> {
             }
           }
           
-          // Set event type and visibility
+          // Set event type and visibility for private or public
           _isOnline = eventData.isOnline;
           _isPublic = eventData.isPublic;
           
@@ -115,14 +113,13 @@ class _EditEventPageState extends State<EditEventPage> {
               _isEditingLocation = false;
             }
           }
-          
-          // Set image
+          // set image for events
           _currentEventImageUrl = eventData.eventImageUrl;
           
           _isLoading = false;
         });
       } else {
-        // Event not found
+        // Error for event not found or access denied
         if (mounted) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -142,7 +139,7 @@ class _EditEventPageState extends State<EditEventPage> {
     }
   }
 
-  /// Pick date for the event
+  /// Pick date for the events
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -178,7 +175,7 @@ class _EditEventPageState extends State<EditEventPage> {
     }
   }
 
-  /// Search location using geocoding package (primary method)
+  /// Search location
   Future<void> _searchLocation(String query) async {
     try {
       log('🔍 Searching location with geocoding: $query');
@@ -189,11 +186,10 @@ class _EditEventPageState extends State<EditEventPage> {
           _selectedLocation = LatLng(loc.latitude, loc.longitude);
           _isEditingLocation = false;
         });
-        log('✅ Found location: ${loc.latitude}, ${loc.longitude}');
+        log('Found location: ${loc.latitude}, ${loc.longitude}');
       }
     } catch (e) {
-      log('❌ Geocoding failed: $e');
-      // Fallback to manual entry
+      log('Geocoding failed: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Location not found. Please try a different search term.')),
       );
@@ -604,7 +600,7 @@ class _EditEventPageState extends State<EditEventPage> {
     );
   }
 
-  // Location picker widget adapted from time_and_location_screen.dart
+  // Location picker widget
   Widget _locationPicker({
     required LatLng? selectedLocation,
     required bool isEditingLocation,
