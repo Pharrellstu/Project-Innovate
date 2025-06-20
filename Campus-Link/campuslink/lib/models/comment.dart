@@ -20,10 +20,9 @@ class CommentModel {
     );
   }
 
-  /// Use this for insert/update payloads.
+  /// insert/update payloads.
   Map<String, dynamic> toMap() {
     return {
-      // omit PK for insert to let DB generate it
       if (commentId != 0) 'comment_id': commentId,
       'commentcreator': commentCreator,
       'post_id':        postId,

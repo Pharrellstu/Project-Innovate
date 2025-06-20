@@ -17,10 +17,9 @@ class FollowingModel {
     );
   }
 
-  /// Use for insert/update payloads.
+  /// insert/update payloads.
   Map<String, dynamic> toMap() {
     return {
-      // omit PK on insert to let the DB generate it
       if (followingId != 0) 'following_id': followingId,
       'followepersonid':    followePersonId,
       'followingpersonid':  followingPersonId,

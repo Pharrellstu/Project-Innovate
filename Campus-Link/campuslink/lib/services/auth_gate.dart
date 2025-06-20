@@ -16,7 +16,6 @@ class AuthGate extends StatefulWidget {
   @override
   State<AuthGate> createState() => _AuthGateState();
 
-  // Static methods that can be called from anywhere in the app
   static String? getCurrentUserId() {
     final session = Supabase.instance.client.auth.currentSession;
     return session?.user.id;
@@ -28,7 +27,7 @@ class AuthGate extends StatefulWidget {
       final AuthResponse response = await supabase.auth.signUp(
         email: email,
         password: password,
-        data: {'isNewUser': true}, // Custom metadata
+        data: {'isNewUser': true},
         emailRedirectTo: 'campuslink://email-confirmed',
       );
 
@@ -119,7 +118,6 @@ class _AuthGateState extends State<AuthGate> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       print('AuthGate: App resumed - checking auth state');
-      // Small delay to allow any deep link processing to complete
       Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) {
           setState(() {});
@@ -163,11 +161,8 @@ class _AuthGateState extends State<AuthGate> with WidgetsBindingObserver {
         final isNewUser = userToEvaluate.userMetadata?['isNewUser'] ?? false;
         if (isNewUser) {
           print('AuthGate: User is new. TODO: Redirect to edit profile page.');
-          // TODO: You can add logic here to navigate to a profile setup page.
-          // For now, we'll let them land on the main screen.
         }
 
-        // Navigate to MainScreen instead of HomePage
         return const MainScreen();
       },
     );

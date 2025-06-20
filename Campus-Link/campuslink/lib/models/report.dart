@@ -26,10 +26,8 @@ class ReportModel {
     );
   }
 
-  /// Use for insert/update payloads.
   Map<String, dynamic> toMap() {
     return {
-      // omit PK on insert to let the DB generate it
       if (reportId != 0)      'report_id'          : reportId,
       'giveraccountid'        : giverAccountId,
       'receiveraccount_id'    : receiverAccountId,

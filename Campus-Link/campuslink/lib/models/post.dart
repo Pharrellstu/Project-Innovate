@@ -23,10 +23,8 @@ class PostModel {
     );
   }
 
-  /// Use for insert/update payloads.
   Map<String, dynamic> toMap() {
     return {
-      // omit PK for insert to let DB generate it
       if (postId != 0) 'post_id': postId,
       'posttopic':       postTopic,
       'postcontent':     postContent,
