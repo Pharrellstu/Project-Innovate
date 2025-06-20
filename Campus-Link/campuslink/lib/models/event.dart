@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart'; // Keep if you use other Flutter specific imports here, otherwise remove
+import 'package:flutter/material.dart'; 
 import 'package:intl/intl.dart';
 
 class EventModel {
@@ -16,7 +16,6 @@ class EventModel {
   final bool isPublic;
   final int? maxnumberofpeople;
   final DateTime? signUpDeadline;
-  //final bool offerBadge;
   final String? eventCreatorUUID;
   final String? eventImageUrl;
   final DateTime? createdAt;
@@ -37,7 +36,6 @@ class EventModel {
     this.maxnumberofpeople,
     this.signUpDeadline,
     this.eventImageUrl,
-    //required this.offerBadge,
     required this.eventCreatorUUID,
     required this.createdAt,
   });
@@ -49,18 +47,7 @@ class EventModel {
       if (parts.length != 2) return null;
       return double.tryParse(getLat ? parts[0].trim() : parts[1].trim());
     }
-
-    // You can keep the print statements for your own debugging if you wish
-    // print('--- Event Raw Map Data ---');
-    // print('id: ${map['id']}');
-    // print('eventname: ${map['eventname']}'); // Corrected key
-    // print('eventcategory: ${map['eventcategory']}'); // Corrected key
-    // print('startdate: ${map['startdate']}'); // Corrected key
-    // print('locationName: ${map['locationName']}'); // Corrected key
-    // // ... print other fields
-    // print('--------------------------');
-
-
+    
     return EventModel(
       eventId: (map['event_id'] as int?) ?? 0,
       eventName: (map['eventname'] as String?) ?? 'Unnamed Event',

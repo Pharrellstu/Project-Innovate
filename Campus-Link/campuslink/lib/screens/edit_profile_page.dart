@@ -158,7 +158,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               ? FileImage(_newImageFile!)
                               : (_currentImageUrl != null && _currentImageUrl!.isNotEmpty
                                   ? NetworkImage(_currentImageUrl!)
-                                  : const AssetImage('resources/img/default_profile.png')) // Ensure you have a default asset
+                                  : const AssetImage('resources/img/default_profile.png')) 
                                   as ImageProvider,
                         ),
                         const SizedBox(height: 12),
@@ -186,7 +186,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   _buildTextField( // Added Age field
                     label: 'Age',
                     controller: _ageController,
-                    keyboardType: TextInputType.number, // For age input
+                    keyboardType: TextInputType.number, // For age in
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton(
