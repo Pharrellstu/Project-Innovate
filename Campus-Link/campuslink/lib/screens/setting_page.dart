@@ -8,9 +8,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
@@ -18,6 +16,7 @@ class SettingsPage extends StatelessWidget {
             leading: const Icon(Icons.person),
             title: const Text('Edit Profile'),
             onTap: () {
+              // Navigate to the Edit Profile page
               Navigator.push(
                 context,
                 MaterialPageRoute(

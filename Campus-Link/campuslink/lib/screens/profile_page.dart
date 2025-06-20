@@ -1,7 +1,8 @@
+// Note: This page might be deprecated. The main navigation uses 'profile_page_update.dart'.
+
 import 'package:campuslink/screens/my_events_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/profile_service.dart';
-import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'edit_profile_page.dart';
 import 'even_invitations_page.dart'; // Assuming this is the correct path
@@ -294,22 +295,23 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                       }
                     },
-                    itemBuilder: (BuildContext context) => [
-                      const PopupMenuItem<String>(
-                        value: 'invitations',
-                        child: ListTile(
-                          leading: Icon(Icons.mail),
-                          title: Text('Invitations'),
-                        ),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'my_events',
-                        child: ListTile(
-                          leading: Icon(Icons.event_note),
-                          title: Text('My Events'),
-                        ),
-                      ),
-                    ],
+                    itemBuilder:
+                        (BuildContext context) => [
+                          const PopupMenuItem<String>(
+                            value: 'invitations',
+                            child: ListTile(
+                              leading: Icon(Icons.mail),
+                              title: Text('Invitations'),
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'my_events',
+                            child: ListTile(
+                              leading: Icon(Icons.event_note),
+                              title: Text('My Events'),
+                            ),
+                          ),
+                        ],
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(

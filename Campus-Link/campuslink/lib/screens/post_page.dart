@@ -6,7 +6,7 @@ class PostPage extends StatefulWidget {
 }
 
 class _PostPageState extends State<PostPage> {
-  // Dummy data
+  // Dummy data for demonstration purposes.
   final String userName = 'Think Wireless';
   final String title = 'Friday Pub Quiz Night';
   final String date = '09 May | 19:45';
@@ -14,15 +14,16 @@ class _PostPageState extends State<PostPage> {
   final String description =
       'Gather your mates and put your brains to the test at our lively Pub Quiz! Fun questions, cold drinks, and bragging rights up for grabs!';
 
-  // Comment-related state
-  // Using a TextEditingController to manage the comment input
+  // Controller for the comment input field.
   final TextEditingController _commentController = TextEditingController();
+  // List of comments on the post.
   final List<Comment> comments = [
     Comment(user: 'Peter Kapsiar', text: 'Yall are getting clapped'),
     Comment(
-        user: 'Name',
-        text:
-            'I am so excited. Was amazing last time. Cant wait to see you there. 😁'),
+      user: 'Name',
+      text:
+          'I am so excited. Was amazing last time. Cant wait to see you there. 😁',
+    ),
   ];
 
   @override
@@ -45,9 +46,7 @@ class _PostPageState extends State<PostPage> {
       appBar: AppBar(
         leading: BackButton(),
         title: Text('Post'),
-        actions: [
-          IconButton(icon: Icon(Icons.add), onPressed: () {}),
-        ],
+        actions: [IconButton(icon: Icon(Icons.add), onPressed: () {})],
       ),
       body: ListView(
         padding: const EdgeInsets.all(12),
@@ -57,23 +56,27 @@ class _PostPageState extends State<PostPage> {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundImage:
-                    AssetImage('resources/icons/profile_placeholder.png'),
+                backgroundImage: AssetImage(
+                  'resources/icons/profile_placeholder.png',
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(userName,
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  userName,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade100,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text('New event',
-                    style: TextStyle(color: Colors.blue.shade800)),
+                child: Text(
+                  'New event',
+                  style: TextStyle(color: Colors.blue.shade800),
+                ),
               ),
               const SizedBox(width: 8),
               TextButton(onPressed: () {}, child: Text('See profile')),
@@ -112,11 +115,14 @@ class _PostPageState extends State<PostPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(date, style: TextStyle(color: Colors.white70)),
-                    Text(title,
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     Text(location, style: TextStyle(color: Colors.white70)),
                   ],
                 ),
@@ -144,8 +150,10 @@ class _PostPageState extends State<PostPage> {
           // Attendance avatars (unchanged)
           Row(
             children: [
-              Text('Attendance:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Attendance:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               // ... avatars here ...
             ],
           ),
@@ -160,9 +168,12 @@ class _PostPageState extends State<PostPage> {
                   decoration: InputDecoration(
                     hintText: 'New comment…',
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                   onSubmitted: _addComment,
                 ),
@@ -170,20 +181,26 @@ class _PostPageState extends State<PostPage> {
               IconButton(
                 icon: Icon(Icons.send),
                 onPressed: () => _addComment(_commentController.text),
-              )
+              ),
             ],
           ),
           const SizedBox(height: 16),
 
           // Comments list
-          ...comments.map((c) => ListTile(
-                leading: CircleAvatar(child: Icon(Icons.person)),
-                title: Text(c.user,
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(c.text),
-                trailing: TextButton(
-                    onPressed: () {}, child: Text('See profile')),
-              )),
+          ...comments.map(
+            (c) => ListTile(
+              leading: CircleAvatar(child: Icon(Icons.person)),
+              title: Text(
+                c.user,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(c.text),
+              trailing: TextButton(
+                onPressed: () {},
+                child: Text('See profile'),
+              ),
+            ),
+          ),
         ],
       ),
     );
