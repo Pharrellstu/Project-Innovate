@@ -15,8 +15,11 @@ class MyEventsPage extends StatefulWidget {
 }
 
 class _MyEventsPageState extends State<MyEventsPage> {
+  // Future to hold the list of events created by the current user.
   late Future<List<EventModel>> _createdEventsFuture;
+  // Future to hold the list of events the current user has joined.
   late Future<List<EventModel>> _joinedEventsFuture;
+  // The authentication ID of the current user.
   String? _userId;
 
   @override
@@ -26,6 +29,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
     _loadEvents();
   }
 
+  /// Loads both created and joined events for the current user.
   void _loadEvents() {
     if (_userId != null) {
       _createdEventsFuture = _fetchCreatedEvents();
@@ -36,10 +40,12 @@ class _MyEventsPageState extends State<MyEventsPage> {
     }
   }
 
+  /// Fetches the list of events created by the current user.
   Future<List<EventModel>> _fetchCreatedEvents() async {
     return EventService.fetchEventsCreatedByUser(_userId!);
   }
 
+  /// Fetches the list of events joined by the current user.
   Future<List<EventModel>> _fetchJoinedEvents() async {
     final accountId = await UserService().getAccountIdByAuthUserId(_userId!);
     if (accountId == null) return [];
@@ -59,18 +65,13 @@ class _MyEventsPageState extends State<MyEventsPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => CreateEventPage(),
-                  ),
+                  MaterialPageRoute(builder: (context) => CreateEventPage()),
                 );
               },
             ),
           ],
           bottom: const TabBar(
-            tabs: [
-              Tab(text: 'My events'),
-              Tab(text: 'Joined events'),
-            ],
+            tabs: [Tab(text: 'My events'), Tab(text: 'Joined events')],
           ),
         ),
         body: TabBarView(
@@ -83,7 +84,11 @@ class _MyEventsPageState extends State<MyEventsPage> {
     );
   }
 
-  Widget _buildEventsList(Future<List<EventModel>> future, {required bool isMyEvent}) {
+  /// Builds a list of events from a future, displaying a loading indicator or error message as needed.
+  Widget _buildEventsList(
+    Future<List<EventModel>> future, {
+    required bool isMyEvent,
+  }) {
     return FutureBuilder<List<EventModel>>(
       future: future,
       builder: (context, snapshot) {
@@ -116,30 +121,30 @@ class _MyEventsPageState extends State<MyEventsPage> {
     );
   }
 
-  void _navigateToEvent(BuildContext context, EventModel event, bool isMyEvent) {
-    if (isMyEvent) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EventPage(eventId: event.eventId),
-        ),
-      );
-    } else {
-      //Replace EditEventPage() with actual name of file
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EventPage(eventId: event.eventId),
-        ),
-      );
-    }
-
+  /// Navigates to the detailed event page for the selected event.
+  void _navigateToEvent(
+    BuildContext context,
+    EventModel event,
+    bool isMyEvent,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EventPage(eventId: event.eventId),
+      ),
+    );
   }
 }
 
+/// A list item widget to display a summary of an event.
 class _EventListItem extends StatelessWidget {
+  /// The event data to display.
   final EventModel event;
+
+  /// Whether the event is one created by the current user.
   final bool isMyEvent;
+
+  /// Callback for when the list item is tapped.
   final VoidCallback onPressed;
 
   const _EventListItem({
@@ -158,9 +163,11 @@ class _EventListItem extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 30,
-              backgroundImage: event.eventImageUrl != null
-                  ? NetworkImage(event.eventImageUrl!)
-                  : const AssetImage('assets/placeholder.png') as ImageProvider,
+              backgroundImage:
+                  event.eventImageUrl != null
+                      ? NetworkImage(event.eventImageUrl!)
+                      : const AssetImage('assets/placeholder.png')
+                          as ImageProvider,
               backgroundColor: Colors.grey[200],
             ),
             const SizedBox(width: 16),
@@ -178,8 +185,8 @@ class _EventListItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   _buildInfoRow(
-                      Icons.location_on,
-                      event.locationName ?? 'Location'
+                    Icons.location_on,
+                    event.locationName ?? 'Location',
                   ),
                 ],
               ),
@@ -194,6 +201,7 @@ class _EventListItem extends StatelessWidget {
     );
   }
 
+  /// Builds a row with an icon and text for displaying event details.
   Widget _buildInfoRow(IconData icon, String? text) {
     return Row(
       children: [

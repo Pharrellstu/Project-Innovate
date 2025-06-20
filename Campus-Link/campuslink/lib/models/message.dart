@@ -33,7 +33,6 @@ class MessageModel {
     );
   }
 
-  /// Use for insert/update payloads.
   Map<String, dynamic> toMap() {
     return {
       if (messageId != 0) 'message_id': messageId,

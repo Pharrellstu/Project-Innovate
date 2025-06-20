@@ -16,9 +16,13 @@ class FollowersPage extends StatefulWidget {
 }
 
 class _FollowersPageState extends State<FollowersPage> {
+  // Service for handling following/unfollowing actions.
   final FollowingService _followingService = FollowingService();
+  // Service for fetching user data.
   final UserService _userService = UserService();
+  // Future that holds the list of followers for the account.
   late Future<List<UserObject>> _followersFuture;
+  // Future that holds the account ID of the current logged-in user.
   late Future<int> _currentUserAccountId;
 
   @override
@@ -28,12 +32,14 @@ class _FollowersPageState extends State<FollowersPage> {
     _currentUserAccountId = _getCurrentUserAccountId();
   }
 
+  /// Fetches the account ID of the current logged-in user.
   Future<int> _getCurrentUserAccountId() async {
     final userId = AuthGate.getCurrentUserId();
     if (userId == null) return 0;
     return await _userService.getAccountIdByAuthUserId(userId) ?? 0;
   }
 
+  /// Fetches the list of users who are following the current account.
   Future<List<UserObject>> _fetchFollowers() async {
     final followerIds = await FollowingService.getFollowerIds(widget.accountId);
 
@@ -45,6 +51,7 @@ class _FollowersPageState extends State<FollowersPage> {
     return users.whereType<UserObject>().toList();
   }
 
+  /// Unfollows a user and refreshes the followers list.
   Future<void> _unfollowUser(int userId) async {
     final currentUserAccountId = await _currentUserAccountId;
     await FollowingService.unfollow(
@@ -86,14 +93,16 @@ class _FollowersPageState extends State<FollowersPage> {
                   future: _currentUserAccountId,
                   builder: (context, currentUserSnapshot) {
                     final currentUserAccountId = currentUserSnapshot.data ?? 0;
-                    final isCurrentUser = user.accountId == currentUserAccountId;
+                    final isCurrentUser =
+                        user.accountId == currentUserAccountId;
 
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: user.profilePictureUrl != null &&
-                            user.profilePictureUrl!.isNotEmpty
-                            ? NetworkImage(user.profilePictureUrl!)
-                            : null,
+                        backgroundImage:
+                            user.profilePictureUrl != null &&
+                                    user.profilePictureUrl!.isNotEmpty
+                                ? NetworkImage(user.profilePictureUrl!)
+                                : null,
                       ),
                       title: Text(user.username ?? 'No username'),
                       subtitle: Text(user.email ?? ''),
@@ -101,39 +110,51 @@ class _FollowersPageState extends State<FollowersPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => UserProfilePage(
-                              userId: user.accountId!,
-                              currentUserAccountId: currentUserAccountId,
-                            ),
+                            builder:
+                                (context) => UserProfilePage(
+                                  userId: user.accountId!,
+                                  currentUserAccountId: currentUserAccountId,
+                                ),
                           ),
                         );
                       },
-                      trailing: isCurrentUser
-                          ? null
-                          : FutureBuilder<bool>(
-                        future: FollowingService.isFollowing(
-                          followerId: currentUserAccountId,
-                          followingId: user.accountId!,
-                        ),
-                        builder: (context, isFollowingSnapshot) {
-                          if (isFollowingSnapshot.connectionState == ConnectionState.waiting) {
-                            return const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            );
-                          }
+                      trailing:
+                          isCurrentUser
+                              ? null
+                              : FutureBuilder<bool>(
+                                future: FollowingService.isFollowing(
+                                  followerId: currentUserAccountId,
+                                  followingId: user.accountId!,
+                                ),
+                                builder: (context, isFollowingSnapshot) {
+                                  if (isFollowingSnapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    );
+                                  }
 
-                          final isFollowing = isFollowingSnapshot.data ?? false;
-                          return IconButton(
-                            icon: Icon(
-                              isFollowing ? Icons.person_remove : Icons.person_add,
-                              color: isFollowing ? Colors.red : Colors.blue,
-                            ),
-                            onPressed: () => _unfollowUser(user.accountId!),
-                          );
-                        },
-                      ),
+                                  final isFollowing =
+                                      isFollowingSnapshot.data ?? false;
+                                  return IconButton(
+                                    icon: Icon(
+                                      isFollowing
+                                          ? Icons.person_remove
+                                          : Icons.person_add,
+                                      color:
+                                          isFollowing
+                                              ? Colors.red
+                                              : Colors.blue,
+                                    ),
+                                    onPressed:
+                                        () => _unfollowUser(user.accountId!),
+                                  );
+                                },
+                              ),
                     );
                   },
                 );

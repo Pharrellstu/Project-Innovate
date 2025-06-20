@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:campuslink/widgets/auth_form.dart';
 
+// A stateless widget for the login page.
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
   final String title = "LogIn Page";

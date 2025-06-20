@@ -1,4 +1,3 @@
-import 'package:campuslink/screens/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/models/eventinvitation.dart';
 import 'package:campuslink/services/event_invitation_service.dart';

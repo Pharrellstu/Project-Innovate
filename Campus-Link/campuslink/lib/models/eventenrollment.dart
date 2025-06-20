@@ -19,7 +19,6 @@ class EventEnrollmentModel {
 
   Map<String, dynamic> toMap() {
     return {
-      // omit the PK if letting the DB generate it on insert:
       if (eventEnrollmentId != 0) 'eventenrollment_id': eventEnrollmentId,
       'accountid': accountId,
       'eventid':   eventId,

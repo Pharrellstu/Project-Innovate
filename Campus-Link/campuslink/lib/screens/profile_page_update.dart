@@ -1,6 +1,4 @@
-import 'package:campuslink/screens/create_event_page.dart';
 import 'package:campuslink/screens/edit_profile_page.dart';
-import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/my_events_page.dart';
 import 'package:campuslink/screens/setting_page.dart';
 import 'package:flutter/material.dart';
@@ -8,9 +6,7 @@ import 'package:campuslink/models/user.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/following_page.dart';
-
 import '../services/following_service.dart';
-import '../widgets/nav_bar.dart';
 import 'even_invitations_page.dart';
 import 'followers_page.dart';
 
@@ -21,13 +17,21 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
+class _ProfilePageState extends State<ProfilePage>
+    with SingleTickerProviderStateMixin {
+  // Service for user-related operations.
   final UserService _userService = UserService();
+  // Service for following-related operations.
   final FollowingService _followingService = FollowingService();
+  // Future to get the current user's data.
   late Future<UserObject?> _userFuture;
+  // Future to get the follower count.
   late Future<int> _followersFuture;
+  // Future to get the following count.
   late Future<int> _followingFuture;
+  // Controller for animations.
   late AnimationController _animationController;
+  // Animation for fading in elements.
   late Animation<double> _fadeAnimation;
 
   @override
@@ -57,7 +61,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       _userFuture.then((user) {
         if (user != null && user.accountId != null) {
           _followersFuture = _userService.getFollowersCount(user.accountId!);
-          _followingFuture = FollowingService.getFollowingCount(user.accountId!);
+          _followingFuture = FollowingService.getFollowingCount(
+            user.accountId!,
+          );
         } else {
           _followersFuture = Future.value(0);
           _followingFuture = Future.value(0);
@@ -92,7 +98,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 children: [
                   Icon(Icons.person_off, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
-                  Text('User not found', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                  Text(
+                    'User not found',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
                 ],
               ),
             );
@@ -110,11 +119,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 pinned: true,
                 //backgroundColor: Colors.blue.shade600,
                 flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: BoxDecoration(
-
-                    ),
-                  ),
+                  background: Container(decoration: BoxDecoration()),
                 ),
                 actions: [
                   IconButton(
@@ -122,7 +127,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SettingsPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsPage(),
+                        ),
                       );
                     },
                   ),
@@ -144,7 +151,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                         _buildUserInfoCard(user),
                         const SizedBox(height: 20),
                         _buildActionButtons(),
-                        const SizedBox(height: 100), // Bottom padding for nav bar
+                        const SizedBox(
+                          height: 100,
+                        ), // Bottom padding for nav bar
                       ],
                     ),
                   ),
@@ -169,27 +178,34 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: user.isVerified == true
-                      ? const LinearGradient(
-                    colors: [Colors.blue, Colors.purple],
-                  )
-                      : const LinearGradient(
-                    colors: [Colors.grey, Colors.grey],
-                  ),
+                  gradient:
+                      user.isVerified == true
+                          ? const LinearGradient(
+                            colors: [Colors.blue, Colors.purple],
+                          )
+                          : const LinearGradient(
+                            colors: [Colors.grey, Colors.grey],
+                          ),
                 ),
                 child: CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.white,
                   child: CircleAvatar(
                     radius: 56,
-                    backgroundImage: user.profilePictureUrl != null &&
-                        user.profilePictureUrl!.isNotEmpty
-                        ? NetworkImage(user.profilePictureUrl!)
-                        : null,
-                    child: user.profilePictureUrl == null ||
-                        user.profilePictureUrl!.isEmpty
-                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
-                        : null,
+                    backgroundImage:
+                        user.profilePictureUrl != null &&
+                                user.profilePictureUrl!.isNotEmpty
+                            ? NetworkImage(user.profilePictureUrl!)
+                            : null,
+                    child:
+                        user.profilePictureUrl == null ||
+                                user.profilePictureUrl!.isEmpty
+                            ? const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Colors.grey,
+                            )
+                            : null,
                   ),
                 ),
               ),
@@ -268,42 +284,61 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             future: _followersFuture,
             builder: (context, snapshot) {
               final count = snapshot.hasData ? snapshot.data! : 0;
-              return _buildStatItem(count, 'Followers', Icons.people, user, false);
+              return _buildStatItem(
+                count,
+                'Followers',
+                Icons.people,
+                user,
+                false,
+              );
             },
           ),
-          Container(
-            height: 40,
-            width: 1,
-            color: Colors.grey[300],
-          ),
+          Container(height: 40, width: 1, color: Colors.grey[300]),
           FutureBuilder<int>(
             future: _followingFuture,
             builder: (context, snapshot) {
               final count = snapshot.hasData ? snapshot.data! : 0;
-              return _buildStatItem(count, 'Following', Icons.person_add, user, true);
+              return _buildStatItem(
+                count,
+                'Following',
+                Icons.person_add,
+                user,
+                true,
+              );
             },
           ),
-          Container(
-            height: 40,
-            width: 1,
-            color: Colors.grey[300],
+          Container(height: 40, width: 1, color: Colors.grey[300]),
+          _buildStatItem(
+            user.badgeCount ?? 0,
+            'Badges',
+            Icons.star,
+            user,
+            false,
           ),
-          _buildStatItem(user.badgeCount ?? 0, 'Badges', Icons.star, user, false),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(int count, String label, IconData icon, UserObject user, bool isFollowing) {
+  Widget _buildStatItem(
+    int count,
+    String label,
+    IconData icon,
+    UserObject user,
+    bool isFollowing,
+  ) {
     return GestureDetector(
       onTap: () {
-        if (user.accountId != null && (label == 'Followers' || label == 'Following')) {
+        if (user.accountId != null &&
+            (label == 'Followers' || label == 'Following')) {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => isFollowing
-                  ? FollowingPage(accountId: user.accountId!)
-                  : FollowersPage(accountId: user.accountId!),
+              builder:
+                  (context) =>
+                      isFollowing
+                          ? FollowingPage(accountId: user.accountId!)
+                          : FollowersPage(accountId: user.accountId!),
             ),
           );
         }
@@ -370,7 +405,11 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           ),
 
           _buildInfoTile(Icons.email, 'Email', user.email),
-          _buildInfoTile(Icons.badge, 'Student ID', user.studentCardId?.toString()),
+          _buildInfoTile(
+            Icons.badge,
+            'Student ID',
+            user.studentCardId?.toString(),
+          ),
           _buildInfoTile(Icons.flag, 'Nationality', user.nationality),
           if (user.age != null && user.age! > 0)
             _buildInfoTile(Icons.cake, 'Age', '${user.age} years old'),
@@ -381,13 +420,24 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             isVerified: user.isVerified == true,
           ),
           if (user.isAdmin == true)
-            _buildInfoTile(Icons.admin_panel_settings, 'Role', 'Administrator', isAdmin: true),
+            _buildInfoTile(
+              Icons.admin_panel_settings,
+              'Role',
+              'Administrator',
+              isAdmin: true,
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String label, String? value, {bool isVerified = false, bool isAdmin = false}) {
+  Widget _buildInfoTile(
+    IconData icon,
+    String label,
+    String? value, {
+    bool isVerified = false,
+    bool isAdmin = false,
+  }) {
     Color iconColor = Colors.grey[600]!;
     Color valueColor = Colors.black87;
 
@@ -402,9 +452,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: Colors.grey[100]!, width: 1),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey[100]!, width: 1)),
       ),
       child: Row(
         children: [
@@ -426,7 +474,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               value ?? 'Not provided',
               style: TextStyle(
                 color: value != null ? valueColor : Colors.grey[500],
-                fontWeight: isVerified || isAdmin ? FontWeight.w600 : FontWeight.normal,
+                fontWeight:
+                    isVerified || isAdmin ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ),
@@ -496,26 +545,30 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   );
                 }
               },
-              itemBuilder: (BuildContext context) => [
-                const PopupMenuItem<String>(
-                  value: 'invitations',
-                  child: ListTile(
-                    leading: Icon(Icons.mail_outline, color: Colors.blue),
-                    title: Text('Event Invitations'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'my_events',
-                  child: ListTile(
-                    leading: Icon(Icons.event_note, color: Colors.blue),
-                    title: Text('My Events'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ],
+              itemBuilder:
+                  (BuildContext context) => [
+                    const PopupMenuItem<String>(
+                      value: 'invitations',
+                      child: ListTile(
+                        leading: Icon(Icons.mail_outline, color: Colors.blue),
+                        title: Text('Event Invitations'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'my_events',
+                      child: ListTile(
+                        leading: Icon(Icons.event_note, color: Colors.blue),
+                        title: Text('My Events'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

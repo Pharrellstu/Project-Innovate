@@ -2,22 +2,21 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Represents the data structure for a user's profile.
 class ProfileData {
   final int id;
   final String name;
   final String bio;
   final String profilePictureUrl;
-  final String? nationality; // Added
-  final int? age;             // Added
+  final String? nationality;
+  final int? age;           
 
   ProfileData({
     required this.id,
     required this.name,
     required this.bio,
     required this.profilePictureUrl,
-    this.nationality, // Added
-    this.age,         // Added
+    this.nationality,
+    this.age,       
   });
 
   factory ProfileData.fromMap(Map<String, dynamic> map) {
@@ -26,8 +25,8 @@ class ProfileData {
       name: map['username'] as String? ?? '',
       bio: map['bio'] as String? ?? '',
       profilePictureUrl: map['profilepictureurl'] as String? ?? '',
-      nationality: map['nationality'] as String?, // Added
-      age: map['age'] as int?,                   // Added
+      nationality: map['nationality'] as String?, 
+      age: map['age'] as int?,                   
     );
   }
 }
@@ -44,7 +43,6 @@ class ProfileService {
     return _supabase.auth.currentUser?.id;
   }
 
-  // Get the account ID of the currently logged-in Supabase user.
   static Future<int?> getCurrentAccountId() async {
     final authUserId = getCurrentAuthUserId();
     if (authUserId == null) return null;
@@ -57,55 +55,52 @@ class ProfileService {
           .maybeSingle();
       return result?['accountid'] as int?;
     } catch (e) {
-      log('❌ ProfileService: Error fetching current account ID: $e');
+      log(' ProfileService: Error fetching current account ID: $e');
       return null;
     }
   }
 
-  // Fetch a user's profile by their account ID.
   static Future<ProfileData?> fetchProfileByAccountId(int accountId) async {
     try {
       final data = await _supabase
           .from(_accountTable)
-          .select('accountid, username, bio, profilepictureurl, nationality, age') // Added nationality, age
+          .select('accountid, username, bio, profilepictureurl, nationality, age')
           .eq('accountid', accountId)
           .maybeSingle();
       if (data == null) return null;
       return ProfileData.fromMap(data);
     } catch (e) {
-      log('❌ ProfileService: Error fetching profile by account ID ($accountId): $e');
+      log(' ProfileService: Error fetching profile by account ID ($accountId): $e');
       return null;
     }
   }
   
-  // Fetch the profile of the currently logged-in user.
   static Future<ProfileData?> fetchCurrentLoggedInUserProfile() async {
     final authUserId = getCurrentAuthUserId();
     if (authUserId == null) {
-      log('❌ ProfileService: No authenticated user to fetch profile for.');
+      log(' ProfileService: No authenticated user to fetch profile for.');
       return null;
     }
     try {
       final data = await _supabase
           .from(_accountTable)
-          .select('accountid, username, bio, profilepictureurl, nationality, age') // Added nationality, age
+          .select('accountid, username, bio, profilepictureurl, nationality, age')
           .eq('auth_user_id', authUserId)
           .maybeSingle();
       if (data == null) return null;
       return ProfileData.fromMap(data);
     } catch (e) {
-      log('❌ ProfileService: Error fetching current logged-in user profile: $e');
+      log(' ProfileService: Error fetching current logged-in user profile: $e');
       return null;
     }
   }
 
-  // Update profile information for a given account ID.
   static Future<bool> updateProfileData(int accountId, {
     required String name,
     required String bio,
     String? profilePictureUrl,
-    String? nationality, // Added
-    int? age,             // Added
+    String? nationality, 
+    int? age,           
   }) async {
     try {
       final updates = <String, dynamic>{
@@ -115,21 +110,20 @@ class ProfileService {
       if (profilePictureUrl != null && profilePictureUrl.isNotEmpty) {
         updates['profilepictureurl'] = profilePictureUrl;
       }
-      if (nationality != null) { // Added
+      if (nationality != null) { 
         updates['nationality'] = nationality;
       }
-      if (age != null) { // Added
+      if (age != null) { 
         updates['age'] = age;
       }
       await _supabase.from(_accountTable).update(updates).eq('accountid', accountId);
       return true;
     } catch (e) {
-      log('❌ ProfileService: Error updating profile for account ID ($accountId): $e');
+      log(' ProfileService: Error updating profile for account ID ($accountId): $e');
       return false;
     }
   }
 
-  // Upload a profile image and return its public URL.
   static Future<String?> uploadProfileImage(File imageFile, int accountId) async {
     try {
       final fileName = 'user_${accountId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -137,12 +131,11 @@ class ProfileService {
       await _supabase.storage.from(_profilePicturesBucket).upload(path, imageFile);
       return _supabase.storage.from(_profilePicturesBucket).getPublicUrl(path);
     } catch (e) {
-      log('❌ ProfileService: Error uploading profile image: $e');
+      log(' ProfileService: Error uploading profile image: $e');
       return null;
     }
   }
 
-  // Make the current user (follower) follow another user (followed).
   static Future<bool> followUser(int followerAccountId, int followingAccountId) async {
     if (followerAccountId == followingAccountId) return false;
     try {
@@ -152,12 +145,11 @@ class ProfileService {
       });
       return true;
     } catch (e) {
-      log('❌ ProfileService: Error following user (follower: $followerAccountId, following: $followingAccountId): $e');
+      log(' ProfileService: Error following user (follower: $followerAccountId, following: $followingAccountId): $e');
       return false;
     }
   }
 
-  // Make the current user (follower) unfollow another user (followed).
   static Future<bool> unfollowUser(int followerAccountId, int followingAccountId) async {
     try {
       await _supabase
@@ -167,12 +159,11 @@ class ProfileService {
           .eq('followingpersonid', followingAccountId);
       return true;
     } catch (e) {
-      log('❌ ProfileService: Error unfollowing user (follower: $followerAccountId, following: $followingAccountId): $e');
+      log(' ProfileService: Error unfollowing user (follower: $followerAccountId, following: $followingAccountId): $e');
       return false;
     }
   }
 
-  // Check if the current user (follower) is following another user (followed).
   static Future<bool> isFollowing(int followerAccountId, int targetAccountId) async {
     if (followerAccountId == targetAccountId) return false;
     try {
@@ -184,12 +175,11 @@ class ProfileService {
           .maybeSingle();
       return result != null;
     } catch (e) {
-      log('❌ ProfileService: Error checking follow status: $e');
+      log(' ProfileService: Error checking follow status: $e');
       return false;
     }
   }
 
-  // Get list of profile image URLs for users someone is following
   static Future<List<String>> fetchFollowingProfilePictures(int accountId) async {
     try {
       final followingRows = await _supabase
@@ -203,18 +193,17 @@ class ProfileService {
       final profiles = await _supabase
           .from(_accountTable)
           .select('profilepictureurl')
-          .inFilter('accountid', followingIds); // Corrected to inFilter
+          .inFilter('accountid', followingIds);
       return (profiles as List)
           .map<String>((row) => (row['profilepictureurl'] as String?) ?? '')
           .where((url) => url.isNotEmpty)
           .toList();
     } catch (e) {
-      log('❌ ProfileService: Error fetching following profile pictures for account ID ($accountId): $e');
+      log(' ProfileService: Error fetching following profile pictures for account ID ($accountId): $e');
       return [];
     }
   }
 
-  // Get list of badge image URLs (assuming 'badgedescription' contains the image URL)
   static Future<List<String>> fetchBadgeImageUrls(int accountId) async {
     try {
       final badgeOwnershipRows = await _supabase
@@ -228,13 +217,13 @@ class ProfileService {
       final badgeDetails = await _supabase
           .from(_badgeTable)
           .select('badgedescription')
-          .inFilter('badge_id', badgeIds); // Corrected to inFilter
+          .inFilter('badge_id', badgeIds); 
       return (badgeDetails as List)
           .map<String>((row) => (row['badgedescription'] as String?) ?? '')
           .where((url) => url.isNotEmpty)
           .toList();
     } catch (e) {
-      log('❌ ProfileService: Error fetching badge image URLs for account ID ($accountId): $e');
+      log(' ProfileService: Error fetching badge image URLs for account ID ($accountId): $e');
       return [];
     }
   }

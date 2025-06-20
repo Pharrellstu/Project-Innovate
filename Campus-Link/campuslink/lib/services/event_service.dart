@@ -9,13 +9,10 @@ import 'package:campuslink/services/user_service.dart';
 
 class EventService {
   static final SupabaseClient _supabase = Supabase.instance.client;
-
-// In event_service.dart
   static Future<int?> createEvent(EventData data) async {
     final creatorId = AuthGate.getCurrentUserId();
     final accountId = await UserService().getAccountIdByAuthUserId(creatorId!);
 
-    // Upload image if exists and not already uploaded
     if (data.eventImageFile != null && data.eventImageUrl == null) {
       final imageUrl = await uploadEventImage(data.eventImageFile!);
       if (imageUrl != null) {
@@ -23,7 +20,7 @@ class EventService {
       }
     }
 
-    // Add search functionality to fetchEvents
+
     final payload = data.toMap(creatorId);
 
     payload['eventcreatorid_uuid'] = creatorId;
@@ -69,7 +66,6 @@ class EventService {
     final to = from + perPage - 1;
 
     try {
-      // Create base query
       var query = _supabase
           .from('event')
           .select();
@@ -97,18 +93,15 @@ class EventService {
     }
   }
 
-// In event_service.dart
   static Future<String?> uploadEventImage(File imageFile) async {
     try {
       final fileName = '${DateTime.now().millisecondsSinceEpoch}${path.extension(imageFile.path)}';
       final bytes = await imageFile.readAsBytes();
 
-      // Use uploadBinary instead of upload
       await _supabase.storage
           .from('eventimage')
           .uploadBinary(fileName, bytes);
 
-      // If we get here, upload was successful
       final publicUrl = _supabase.storage
           .from('eventimage')
           .getPublicUrl(fileName);
@@ -122,8 +115,6 @@ class EventService {
       return null;
     }
   }
-
-  // Add to EventService class
 
   static Future<EventModel?> getEventById(int eventId) async {
     try {
@@ -149,7 +140,6 @@ class EventService {
     }
   }
 
-  // Add these methods to the EventService class
   static Future<List<EventModel>> fetchEventsCreatedByUser(String userId) async {
     try {
       final response = await _supabase
@@ -167,10 +157,8 @@ class EventService {
     }
   }
 
-// Fetch events joined by a specific user (using accountId)
   static Future<List<EventModel>> fetchEventsJoinedByUser(int accountId) async {
     try {
-      // First get event IDs from enrollment table
       final enrollmentResponse = await _supabase
           .from('eventenrollment')
           .select('eventid')
@@ -181,19 +169,16 @@ class EventService {
       final eventIds = (enrollmentResponse as List<dynamic>)
           .map<int>((e) => e['eventid'] as int)
           .toList();
-
-      // Get profile user's authUserId
       final profileUser = await UserService().getUserByAccountId(accountId);
       final profileAuthUserId = profileUser?.authUserId;
 
       if (profileAuthUserId == null) return [];
 
-      // Fetch events excluding those created by profile user
       final eventsResponse = await _supabase
           .from('event')
           .select()
           .inFilter('event_id', eventIds)
-          .neq('eventcreatorid_uuid', profileAuthUserId) // Use profile user's ID
+          .neq('eventcreatorid_uuid', profileAuthUserId)
           .order('startdate', ascending: false);
 
       return (eventsResponse as List<dynamic>)
@@ -225,11 +210,9 @@ class EventService {
 
   static Future<bool> isEventFull(int eventId) async {
     try {
-      // Fetch event to get max capacity
       final event = await getEventById(eventId);
       if (event == null || event.maxnumberofpeople == null) return false;
 
-      // Get current enrollment count
       final countResponse = await _supabase
           .from('eventenrollment')
           .select('eventid')
@@ -250,7 +233,6 @@ class EventService {
         print('No authenticated user.');
         return false;
       }
-      // Prepare update data with correct DB field names
       final updateData = <String, dynamic>{
         'eventname': event.eventName,
         'eventcategory': event.category,
