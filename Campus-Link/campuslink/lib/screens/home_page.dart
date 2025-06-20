@@ -1,8 +1,5 @@
-import 'package:campuslink/widgets/interestingPeople.dart';
 import 'package:flutter/material.dart';
-import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
-import 'package:campuslink/widgets/feed.dart';
 import 'package:campuslink/widgets/explore.dart';
 
 import '../widgets/accounts_page.dart'; // Create this later

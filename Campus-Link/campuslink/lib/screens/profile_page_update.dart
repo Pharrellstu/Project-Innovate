@@ -1,6 +1,4 @@
-import 'package:campuslink/screens/create_event_page.dart';
 import 'package:campuslink/screens/edit_profile_page.dart';
-import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/my_events_page.dart';
 import 'package:campuslink/screens/setting_page.dart';
 import 'package:flutter/material.dart';
@@ -8,9 +6,7 @@ import 'package:campuslink/models/user.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/screens/following_page.dart';
-
 import '../services/following_service.dart';
-import '../widgets/nav_bar.dart';
 import 'even_invitations_page.dart';
 import 'followers_page.dart';
 

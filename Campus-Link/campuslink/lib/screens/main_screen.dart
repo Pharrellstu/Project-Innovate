@@ -3,7 +3,6 @@ import 'package:campuslink/screens/chat_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/screens/home_page.dart';
 import 'package:campuslink/screens/map_page.dart';
-import 'package:campuslink/screens/chat_list.dart';
 import 'package:campuslink/screens/profile_page_update.dart';
 import 'package:campuslink/widgets/nav_bar.dart';
 

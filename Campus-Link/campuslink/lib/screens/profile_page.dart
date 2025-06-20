@@ -1,7 +1,6 @@
 import 'package:campuslink/screens/my_events_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/services/profile_service.dart';
-import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
 import 'edit_profile_page.dart';
 import 'even_invitations_page.dart'; // Assuming this is the correct path

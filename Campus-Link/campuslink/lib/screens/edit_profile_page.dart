@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:campuslink/services/profile_service.dart';
 import 'package:campuslink/widgets/top_bar.dart';
-import 'package:campuslink/widgets/nav_bar.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});

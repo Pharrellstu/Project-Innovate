@@ -11,7 +11,6 @@ import 'package:campuslink/screens/edit_event.dart';
 import '../models/eventenrollment.dart';
 import '../models/user.dart';
 import '../services/event_invitation_service.dart';
-import 'create_event_page.dart';
 
 class EventPage extends StatefulWidget {
   final int eventId;
