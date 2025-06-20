@@ -29,7 +29,8 @@ function Navigation() {
             behavior: "smooth",
             block: "start",
           });
-        }      }, 100);
+        }
+      }, 100);
     }
   };
 
@@ -102,7 +103,8 @@ function Navigation() {
                 <a href="#features" onClick={handleFeaturesClick}>
                   Features
                 </a>
-              </li>              <li className="listNavBarElement">
+              </li>{" "}
+              <li className="listNavBarElement">
                 <a href="#contact" onClick={handleContactClick}>
                   Contact
                 </a>

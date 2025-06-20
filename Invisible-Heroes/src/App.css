@@ -1,7 +1,5 @@
-/* Import CSS Variables */
 @import "./styles/variables.css";
 
-/* Import Google Fonts */
 @import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap");
 
 * {
@@ -10,7 +8,6 @@
   padding: 0;
 }
 
-/* Text Normalization - Reset all default styles */
 h1,
 h2,
 h3,
@@ -33,7 +30,6 @@ body {
   font-family: var(--font-body);
 }
 
-/* Typography */
 h1,
 h2,
 h3,
@@ -60,7 +56,6 @@ button {
   padding-top: clamp(140px, 15vh, 160px);
 }
 
-/* Responsive design for app container */
 @media (max-width: 768px) {
   .app-container {
     padding: 16px;

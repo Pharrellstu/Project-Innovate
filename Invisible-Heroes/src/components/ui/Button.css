@@ -1,7 +1,5 @@
-/* Import CSS Variables */
 @import "../../styles/variables.css";
 
-/* Universal Button Styles */
 .btn {
   display: inline-flex;
   justify-content: center;
@@ -34,7 +32,6 @@
   fill: currentColor;
 }
 
-/* Button Variants */
 .btn--filled {
   background: var(--gradient-button);
   color: var(--color-white);
@@ -85,7 +82,6 @@
   fill: var(--color-white);
 }
 
-/* Button Sizes */
 .btn--small {
   height: 50px;
   padding: 0 20px;

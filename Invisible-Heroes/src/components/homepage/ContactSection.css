@@ -1,31 +1,30 @@
-/* Import CSS Variables */
 @import "../../styles/variables.css";
 
 .contact-section {
-  padding: 60px clamp(20px, 3vw, 40px); /* Adjusted top/bottom padding to 60px */
-  background-color: var(--color-dark); /* Changed to dark */
-  border-radius: var(--border-radius); /* Added border-radius */
+  padding: 60px clamp(20px, 3vw, 40px);
+  background-color: var(--color-dark);
+  border-radius: var(--border-radius);
 }
 
 .contact-top-section {
-  max-width: calc(var(--max-width) - 80px); /* Reduce width to account for 40px padding on each side */
-  margin: 0 auto var(--section-gap, 40px) auto; /* Added margin-bottom, using var or fallback */
+  max-width: calc(var(--max-width) - 80px);
+  margin: 0 auto var(--section-gap, 40px) auto;
   display: flex;
-  gap: 0; /* Let children handle their spacing/margin if needed */
-  min-height: 600px; /* Or adjust as needed */
+  gap: 0;
+  min-height: 600px;
 }
 
 .contact-left-section {
-  flex: 0 0 60%; /* Set to 60% of the flex container's width */
-  padding: 40px; /* Internal padding */
-  color: var(--color-white); /* Default text color for this section */
+  flex: 0 0 60%;
+  padding: 40px;
+  color: var(--color-white);
 }
 
 .contact-right-section {
-  flex: 0 0 40%; /* Set to 40% of the flex container's width */
-  padding: 40px; /* Internal padding */
-  color: var(--color-dark); /* Default text color for this section */
-  background-color: var(--color-white); /* White background for the form area */
+  flex: 0 0 40%;
+  padding: 40px;
+  color: var(--color-dark);
+  background-color: var(--color-white);
   border-radius: var(--border-radius-small);
 }
 
@@ -41,7 +40,7 @@
 .contact-left-section > p {
   font-family: var(--font-body);
   font-size: var(--fs-body-small);
-  font-weight: var(--font-weight-light); /* Lighter paragraph text */
+  font-weight: var(--font-weight-light);
   color: rgba(255, 255, 255, 0.85);
   margin-bottom: 40px;
   line-height: 1.6;
@@ -59,13 +58,9 @@
 
 .social-information-section h2 {
   font-family: var(--font-heading);
-  font-size: clamp(
-    0.875rem,
-    2vw,
-    1.625rem
-  ); /* Max 1.625rem = 26px, base 14px */
-  font-weight: var(--font-weight-semibold); /* Bolder */
-  color: var(--color-white); /* White color */
+  font-size: clamp(0.875rem, 2vw, 1.625rem);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-white);
   margin-bottom: 10px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -74,7 +69,7 @@
 .social-information-section p {
   font-family: var(--font-body);
   font-size: var(--fs-body-small);
-  font-weight: var(--font-weight-light); /* Lighter font weight */
+  font-weight: var(--font-weight-light);
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.5;
   margin: 0;
@@ -105,152 +100,136 @@
   transform: translateY(-2px);
 }
 
-/* Styles for the right (form) section */
 .contact-right-section h2 {
   font-family: var(--font-heading);
-  font-size: clamp(1.2rem, 2.5vw, 1.625rem); /* Max 1.625rem */
-  font-weight: var(--font-weight-semibold); /* Bolder */
-  color: var(--color-dark); /* Dark text on white background */
+  font-size: clamp(1.2rem, 2.5vw, 1.625rem);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-dark);
   margin-bottom: 15px;
 }
 
 .contact-right-section > p {
   font-family: var(--font-body);
   font-size: var(--fs-body);
-  font-weight: var(--font-weight-light); /* Lighter paragraph text */
-  color: var(--color-text); /* Dark text on white background */
+  font-weight: var(--font-weight-light);
+  color: var(--color-text);
   opacity: 0.85;
   margin-bottom: 30px;
   line-height: 1.6;
 }
 
 .contact-right-section .contact-form {
-  /* Scoping form */
   margin-bottom: 30px;
 }
 
 .contact-right-section .form-group {
-  /* Scoping form group */
   margin-bottom: 25px;
-  position: relative; /* For potential label animations if added later */
+  position: relative;
 }
 
 .contact-right-section .form-input {
-  /* Scoped form input */
   width: 100%;
   background-color: transparent;
-  border: none; /* Remove all borders */
-  border-bottom: 1px solid #cccccc; /* Light grey bottom border */
-  padding: 10px 0 10px 10px; /* TOP | RIGHT | BOTTOM | LEFT padding */
-  color: var(--color-dark); /* Dark text for input */
+  border: none;
+  border-bottom: 1px solid #cccccc;
+  padding: 10px 0 10px 10px;
+  color: var(--color-dark);
   font-family: var(--font-body);
   font-size: 16px;
-  outline: none; /* Remove default browser outline */
-  border-radius: 0; /* Ensure no border radius is applied */
-  box-shadow: none; /* Ensure no box shadow is applied on focus from other rules */
-  transition: border-color 0.3s ease, border-width 0.3s ease; /* Smooth transition for border */
+  outline: none;
+  border-radius: 0;
+  box-shadow: none;
+  transition: border-color 0.3s ease, border-width 0.3s ease;
 }
 
 .contact-right-section .form-input:hover {
-  border-bottom-color: var(--color-dark); /* Darker border on hover */
+  border-bottom-color: var(--color-dark);
 }
 
 .contact-right-section .form-input:focus {
-  border-bottom-color: var(--color-dark); /* Dark border on focus */
-  border-bottom-width: 2px; /* Thicker border on focus */
-  border-left: none; /* Explicitly no left border on focus */
-  border-right: none; /* Explicitly no right border on focus */
-  border-top: none; /* Explicitly no top border on focus */
-  box-shadow: none; /* Ensure no box shadow is applied on focus */
+  border-bottom-color: var(--color-dark);
+  border-bottom-width: 2px;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  box-shadow: none;
 }
 
 .contact-right-section .form-input::placeholder {
-  color: rgba(26, 26, 26, 0.5); /* Semi-transparent dark placeholder */
+  color: rgba(26, 26, 26, 0.5);
   transition: var(--transition-smooth);
 }
 
 .contact-right-section .form-input:focus::placeholder {
-  color: rgba(26, 26, 26, 0.4); /* Lighter placeholder on focus */
-  /* transform: translateY(-20px); Example of moving placeholder up */
+  color: rgba(26, 26, 26, 0.4);
 }
 
 .contact-right-section .form-textarea {
-  /* Scoped textarea */
   resize: vertical;
   min-height: 100px;
-  /* padding-top: 10px; Inherits .form-input padding, but we'll make it explicit for textareas if needed */
-  padding-left: 10px; /* Ensure textarea also has left padding */
-  border-radius: 0; /* Ensure no border radius for textarea */
-  box-shadow: none; /* Ensure no box shadow for textarea */
+  padding-left: 10px;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .contact-submit-btn {
   background: linear-gradient(to right, #005fa9, #094676);
-  color: white; /* Ensure text is readable on gradient */
-  border: none; /* Remove default border if any */
+  color: white;
+  border: none;
 }
 
 .contact-submit-btn:hover {
-  background: linear-gradient(
-    to right,
-    #004a8a,
-    #07375a
-  ); /* Darken gradient on hover */
+  background: linear-gradient(to right, #004a8a, #07375a);
   color: white;
 }
 
-/* Removed contact-bottom-section styles as they are now handled by contact-section */
-
 .location-map-image {
-  display: block; /* Good practice for responsive images */
+  display: block;
   width: 100%;
-  max-width: 100%; /* Explicitly ensure it doesn't exceed container or its natural width */
-  max-height: 500px; /* Limit map height */
-  object-fit: cover; /* Cover the area, might crop a bit */
-  border-radius: var(--border-radius-small); /* Ensures rounded corners */
-  border: 1px solid #ddd; /* Optional: subtle border */
+  max-width: 100%;
+  max-height: 500px;
+  object-fit: cover;
+  border-radius: var(--border-radius-small);
+  border: 1px solid #ddd;
 }
 
-/* Responsive Design */
 @media (max-width: 992px) {
-  /* Adjusted breakpoint for better layout shift */  .contact-top-section {
+  .contact-top-section {
     flex-direction: column;
-    padding: 0; /* Remove padding on mobile */
-    margin: 0 auto 40px auto; /* Add bottom margin for spacing with map */
-    gap: 0; /* Remove gap, right section margin will handle spacing */
+    padding: 0;
+    margin: 0 auto 40px auto;
+    gap: 0;
   }
-
   .contact-left-section {
-    flex: 1; /* Take full width on mobile */
-    padding: 30px; /* Adjust padding */
-    text-align: center; /* Center text for stacked view */
+    flex: 1;
+    padding: 30px;
+    text-align: center;
   }
-  
   .contact-right-section {
-    flex: 1; /* Take full width on mobile */
-    padding: 30px; /* Adjust padding */
-    margin: 20px 0 0 0; /* Margin top only when stacked */
+    flex: 1;
+    padding: 30px;
+    margin: 20px 0 0 0;
   }
-  
   .social-information-section {
-    grid-template-columns: 1fr; /* Stack social info */
-    text-align: left; /* Align text left within social info */
+    grid-template-columns: 1fr;
+    text-align: left;
   }
   .social-icons {
-    justify-content: flex-start; /* Align icons to the left */
+    justify-content: flex-start;
   }
   .location-map-image {
-    object-fit: cover; /* Zoom in while maintaining aspect ratio */
-    object-position: center; /* Center the cropped area */
-    min-height: 350px; /* Increased minimum height for more zoom */
-    width: 100%; /* Ensure it stays within container */
-    max-width: 100%; /* Prevent overflow */
+    object-fit: cover;
+    object-position: center;
+    min-height: 350px;
+    width: 100%;
+    max-width: 100%;
   }
 }
 
-@media (max-width: 480px) {  .contact-top-section {
-    margin: 0 auto 30px auto; /* Add bottom margin for spacing with map */
-    padding: 0; /* Remove padding */
+@media (max-width: 480px) {
+  .contact-top-section {
+    margin: 0 auto 30px auto;
+    padding: 0;
   }
   .contact-left-section {
     padding: 20px;
@@ -260,16 +239,16 @@
     margin: 15px 0 0 0;
   }
   .social-information-section h2 {
-    font-size: clamp(0.875rem, 4vw, 1.2rem); /* Smaller h2 on mobile */
+    font-size: clamp(0.875rem, 4vw, 1.2rem);
   }
   .contact-right-section h2 {
-    font-size: clamp(1rem, 5vw, 1.5rem); /* Smaller h2 on mobile */
+    font-size: clamp(1rem, 5vw, 1.5rem);
   }
-    .location-map-image {
-    min-height: 300px; /* Increased minimum height for more zoom */
-    object-fit: cover; /* Maintain zoom effect */
-    object-position: center; /* Keep centered cropping */
-    width: 100%; /* Ensure it stays within container */
-    max-width: 100%; /* Prevent overflow */
+  .location-map-image {
+    min-height: 300px;
+    object-fit: cover;
+    object-position: center;
+    width: 100%;
+    max-width: 100%;
   }
 }

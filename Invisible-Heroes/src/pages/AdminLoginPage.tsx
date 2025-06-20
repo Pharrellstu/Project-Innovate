@@ -16,10 +16,11 @@ function AdminLoginPage() {
 
     try {
       // Step 1: Authenticate with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
 
       if (authError) {
         setError("Invalid email or password");
@@ -33,10 +34,10 @@ function AdminLoginPage() {
 
       // Step 2: Check if authenticated user is an admin in the account table
       const { data: accountData, error: accountError } = await supabase
-        .from('account')
-        .select('accountid, email, isadmin, auth_user_id')
-        .eq('auth_user_id', authData.user.id)
-        .eq('isadmin', true)
+        .from("account")
+        .select("accountid, email, isadmin, auth_user_id")
+        .eq("auth_user_id", authData.user.id)
+        .eq("isadmin", true)
         .single();
 
       if (accountError || !accountData) {
@@ -51,10 +52,9 @@ function AdminLoginPage() {
       localStorage.setItem("adminAccountId", accountData.accountid.toString());
       localStorage.setItem("adminEmail", accountData.email);
       localStorage.setItem("supabaseSession", JSON.stringify(authData.session));
-      
+
       // Navigate to admin panel
       navigate("/admin-panel");
-
     } catch (err) {
       setError("Login failed. Please try again.");
       console.error("Login error:", err);
@@ -66,9 +66,9 @@ function AdminLoginPage() {
     <div className="admin-login-container">
       <form onSubmit={handleLogin} className="login-form">
         <h2>Admin Login</h2>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
