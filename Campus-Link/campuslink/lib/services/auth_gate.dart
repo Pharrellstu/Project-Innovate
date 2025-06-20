@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'dart:async';
 
+import '../screens/main_screen.dart';
+
 final userService = UserService();
 
 class AuthGate extends StatefulWidget {
@@ -153,21 +155,20 @@ class _AuthGateState extends State<AuthGate> with WidgetsBindingObserver {
         }
 
         if (userToEvaluate.emailConfirmedAt == null) {
-          print(
-            'AuthGate: User email NOT confirmed (${userToEvaluate.emailConfirmedAt}). Navigating to EmailVerificationPage for ${userToEvaluate.email}.',
-          );
+          print('AuthGate: User email NOT confirmed. Navigating to EmailVerificationPage.');
           return EmailVerificationPage(email: userToEvaluate.email!);
         }
 
-        print(
-          'AuthGate: User email IS confirmed. Navigating to HomePage for ${userToEvaluate.email}.',
-        );
+        print('AuthGate: User email IS confirmed. Navigating to MainScreen.');
         final isNewUser = userToEvaluate.userMetadata?['isNewUser'] ?? false;
         if (isNewUser) {
           print('AuthGate: User is new. TODO: Redirect to edit profile page.');
-          // TODO: If the user is new, redirect to the edit profile page
+          // TODO: You can add logic here to navigate to a profile setup page.
+          // For now, we'll let them land on the main screen.
         }
-        return HomePage();
+
+        // Navigate to MainScreen instead of HomePage
+        return const MainScreen();
       },
     );
   }

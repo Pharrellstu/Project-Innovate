@@ -748,13 +748,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             ),
           ),
 
-          // Bottom navigation bar
-          const Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: NavBar(),
-          ),
         ],
       ),
     );

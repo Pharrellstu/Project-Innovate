@@ -154,7 +154,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           );
         },
       ),
-      bottomNavigationBar: const NavBar(),
     );
   }
 
