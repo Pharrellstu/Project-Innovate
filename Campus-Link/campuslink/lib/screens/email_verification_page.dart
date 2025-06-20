@@ -146,7 +146,6 @@ class _EmailVerificationPageState extends State<EmailVerificationPage>
     });
 
     try {
-      // Use magic link for resend
       await Supabase.instance.client.auth.signInWithOtp(
         email: widget.email,
         emailRedirectTo: 'campuslink://email-confirmed',
