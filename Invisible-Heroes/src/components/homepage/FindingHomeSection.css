@@ -4,34 +4,34 @@
   width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 0; /* Remove top/bottom padding to avoid double spacing */
+  padding: 0;
   text-align: center;
-  margin-bottom: var(--section-spacing); /* Use consistent section spacing */
+  margin-bottom: var(--section-spacing);
   transition: var(--transition-smooth);
 }
 
 .finding-home-intro {
   display: flex;
-  flex-direction: row; /* Arrange H1 and P side-by-side */
-  align-items: baseline; /* Align their text baselines */
-  justify-content: space-between; /* Center the H1 and P row */
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
   margin-bottom: calc(var(--section-gap) * 2);
-  text-align: left; /* Align text within H1 and P to the left */
+  text-align: left;
 }
 
 .finding-home-intro h1 {
   font-family: var(--font-heading);
   font-size: var(--fs-hero);
   color: var(--color-text);
-  margin-bottom: 0; /* Remove bottom margin for row layout */
-  flex-shrink: 0; /* Prevent H1 from shrinking if P is long */
+  margin-bottom: 0;
+  flex-shrink: 0;
 }
 
 .finding-home-intro p {
   font-family: var(--font-body);
   font-size: var(--fs-body);
   color: var(--color-text);
-  max-width: 30ch; /* Limit width of paragraph for readability in a row */
+  max-width: 30ch;
 }
 
 .finding-home-section-content {
@@ -50,61 +50,52 @@
   text-align: left;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* Align content to the top */
-  min-height: 200px; /* Minimum height for very small content */
-  max-height: 300px; /* Maximum height to constrain panel size */
-  overflow: hidden; /* Hide overflow at the panel level */
+  justify-content: flex-start;
+  min-height: 200px;
+  max-height: 300px;
+  overflow: hidden;
 }
 
 .finding-home-panel h2 {
   font-family: var(--font-heading);
   font-size: var(--fs-h2);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-white); /* Ensure title is white on dark background */
-  margin-bottom: calc(var(--section-gap) / 1.5); /* Consistent spacing */
+  color: var(--color-white);
+  margin-bottom: calc(var(--section-gap) / 1.5);
 }
 
 .finding-home-panel .panel-content-wrapper {
   display: flex;
-  align-items: center; /* Center align items vertically */
-  gap: 20px; /* Increased space between number and text */
-  height: 100%; /* Take full height of remaining panel space */
-  position: relative; /* For proper positioning of translated elements */
+  align-items: center;
+  gap: 20px;
+  height: 100%;
+  position: relative;
 }
 
 .finding-home-panel .panel-number {
   font-family: var(--font-heading);
-  font-size: clamp(7rem, 18vw, 15rem); /* Made even bigger */
-  font-weight: var(--font-weight-medium); /* Lighter font weight */
-  background: linear-gradient(
-    to top,
-    #1c1a1a,
-    #094676
-  ); /* Normal state gradient */
+  font-size: clamp(7rem, 18vw, 15rem);
+  font-weight: var(--font-weight-medium);
+  background: linear-gradient(to top, #1c1a1a, #094676);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 0.8;
-  flex: 0 0 50%; /* Take exactly 50% of the space, don't grow or shrink */
+  flex: 0 0 50%;
   display: flex;
   align-items: center;
-  justify-content: center; /* Center the number horizontally */
+  justify-content: center;
   text-align: center;
-  transform: translateY(35%); /* Position so only 65% is visible */
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth transition */
+  transform: translateY(35%);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Hover effect for the entire panel */
 .finding-home-panel:hover .panel-number {
-  background: linear-gradient(
-    to top,
-    #1c1a1a,
-    #005fa9
-  ); /* More vibrant gradient */
+  background: linear-gradient(to top, #1c1a1a, #005fa9);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  transform: translateY(0); /* Rise to full position */
+  transform: translateY(0);
 }
 
 .finding-home-panel .panel-text {
@@ -112,128 +103,99 @@
   font-size: var(--fs-body-small);
   line-height: 1.6;
   color: var(--color-light);
-  flex: 0 0 50%; /* Take exactly 50% of the space, don't grow or shrink */
+  flex: 0 0 50%;
   display: flex;
-  align-items: center; /* Center text vertically within its 50% space */
-  padding: 0 10px; /* Add horizontal padding to keep text within bounds */
+  align-items: center;
+  padding: 0 10px;
 }
 
-/* Bottom panels (3 and 4) - right-aligned titles and reversed layout */
 #finding-home-panel-3,
 #finding-home-panel-4 {
-  text-align: left; /* Keep consistent left alignment */
+  text-align: left;
 }
 
 #finding-home-panel-3 h2,
 #finding-home-panel-4 h2 {
-  text-align: right; /* Keep titles right-aligned */
-  padding-right: 10px; /* Add padding to prevent text cutoff */
+  text-align: right;
+  padding-right: 10px;
 }
 
 #finding-home-panel-3 .panel-content-wrapper,
 #finding-home-panel-4 .panel-content-wrapper {
-  flex-direction: row-reverse; /* Reverse the order: number on right, text on left */
+  flex-direction: row-reverse;
 }
 
 #finding-home-panel-3 .panel-text,
 #finding-home-panel-4 .panel-text {
-  text-align: left; /* Change from 'start' to 'left' for better control */
-  padding-left: 30px; /* Add left padding to prevent text from going too far left */
+  text-align: left;
+  padding-left: 30px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .finding-home-section-content {
     grid-template-columns: 1fr;
     grid-template-rows: repeat(4, auto);
   }
   .finding-home-intro {
-    flex-direction: column; /* Stack H1 and P on mobile */
-    align-items: center; /* Center them when stacked */
-    text-align: center; /* Center text within H1 and P on mobile */
-  }  .finding-home-intro h1 {
-    font-size: clamp(2rem, 8vw, 3.5rem); /* Smaller mobile size */
-    margin-bottom: 0.5em; /* Add margin back when stacked */
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .finding-home-intro h1 {
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    margin-bottom: 0.5em;
   }
   .finding-home-intro p {
     font-size: var(--fs-body-small);
-    max-width: 100%; /* Allow full width when stacked */
+    max-width: 100%;
   }
   .finding-home-panel h2 {
-    font-size: var(--fs-h2); /* Use the variable directly */
-    margin-bottom: calc(var(--section-gap) / 2); /* Smaller margin on mobile */
+    font-size: var(--fs-h2);
+    margin-bottom: calc(var(--section-gap) / 2);
   }
   .finding-home-panel {
-    min-height: 150px; /* Scaled down from desktop 200px */
-    max-height: 220px; /* Scaled down from desktop 300px */
-    padding: clamp(12px, 2vw, 20px); /* Further reduce padding on mobile */
+    min-height: 150px;
+    max-height: 220px;
+    padding: clamp(12px, 2vw, 20px);
   }
   .finding-home-panel .panel-number {
-    font-size: clamp(10rem, 30vw, 20rem); /* Made 2x bigger for mobile */
-    font-weight: var(
-      --font-weight-medium
-    ); /* Lighter font weight on mobile too */
-    transform: translateY(35%); /* Maintain positioning on mobile */
+    font-size: clamp(10rem, 30vw, 20rem);
+    font-weight: var(--font-weight-medium);
+    transform: translateY(35%);
   }
-
-  /* Disable hover effects on mobile */
   .finding-home-panel:hover .panel-number {
-    transform: translateY(35%); /* Keep in normal position, no hover effect */
-    background: linear-gradient(
-      to top,
-      #1c1a1a,
-      #094676
-    ); /* Keep normal gradient */
+    transform: translateY(35%);
+    background: linear-gradient(to top, #1c1a1a, #094676);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-
-  /* Active state for panels in center of screen */
   .finding-home-panel.active .panel-number {
-    background: linear-gradient(
-      to top,
-      #1c1a1a,
-      #005fa9
-    ); /* More vibrant gradient */
+    background: linear-gradient(to top, #1c1a1a, #005fa9);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    transform: translateY(0); /* Rise to full position */
+    transform: translateY(0);
   }
   .finding-home-panel .panel-content-wrapper {
-    gap: 15px; /* Smaller gap on mobile */
+    gap: 15px;
   }
-  /* Maintain layout for bottom panels on mobile but ensure text stays within bounds */
   #finding-home-panel-3,
   #finding-home-panel-4 {
-    text-align: left; /* Keep consistent with desktop */
+    text-align: left;
   }
-
   #finding-home-panel-3 h2,
   #finding-home-panel-4 h2 {
     text-align: right;
-    padding-right: 10px; /* Ensure title doesn't get cut off */
+    padding-right: 10px;
   }
-
   #finding-home-panel-3 .panel-content-wrapper,
   #finding-home-panel-4 .panel-content-wrapper {
     flex-direction: row-reverse;
   }
-
   #finding-home-panel-3 .panel-text,
   #finding-home-panel-4 .panel-text {
-    text-align: left; /* Change from 'start' to 'left' */
-    padding-left: 15px; /* Ensure text doesn't go outside panel bounds */
+    text-align: left;
+    padding-left: 15px;
   }
-  /* Optional: Stack number and text in panels on very small screens if needed */
-  /*
-  .finding-home-panel .panel-content-wrapper {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .finding-home-panel .panel-number {
-    margin-bottom: 10px;
-  }
-  */
 }

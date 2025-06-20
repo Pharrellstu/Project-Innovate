@@ -1,9 +1,7 @@
-/* Import CSS Variables */
 @import "../../styles/variables.css";
 
-/* About Hero Section Styles */
 .about-hero-section {
-  margin-bottom: var(--section-spacing); /* Add consistent section spacing */
+  margin-bottom: var(--section-spacing);
 }
 
 .about-hero-section h1 {
@@ -25,7 +23,6 @@
   line-height: 1.2;
 }
 
-/* Mobile responsive */
 @media (max-width: 768px) {
   .about-hero-section h1 {
     width: 100%;

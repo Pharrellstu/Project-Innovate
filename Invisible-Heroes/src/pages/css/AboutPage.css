@@ -1,7 +1,5 @@
-/* Importing Variables to use */
 @import "../../styles/variables.css";
 
-/* About Page Styles */
 .about-page-container {
   min-height: 100vh;
   max-width: var(--max-width);
@@ -10,7 +8,6 @@
   text-align: start;
 }
 
-/* Mobile responsive */
 @media (max-width: 768px) {
   .about-page-container {
     padding: var(--section-padding) 15px 0;

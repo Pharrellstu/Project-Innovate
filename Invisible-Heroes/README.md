@@ -1,16 +1,14 @@
 # CampusLink Website
 
-A modern React + TypeScript + Vite web application for connecting campus communities.
+A modern React + TypeScript + Vite web application for connecting campus communities and combating student loneliness.
 
-## 🚀 Quick Setup Guide
+## Quick Start
 
 ### Prerequisites
-Before you start, make sure you have the following installed:
-- **Node.js** (version 18 or higher) - [Download here](https://nodejs.org/)
+- **Node.js** (version 18.17.0 or higher) - [Download here](https://nodejs.org/)
 - **Git** - [Download here](https://git-scm.com/)
-- A code editor like **VS Code** - [Download here](https://code.visualstudio.com/)
 
-### Getting Started
+### Setup Instructions
 
 1. **Clone the repository**
    ```bash
@@ -23,147 +21,94 @@ Before you start, make sure you have the following installed:
    npm install
    ```
 
-3. **Start the development server**
+3. **Set up environment variables**
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Edit .env with your Supabase credentials
+   # VITE_SUPABASE_URL=your_supabase_project_url
+   # VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. **Start the development server**
    ```bash
    npm run dev
    ```
-   or
-   ```bash
-   npm start
-   ```
 
-4. **Open your browser**
-   - The app will be running at `http://localhost:5173`
-   - The page will automatically reload when you make changes
+5. **Open your browser**
+   - Navigate to `http://localhost:5173`
+   - The app will automatically reload when you make changes
 
-### 📝 Available Scripts
+## Available Scripts
 
-- `npm run dev` or `npm start` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint to check code quality
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint code quality checks |
 
-### 🛠️ Tech Stack
+## Tech Stack
 
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Bootstrap 5** - CSS framework
-- **ESLint** - Code linting
+- **Frontend**: React 19 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: CSS3 + Bootstrap 5
+- **Backend**: Supabase
+- **Code Quality**: ESLint + TypeScript
 
-### 📁 Project Structure
+## Project Structure
 
 ```
 src/
-├── components/          # React components
-│   ├── css/            # Component-specific styles
-│   ├── AboutSection.tsx
-│   ├── FeaturesSection.tsx
-│   ├── Navigation.tsx
-│   └── ...
-├── styles/             # Global styles
-├── App.tsx             # Main app component
-└── main.tsx           # Entry point
+├── components/              # React components
+│   ├── homepage/           # Homepage sections
+│   ├── about/              # About page components  
+│   ├── layout/             # Navigation, Footer, etc.
+│   └── ui/                 # Reusable UI components
+├── pages/                  # Page components
+├── styles/                 # Global CSS and variables
+├── lib/                    # Utility functions and configs
+├── assets/                 # Images and static files
+├── App.tsx                 # Main app component
+└── main.tsx               # Entry point
 ```
 
-### 🔧 Development Workflow
+## Troubleshooting
 
-1. **Pull latest changes**
-   ```bash
-   git pull origin main
-   ```
+### Common Issues
 
-2. **Create a new branch for your feature**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-3. **Make your changes and test locally**
-   ```bash
-   npm run dev
-   ```
-
-4. **Commit and push your changes**
-   ```bash
-   git add .
-   git commit -m "Add your descriptive commit message"
-   git push origin feature/your-feature-name
-   ```
-
-5. **Create a Pull Request** on GitHub
-
-### 🆘 Troubleshooting
-
-#### Common Issues:
-
-**"Command not found: npm"**
-- Make sure Node.js is installed and added to your PATH
+**"npm command not found"**
+- Install Node.js from the official website
+- Restart your terminal after installation
 
 **"Module not found" errors**
-- Run `npm install` to install all dependencies
-- Delete `node_modules` folder and `package-lock.json`, then run `npm install` again
+- Run `npm install` to install dependencies
+- If issues persist: `rm -rf node_modules package-lock.json && npm install`
+
+**Environment variable errors**
+- Make sure `.env` file exists with correct Supabase credentials
+- Check that variables start with `VITE_` prefix
 
 **Port already in use**
-- The dev server will automatically find an available port
-- Or specify a different port: `npm run dev -- --port 3000`
+- Vite will automatically use the next available port
+- Or specify a port: `npm run dev -- --port 3000`
 
-**CSS import errors**
-- Make sure CSS file paths are correct relative to the component
-- Check that the CSS file exists in the `css/` folder
+## Features
 
-### 📞 Need Help?
+- **Modern UI/UX**: Clean, responsive design
+- **Student Stories**: Share and browse campus experiences
+- **Real-time Updates**: Powered by Supabase
+- **Mobile Optimized**: Works on all devices
+- **Accessibility**: Built with web standards
 
-If you run into any issues, feel free to:
-- Check existing issues on GitHub
-- Ask in the team chat
-- Create a new issue with details about the problem
+## Development Notes
+
+- This project uses TypeScript for type safety
+- CSS follows BEM methodology for consistent styling
+- All components are functional components with React hooks
+- Environment variables are required for Supabase integration
 
 ---
 
-Happy coding! 🎉
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+Built with ❤️ for connecting campus communities

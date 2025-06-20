@@ -41,7 +41,8 @@ function FeaturesSection() {
 
   const handleBubbleClick = (index: number) => {
     setActiveIndex(index);
-  };  return (
+  };
+  return (
     <>
       {/* Header Section - Outside the dark box */}
       <div id="features" className="features-heading-div">

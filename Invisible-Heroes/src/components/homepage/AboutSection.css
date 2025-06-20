@@ -1,7 +1,5 @@
-/* Import CSS Variables */
 @import "../../styles/variables.css";
 
-/* About Section Styles */
 .about-section-panel {
   width: 100%;
   max-width: var(--max-width);
@@ -9,9 +7,9 @@
   grid-template-columns: repeat(12, 1fr);
   grid-template-rows: repeat(2, auto);
   gap: var(--section-gap);
-  margin: 0 auto;  transition: var(--transition-smooth);
+  margin: 0 auto;
+  transition: var(--transition-smooth);
   margin-bottom: var(--section-spacing);
-  /* Animation properties */
   opacity: 0;
   transform: translateY(50px);
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -31,13 +29,11 @@
   padding: clamp(2rem, 4vw, 3rem);
   border-radius: var(--border-radius);
   transition: var(--transition-smooth);
-  /* Individual slide animation properties */
   opacity: 0;
   transform: translateY(30px) scale(0.95);
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Staggered animation delays for slides within a panel */
 .about-section-panel.fade-in .about-slide:nth-child(1) {
   opacity: 1;
   transform: translateY(0) scale(1);
@@ -84,7 +80,6 @@
   color: var(--color-white);
 }
 
-/* About section list styling */
 #about-section-1-pannel-1 ul {
   list-style: none;
   padding: 0;
@@ -129,7 +124,6 @@
   background: var(--color-white);
 }
 
-/* Section 2 Panel Styles */
 #about-section-2-pannel-1 h1,
 #about-section-2-pannel-2 h1,
 #about-section-2-pannel-3 h1 {
@@ -151,7 +145,6 @@
   margin-bottom: clamp(1.5rem, 1vw, 2.5rem);
 }
 
-/* Section 2 Panel Colors */
 #about-section-2-pannel-1 {
   grid-column: 1 / 8;
   grid-row: 1 / 2;
@@ -176,7 +169,6 @@
   color: var(--color-white);
 }
 
-/* White button variant for dark backgrounds */
 #about-section-1-pannel-1 .btn--rounded-hollow {
   background: transparent;
   color: var(--color-white);
@@ -197,9 +189,8 @@
   fill: var(--color-secondary);
 }
 
-/* Section 3 Panel Styles */
 #about-section-3-pannel-1 {
-  grid-column: 1 / 13; /* Spans the full grid width */
+  grid-column: 1 / 13;
   grid-row: 1 / 2;
   background: var(--color-dark);
   color: var(--color-white);
@@ -221,7 +212,6 @@
   margin-bottom: clamp(1.5rem, 2vw, 2rem);
 }
 
-/* Form styling for section 3 */
 #about-section-3-pannel-1 form {
   display: flex;
   flex-direction: column;
@@ -257,7 +247,6 @@
   min-height: clamp(100px, 15vw, 150px);
 }
 
-/* White button variant for section 3 dark background */
 #about-section-3-pannel-1 .btn--rounded-hollow {
   background: transparent;
   color: var(--color-white);
@@ -280,7 +269,6 @@
   fill: var(--color-dark);
 }
 
-/* Submit message styling */
 .submit-message {
   padding: 1rem;
   border-radius: 8px;
@@ -302,7 +290,6 @@
   color: #ef4444;
 }
 
-/* Disabled form elements */
 #about-section-3-pannel-1 input:disabled,
 #about-section-3-pannel-1 textarea:disabled {
   opacity: 0.6;
@@ -314,7 +301,6 @@
   cursor: not-allowed;
 }
 
-/* Enhanced form field styling */
 .form-field {
   display: flex;
   flex-direction: column;
@@ -332,7 +318,6 @@
   color: #22c55e !important;
 }
 
-/* Responsive design for about section */
 @media (max-width: 1280px) {
   .about-section-panel {
     max-width: 95%;
@@ -345,7 +330,6 @@
     grid-template-rows: auto;
     gap: clamp(16px, 4vw, 24px);
   }
-
   #about-section-1-pannel-1,
   #about-section-1-pannel-2,
   #about-section-1-pannel-3,
@@ -355,5 +339,4 @@
     grid-column: 1;
     grid-row: auto;
   }
-
 }

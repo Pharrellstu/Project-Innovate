@@ -1,7 +1,5 @@
-/* Import CSS Variables */
 @import "../../styles/variables.css";
 
-/* Desktop Footer */
 .footer-div {
   max-height: 533px;
   max-width: var(--max-width);
@@ -22,7 +20,6 @@
   font-weight: var(--font-weight-bold);
 }
 
-/* Info Section */
 .info-div {
   padding: 5rem 3rem;
   min-width: 350px;
@@ -30,7 +27,6 @@
   width: auto;
   box-sizing: border-box;
   display: flex;
-
 }
 
 .header-footer {
@@ -66,7 +62,6 @@
   color: #7e7e7e;
 }
 
-/* Stay Updated Section */
 .stay-updated-div {
   width: 100%;
   max-width: 642px;
@@ -183,13 +178,10 @@
     border-top-left-radius: var(--border-radius-small);
     border-top-right-radius: var(--border-radius-small);
   }
-
   .footer-content-div-mobile {
     display: flex;
     flex-direction: column;
   }
-
-  /* Mobile Stay Updated Section */
   .stay-updated-div-mobile {
     width: 100%;
     max-height: 520px;
@@ -199,18 +191,15 @@
     border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
     padding: 1rem 30px;
   }
-
   .stay-updated-div-mobile h1 {
     color: var(--color-text);
     font-size: 30px;
     margin-bottom: 1rem;
   }
-
   .stay-updated-div-mobile p {
     color: var(--color-text);
     margin-bottom: 1rem;
   }
-
   .input-div-mobile {
     display: flex;
     flex-direction: column;
@@ -229,37 +218,31 @@
     transition: var(--transition-smooth);
     font-size: var(--fs-nav);
   }
-
   .input-div-mobile textarea {
     resize: vertical;
     min-height: 30px;
     max-height: 200px;
   }
-
   .input-div-mobile input:hover,
   .input-div-mobile textarea:hover {
     border-bottom-color: var(--color-dark);
     transform: translateY(-1px);
   }
-
   .input-div-mobile input:focus,
   .input-div-mobile textarea:focus {
     border-bottom-color: var(--color-dark);
     border-bottom-width: 2px;
     transform: translateY(-1px);
   }
-
   .input-div-mobile input::placeholder,
   .input-div-mobile textarea::placeholder {
     color: rgba(28, 26, 26, 0.7);
     transition: var(--transition-smooth);
   }
-
   .input-div-mobile input:focus::placeholder,
   .input-div-mobile textarea:focus::placeholder {
     color: rgba(28, 26, 26, 0.9);
   }
-  /* Mobile Info Section */
   .info-div-mobile {
     background: var(--color-dark);
     border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
@@ -268,25 +251,20 @@
     height: 100%;
     width: 100%;
   }
-
   .header-footer-mobile {
     margin-bottom: 20px;
   }
-
   .alignment-div-mobile {
     display: flex;
     justify-content: space-between;
   }
-
   .left-info-div-mobile,
   .right-info-div-mobile {
     margin-bottom: 1rem;
   }
-
   .left-info-div-mobile {
     margin-right: auto;
   }
-
   .left-info-div-mobile p,
   .left-info-div-mobile a,
   .right-info-div-mobile p,
@@ -295,7 +273,6 @@
     color: var(--color-white);
     text-decoration: none;
   }
-
   .social-media-icons-div-mobile {
     width: 100%;
     display: flex;
@@ -303,7 +280,6 @@
     justify-content: space-between;
     gap: 15px;
   }
-
   .social-media-icons-div-mobile a {
     display: flex;
     align-items: center;
@@ -317,12 +293,10 @@
     font-size: var(--fs-body);
     transition: var(--transition-smooth);
   }
-
   .social-media-icons-div-mobile a:hover {
     background-color: var(--color-primary);
     transform: translateY(-2px);
   }
-
   .copyright-text {
     color: var(--color-white);
     display: flex;
@@ -331,7 +305,6 @@
   }
 }
 
-/* Footer Link Styles */
 .left-info-div a,
 .right-info-div a,
 .left-info-div-mobile a,

@@ -10,8 +10,9 @@ function StudentStoriesSection() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);  // Fetch approved stories from database
-  useEffect(() => {    const fetchStories = async () => {
+  const carouselRef = useRef<HTMLDivElement>(null); // Fetch approved stories from database
+  useEffect(() => {
+    const fetchStories = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -87,18 +88,19 @@ function StudentStoriesSection() {
 
   return (
     <div className="student-stories-section">
-      {" "}      <div className="student-stories-intro">
+      {" "}
+      <div className="student-stories-intro">
         <h1>Real Stories</h1>
         <div className="carousel-controls">
-          <button 
-            className="carousel-btn" 
+          <button
+            className="carousel-btn"
             onClick={handlePrevious}
             disabled={loading || stories.length === 0}
           >
             Back
           </button>
-          <button 
-            className="carousel-btn" 
+          <button
+            className="carousel-btn"
             onClick={handleNext}
             disabled={loading || stories.length === 0}
           >
@@ -107,7 +109,8 @@ function StudentStoriesSection() {
         </div>
       </div>
       <div className="carousel-container" ref={carouselRef}>
-        {" "}        <div
+        {" "}
+        <div
           className="student-stories-container"
           style={{
             transform: `translateX(-${
@@ -118,7 +121,9 @@ function StudentStoriesSection() {
           {loading ? (
             <div className="loading-message">Loading stories...</div>
           ) : error ? (
-            <div className="error-message">Unable to load stories at this time.</div>
+            <div className="error-message">
+              Unable to load stories at this time.
+            </div>
           ) : stories.length === 0 ? (
             <div className="no-stories-message">No stories available yet.</div>
           ) : (

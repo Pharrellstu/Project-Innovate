@@ -1,7 +1,5 @@
-/* Import CSS Variables */
 @import "../../styles/variables.css";
 
-/* Hero Section Styles */
 .hero-section {
   width: 100%;
   max-width: var(--max-width);
@@ -13,7 +11,8 @@
   justify-content: start;
   color: var(--color-white);
   text-align: start;
-  padding: var(--section-padding) clamp(50px, 6vw, 80px);  position: relative;
+  padding: var(--section-padding) clamp(50px, 6vw, 80px);
+  position: relative;
   margin-bottom: var(--section-spacing);
   transition: var(--transition-smooth);
 }
@@ -36,14 +35,12 @@
   z-index: 2;
 }
 
-/* Desktop/Tablet Content - Show by default */
 .hero-desktop {
   display: block;
   opacity: 1;
   transition: opacity 0.3s ease;
 }
 
-/* Mobile Content - Hide by default */
 .hero-mobile {
   display: none;
   opacity: 0;
@@ -83,7 +80,6 @@
   margin-bottom: clamp(3rem, 5vw, 4rem);
 }
 
-/* Mobile bullet points styling */
 .hero-bullets {
   list-style: none;
   padding: 0;
@@ -110,52 +106,44 @@
   left: 0;
 }
 
-/* Responsive design for hero section */
 @media (max-width: 1280px) {
   .hero-section {
     max-width: 95%;
   }
 }
 
-/* Tablet breakpoint - gradual transition */
 @media (max-width: 1024px) {
   .hero-content {
     transition: all 0.4s ease;
   }
 }
 
-/* Small tablet / large mobile */
 @media (max-width: 900px) {
   .hero-desktop {
     display: none;
     opacity: 0;
   }
-
   .hero-mobile {
     display: block;
     opacity: 1;
   }
-
   .hero-section {
     transition: all 0.4s ease;
   }
 }
 
-/* Mobile breakpoint - final adjustments */
 @media (max-width: 768px) {
   .hero-bullets li:last-of-type {
     margin-bottom: 3rem;
   }
 }
 
-/* Very small mobile devices */
 @media (max-width: 480px) {
   .hero-section {
     margin-bottom: 8rem;
   }
 }
 
-/* Hide SVG on very small screens */
 @media (max-width: 420px) {
   .hero-bg-svg {
     display: none;

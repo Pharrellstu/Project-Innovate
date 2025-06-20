@@ -1,5 +1,3 @@
-/* SignInPage.css */
-/* Import CSS Variables */
 @import "../../styles/variables.css";
 
 .signInPage {
@@ -102,27 +100,25 @@
   text-decoration: underline;
 }
 
-/* Button height override */
 .sign-in-form .btn {
   height: 45px;
   margin-top: 1rem;
 }
 
-/* Mobile responsiveness */
 @media (max-width: 768px) {
   .signInPage .content {
     padding: var(--section-padding) 1rem;
     max-width: 100%;
   }
-  
+
   .signInPage .content h1 {
     font-size: var(--fs-h1);
   }
-  
+
   .sign-in-form {
     padding: 2rem;
   }
-  
+
   .sign-in-form h2 {
     font-size: var(--fs-h2);
   }
