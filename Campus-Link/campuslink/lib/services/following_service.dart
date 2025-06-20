@@ -1,6 +1,4 @@
-// following_service.dart
 import 'dart:developer';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/models/following.dart';
 
@@ -92,7 +90,7 @@ class FollowingService {
     return response.isNotEmpty;
   }
 
-  /// Unfollow a user by composite key (follower + following)
+  /// Unfollow a user by composite key.
   static Future<void> unfollow({
     required int followerId,
     required int followingId,
@@ -118,7 +116,6 @@ class FollowingService {
     }
   }
 
-  /// Get the list of account IDs that are following a user
   static Future<List<int>> getFollowerIds(int userId) async {
     final response = await _supabase
         .from(_table)
