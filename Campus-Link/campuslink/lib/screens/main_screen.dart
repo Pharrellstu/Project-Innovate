@@ -14,7 +14,9 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  // Controller to manage the pages in the PageView.
   final PageController _pageController = PageController();
+  // The index of the currently displayed page.
   int _currentIndex = 0;
 
   @override
@@ -23,12 +25,14 @@ class _MainScreenState extends State<MainScreen> {
     super.dispose();
   }
 
+  /// Called when the page is changed in the PageView.
   void _onPageChanged(int index) {
     setState(() {
       _currentIndex = index;
     });
   }
 
+  /// Called when a navigation bar item is tapped.
   void _onNavItemTapped(int index) {
     _pageController.jumpToPage(index);
   }

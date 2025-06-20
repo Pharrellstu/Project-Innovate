@@ -22,18 +22,26 @@ class EventPage extends StatefulWidget {
 }
 
 class _EventPageState extends State<EventPage> {
+  // Future for fetching the event details.
   late Future<EventModel?> _eventFuture;
+  // Tracks if the current user is enrolled in the event.
   bool _isEnrolled = false;
+  // Controls the loading indicator.
   bool _isLoading = true;
+  // Holds the event data once fetched.
   EventModel? event;
+  // The account ID of the currently logged-in user.
   int? _currentUserAccountId;
+  // The user object of the event creator.
   UserObject? _creator;
+  // The creation time of the event.
   DateTime? _creationTime;
 
   // Add enrollment count and full status
   int _enrollmentCount = 0;
   bool _isFull = false;
 
+  // Getter to check if the current user is the creator of the event.
   bool get _isCreator {
     final currentUserId = AuthGate.getCurrentUserId();
     return currentUserId != null &&
@@ -47,6 +55,7 @@ class _EventPageState extends State<EventPage> {
     _fetchData();
   }
 
+  /// Fetches all necessary data for the event page.
   Future<void> _fetchData() async {
     await _fetchEvent();
     await _getCurrentUserAccountId();
@@ -55,9 +64,12 @@ class _EventPageState extends State<EventPage> {
   }
 
   // Add enrollment count fetch method
+  /// Fetches the number of users enrolled in the event.
   Future<void> _fetchEnrollmentCount() async {
     try {
-      final count = await EventEnrollmentService.getEnrollmentCountForEvent(widget.eventId);
+      final count = await EventEnrollmentService.getEnrollmentCountForEvent(
+        widget.eventId,
+      );
       setState(() {
         _enrollmentCount = count;
         _updateFullStatus();
@@ -68,6 +80,7 @@ class _EventPageState extends State<EventPage> {
   }
 
   // Add helper to update full status
+  /// Updates the [_isFull] flag based on enrollment count and event capacity.
   void _updateFullStatus() {
     if (event != null && event!.maxnumberofpeople != null) {
       setState(() {
@@ -76,14 +89,16 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
+  /// Fetches the event details from the event service.
   Future<void> _fetchEvent() async {
     try {
       final eventData = await EventService.getEventById(widget.eventId);
       if (mounted) {
         UserObject? creator;
         if (eventData != null && eventData.eventCreatorUUID != null) {
-          creator =
-          await UserService().getUserByAuthUserId(eventData.eventCreatorUUID!);
+          creator = await UserService().getUserByAuthUserId(
+            eventData.eventCreatorUUID!,
+          );
         }
         setState(() {
           event = eventData;
@@ -100,6 +115,7 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
+  /// Fetches the creation time of the event.
   Future<void> _fetchCreationTime() async {
     if (event == null) return;
     final time = await EventService.getEventCreationTime(widget.eventId);
@@ -108,6 +124,7 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
+  /// Fetches the account ID of the current user.
   Future<void> _getCurrentUserAccountId() async {
     final userId = AuthGate.getCurrentUserId();
     if (userId != null) {
@@ -119,6 +136,7 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
+  /// Checks if the current user is enrolled in the event.
   Future<void> _checkEnrollmentStatus(int accountId) async {
     final isEnrolled = await EventEnrollmentService.isUserEnrolled(
       widget.eventId,
@@ -129,12 +147,16 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
+  /// Enrolls the current user in the event.
   Future<void> _enrollInEvent() async {
     if (_currentUserAccountId == null) return;
 
     // Add capacity check
     if (event != null && event!.maxnumberofpeople != null) {
-      final currentCount = await EventEnrollmentService.getEnrollmentCountForEvent(widget.eventId);
+      final currentCount =
+          await EventEnrollmentService.getEnrollmentCountForEvent(
+            widget.eventId,
+          );
       if (currentCount >= event!.maxnumberofpeople!) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('This event is full. Cannot join.')),
@@ -169,10 +191,12 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
+  /// Un-enrolls the current user from the event.
   Future<void> _unEnrollInEvent() async {
     if (_currentUserAccountId == null) return;
     try {
-      await EventEnrollmentService.unEnrollToEvent(widget.eventId,
+      await EventEnrollmentService.unEnrollToEvent(
+        widget.eventId,
         _currentUserAccountId!,
       );
       setState(() => _isEnrolled = false);
@@ -188,7 +212,8 @@ class _EventPageState extends State<EventPage> {
     }
   }
 
-Future<void> _editEvent() async {
+  /// Navigates to the edit event page.
+  Future<void> _editEvent() async {
     if (event != null) {
       final result = await Navigator.push(
         context,
@@ -203,72 +228,81 @@ Future<void> _editEvent() async {
     }
   }
 
+  /// Deletes the event after confirmation.
   Future<void> _deleteEvent() async {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Event?'),
-        content: const Text('This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Event?'),
+            content: const Text('This action cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  try {
+                    await EventService.deleteEvent(event!.eventId);
+                    Navigator.pop(context); // Close event page
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Deletion failed: ${e.toString()}'),
+                      ),
+                    );
+                  }
+                },
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await EventService.deleteEvent(event!.eventId);
-                Navigator.pop(context); // Close event page
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Deletion failed: ${e.toString()}')),
-                );
-              }
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : event == null
-          ? const Center(child: Text('Event not found'))
-          : CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCreatorInfo(),
-                  if (event!.description.isNotEmpty)
-                    const SizedBox(height: 24),
-                  if (event!.description.isNotEmpty)
-                    _buildDescriptionCard(),
-                  const SizedBox(height: 24),
-                  _buildMetadataCard(),
-                  const SizedBox(height: 24),
-                  _buildAttendanceSection(),
-                  const SizedBox(height: 32),
-                  _buildJoinButton(),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : event == null
+              ? const Center(child: Text('Event not found'))
+              : CustomScrollView(
+                slivers: [
+                  _buildSliverAppBar(),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildCreatorInfo(),
+                          if (event!.description.isNotEmpty)
+                            const SizedBox(height: 24),
+                          if (event!.description.isNotEmpty)
+                            _buildDescriptionCard(),
+                          const SizedBox(height: 24),
+                          _buildMetadataCard(),
+                          const SizedBox(height: 24),
+                          _buildAttendanceSection(),
+                          const SizedBox(height: 32),
+                          _buildJoinButton(),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
+  /// Builds the SliverAppBar for the event page.
   Widget _buildSliverAppBar() {
     return SliverAppBar(
       expandedHeight: 250.0,
@@ -285,18 +319,21 @@ Future<void> _editEvent() async {
             fontWeight: FontWeight.bold,
           ),
         ),
-        background: event?.eventImageUrl != null && event!.eventImageUrl!.isNotEmpty
-            ? Image.network(
-          event!.eventImageUrl!,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(),
-        )
-            : _buildImagePlaceholder(),
+        background:
+            event?.eventImageUrl != null && event!.eventImageUrl!.isNotEmpty
+                ? Image.network(
+                  event!.eventImageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (context, error, stackTrace) => _buildImagePlaceholder(),
+                )
+                : _buildImagePlaceholder(),
         stretchModes: const [StretchMode.zoomBackground],
       ),
     );
   }
 
+  /// Builds the creator information section.
   Widget _buildCreatorInfo() {
     return InkWell(
       onTap: () {
@@ -304,9 +341,11 @@ Future<void> _editEvent() async {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => UserProfilePage(
-                userId: _creator!.accountId!,currentUserAccountId: _currentUserAccountId ?? 0,
-              ),
+              builder:
+                  (context) => UserProfilePage(
+                    userId: _creator!.accountId!,
+                    currentUserAccountId: _currentUserAccountId ?? 0,
+                  ),
             ),
           );
         }
@@ -315,9 +354,13 @@ Future<void> _editEvent() async {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundImage: _creator?.profilePictureUrl != null
-                ? NetworkImage(_creator!.profilePictureUrl!) as ImageProvider
-                : const AssetImage('resources/icons/profile_placeholder.png'),
+            backgroundImage:
+                _creator?.profilePictureUrl != null
+                    ? NetworkImage(_creator!.profilePictureUrl!)
+                        as ImageProvider
+                    : const AssetImage(
+                      'resources/icons/profile_placeholder.png',
+                    ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -334,10 +377,7 @@ Future<void> _editEvent() async {
                 if (_creationTime != null)
                   Text(
                     'Posted on ${DateFormat('MMM d, yyyy').format(_creationTime!)}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
               ],
             ),
@@ -347,6 +387,7 @@ Future<void> _editEvent() async {
     );
   }
 
+  /// Builds the event description card.
   Widget _buildDescriptionCard() {
     return Card(
       elevation: 2,
@@ -359,12 +400,18 @@ Future<void> _editEvent() async {
           children: [
             Text(
               'About this event',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
               event!.description,
-              style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+              style: const TextStyle(
+                fontSize: 16,
+                height: 1.5,
+                color: Colors.black87,
+              ),
             ),
           ],
         ),
@@ -372,6 +419,7 @@ Future<void> _editEvent() async {
     );
   }
 
+  /// Builds the event metadata card.
   Widget _buildMetadataCard() {
     return Card(
       elevation: 2,
@@ -380,17 +428,30 @@ Future<void> _editEvent() async {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildMetadataItem(Icons.calendar_today, 'Date', DateFormat('MMMM dd, yyyy').format(event!.eventDate!)),
+            _buildMetadataItem(
+              Icons.calendar_today,
+              'Date',
+              DateFormat('MMMM dd, yyyy').format(event!.eventDate!),
+            ),
             const Divider(height: 24),
-            _buildMetadataItem(Icons.location_on, 'Location', event?.locationName ?? 'Online'),
+            _buildMetadataItem(
+              Icons.location_on,
+              'Location',
+              event?.locationName ?? 'Online',
+            ),
             const Divider(height: 24),
-            _buildMetadataItem(Icons.category, 'Category', event?.category ?? 'Not specified'),
+            _buildMetadataItem(
+              Icons.category,
+              'Category',
+              event?.category ?? 'Not specified',
+            ),
           ],
         ),
       ),
     );
   }
 
+  /// Builds a single metadata item.
   Widget _buildMetadataItem(IconData icon, String label, String value) {
     return Row(
       children: [
@@ -407,7 +468,10 @@ Future<void> _editEvent() async {
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -418,7 +482,7 @@ Future<void> _editEvent() async {
     );
   }
 
-
+  /// Builds the attendance section, showing who is enrolled.
   Widget _buildAttendanceSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,10 +520,12 @@ Future<void> _editEvent() async {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => UserProfilePage(
-                                  userId: user.accountId!,
-                                  currentUserAccountId: _currentUserAccountId ?? 0,
-                                ),
+                                builder:
+                                    (context) => UserProfilePage(
+                                      userId: user.accountId!,
+                                      currentUserAccountId:
+                                          _currentUserAccountId ?? 0,
+                                    ),
                               ),
                             );
                           }
@@ -471,12 +537,12 @@ Future<void> _editEvent() async {
                               CircleAvatar(
                                 radius: 32,
                                 backgroundImage:
-                                user?.profilePictureUrl != null
-                                    ? NetworkImage(user!.profilePictureUrl!)
-                                as ImageProvider
-                                    : const AssetImage(
-                                  'resources/icons/profile_placeholder.png',
-                                ),
+                                    user?.profilePictureUrl != null
+                                        ? NetworkImage(user!.profilePictureUrl!)
+                                            as ImageProvider
+                                        : const AssetImage(
+                                          'resources/icons/profile_placeholder.png',
+                                        ),
                               ),
                               const SizedBox(height: 4),
                               SizedBox(
@@ -507,19 +573,22 @@ Future<void> _editEvent() async {
     );
   }
 
+  /// Builds the join/leave/edit/delete button based on user status.
   Widget _buildJoinButton() {
     if (_isCreator) {
       return Row(
         children: [
           Expanded(
             child: ElevatedButton.icon(
-              icon: const Icon(Icons.edit, color: Colors.white,),
+              icon: const Icon(Icons.edit, color: Colors.white),
               label: const Text('Edit', style: TextStyle(color: Colors.white)),
               onPressed: _editEvent,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -533,7 +602,9 @@ Future<void> _editEvent() async {
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -549,7 +620,9 @@ Future<void> _editEvent() async {
           child: const Text('Login to Join'),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       );
@@ -566,12 +639,15 @@ Future<void> _editEvent() async {
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       );
     } else {
-      final isFull = event != null &&
+      final isFull =
+          event != null &&
           event!.maxnumberofpeople != null &&
           _enrollmentCount >= event!.maxnumberofpeople!;
 
@@ -580,31 +656,29 @@ Future<void> _editEvent() async {
         child: ElevatedButton(
           onPressed: isFull ? null : _enrollInEvent,
           child: Text(
-              isFull ? 'Event Full' : 'Join Event',
-              style: const TextStyle(fontSize: 18)
+            isFull ? 'Event Full' : 'Join Event',
+            style: const TextStyle(fontSize: 18),
           ),
           style: ElevatedButton.styleFrom(
-            backgroundColor: isFull
-                ? Colors.grey
-                : Theme.of(context).primaryColor,
+            backgroundColor:
+                isFull ? Colors.grey : Theme.of(context).primaryColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       );
     }
   }
 
+  /// Builds a placeholder for the event image.
   Widget _buildImagePlaceholder() {
     return Container(
       color: Colors.grey.shade300,
       child: const Center(
-        child: Icon(
-          Icons.event,
-          size: 80,
-          color: Colors.white,
-        ),
+        child: Icon(Icons.event, size: 80, color: Colors.white),
       ),
     );
   }
