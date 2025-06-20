@@ -104,7 +104,7 @@ class _ChatListPageState extends State<ChatListPage> {
         overflow: TextOverflow.ellipsis,
       ),
       trailing: Text(
-        DateFormat('HH:mm').format(chat.lastMessageTimestamp),
+        DateFormat('HH:mm').format(chat.lastMessageTimestamp.add( Duration (hours: 2))),
         style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
       ),
       onTap: () {
