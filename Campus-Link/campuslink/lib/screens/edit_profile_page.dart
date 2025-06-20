@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:campuslink/services/profile_service.dart';
 import 'package:campuslink/widgets/top_bar.dart';
-import 'package:campuslink/widgets/nav_bar.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -252,34 +251,144 @@ class _EditProfilePageState extends State<EditProfilePage> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black54),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.blue.shade300, width: 2),
-            ),
-            filled: true,
-            fillColor: Colors.grey.shade50,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-          value: _selectedNationality,
-          hint: const Text('Select Nationality'),
-          isExpanded: true,
-          items: _nationalities.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
+        InkWell(
+          onTap: () async {
+            final String? selected = await showDialog(
+              context: context,
+              builder: (context) => _NationalitySelectionDialog(
+                nationalities: _nationalities,
+                selectedNationality: _selectedNationality,
+              ),
             );
-          }).toList(),
-          onChanged: (String? newValue) {
-            setState(() {
-              _selectedNationality = newValue;
-            });
+            if (selected != null) {
+              setState(() {
+                _selectedNationality = selected;
+              });
+            }
           },
+          child: InputDecorator(
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade300, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(_selectedNationality ?? 'Select Nationality'),
+                const Icon(Icons.arrow_drop_down),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NationalitySelectionDialog extends StatefulWidget {
+  final List<String> nationalities;
+  final String? selectedNationality;
+
+  const _NationalitySelectionDialog({
+    required this.nationalities,
+    this.selectedNationality,
+  });
+
+  @override
+  __NationalitySelectionDialogState createState() => __NationalitySelectionDialogState();
+}
+
+class __NationalitySelectionDialogState extends State<_NationalitySelectionDialog> {
+  late List<String> _filteredNationalities;
+  late String? _tempSelectedNationality;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredNationalities = widget.nationalities;
+    _tempSelectedNationality = widget.selectedNationality;
+    _searchController.addListener(() {
+      _filterNationalities();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterNationalities() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredNationalities = widget.nationalities
+          .where((nationality) => nationality.toLowerCase().contains(query))
+          .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+      title: const Text('Select Nationality'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                hintText: 'Search by nationality...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 300, // Constrain height
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _filteredNationalities.length,
+                itemBuilder: (context, index) {
+                  final nationality = _filteredNationalities[index];
+                  return ListTile(
+                    title: Text(nationality),
+                    onTap: () {
+                      setState(() {
+                        _tempSelectedNationality = nationality;
+                      });
+                    },
+                    selected: _tempSelectedNationality == nationality,
+                    selectedTileColor: Colors.blue.withOpacity(0.1),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_tempSelectedNationality),
+          child: const Text('Confirm'),
         ),
       ],
     );
