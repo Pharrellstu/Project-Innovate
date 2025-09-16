@@ -7,14 +7,22 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
+      # Step 1: Install Flutter dependencies
       - name: Install dependencies
         script: |
-          cd Campus-Link/campuslink
+          cd $CM_BUILD_DIR
           flutter pub get
 
+      # Step 2: Clean old iOS build and pods
+      - name: Clean iOS build
+        script: |
+          cd $CM_BUILD_DIR/ios
+          rm -rf Pods Podfile.lock
+
+      # Step 3: Set iOS deployment target to 13
       - name: Set iOS Deployment Target
         script: |
-          cd Campus-Link/campuslink/ios
+          cd $CM_BUILD_DIR/ios
 
           # Patch Podfile
           if [ ! -f "Podfile" ]; then
@@ -28,7 +36,14 @@ workflows:
 
           cat Podfile
 
+      # Step 4: Install pods
+      - name: Install Pods
+        script: |
+          cd $CM_BUILD_DIR/ios
+          pod install --repo-update
+
+      # Step 5: Build iOS app
       - name: Build iOS
         script: |
-          cd Campus-Link/campuslink
+          cd $CM_BUILD_DIR
           flutter build ios --debug --no-codesign
