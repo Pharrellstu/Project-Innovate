@@ -4,178 +4,26 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m2
     environment:
-      flutter: stable
-      xcode: 15.0.1  # Use specific Xcode version instead of "latest"
-      cocoapods: 1.12.1
+      flutter: 3.16.9  # Use older stable Flutter version
+      xcode: 14.3.1    # Use older Xcode version to avoid toolchain issues
+      cocoapods: default
     scripts:
-      # Step 1: Install Flutter dependencies
-      - name: Install dependencies
-        script: |
-          cd Campus-Link/campuslink
-          flutter clean
-          flutter pub get
-
-      # Step 2: Set iOS deployment target globally
-      - name: Set iOS Deployment Target
-        script: |
-          cd Campus-Link/campuslink/ios
-          # Set deployment target to 12.0 (more compatible than 13.0)
-          export IPHONEOS_DEPLOYMENT_TARGET=12.0
-          
-          # Update Xcode project file
-          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/g' Runner.xcodeproj/project.pbxproj
-          
-          # Also update any other deployment target references
-          sed -i '' 's/MinimumOSVersion.*</MinimumOSVersion><string>12.0</string>/g' Runner/Info.plist 2>/dev/null || true
-
-      # Step 3: Clean iOS build and pods completely
-      - name: Clean iOS build
-        script: |
-          cd Campus-Link/campuslink/ios
-          rm -rf Pods Podfile.lock Runner.xcworkspace .symlinks
-          rm -rf ~/Library/Caches/CocoaPods
-          rm -rf ~/.cocoapods/repos/trunk
-          flutter clean
-
-      # Step 4: Generate Flutter iOS configuration files
-      - name: Generate Flutter iOS files
-        script: |
-          cd Campus-Link/campuslink
-          
-          # Generate the iOS Flutter files including Generated.xcconfig
-          flutter build ios --config-only
-          
-          # Verify the files were created
-          ls -la ios/Flutter/
-          
-          if [ ! -f "ios/Flutter/Generated.xcconfig" ]; then
-            echo "Generated.xcconfig not found, creating manually..."
-            mkdir -p ios/Flutter
-            cat > ios/Flutter/Generated.xcconfig << 'EOF'
-          FLUTTER_ROOT=/Users/builder/programs/flutter
-          FLUTTER_APPLICATION_PATH=/Users/builder/clone/Campus-Link/campuslink
-          COCOAPODS_PARALLEL_CODE_SIGN=true
-          FLUTTER_TARGET=lib/main.dart
-          FLUTTER_BUILD_DIR=build
-          FLUTTER_BUILD_NAME=1.0.0
-          FLUTTER_BUILD_NUMBER=1
-          EXCLUDED_ARCHS[sdk=iphonesimulator*]=i386
-          EXCLUDED_ARCHS[sdk=iphoneos*]=armv7
-          DART_OBFUSCATION=false
-          TRACK_WIDGET_CREATION=true
-          TREE_SHAKE_ICONS=false
-          PACKAGE_CONFIG=.dart_tool/package_config.json
-          EOF
-          fi
-
-      # Step 5: Update existing Podfile instead of creating new one
-      - name: Update Podfile
-        script: |
-          cd Campus-Link/campuslink/ios
-          
-          # Backup original Podfile if it exists
-          if [ -f "Podfile" ]; then
-            cp Podfile Podfile.backup
-          fi
-          
-          # Update the existing Podfile to fix deployment target
-          cat > Podfile << 'EOF'
-          # Uncomment this line to define a global platform for your project
-          platform :ios, '12.0'
-          
-          # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
-          ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-          
-          project 'Runner', {
-            'Debug' => :debug,
-            'Profile' => :release,
-            'Release' => :release,
-          }
-          
-          def flutter_root
-            generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
-            unless File.exist?(generated_xcode_build_settings_path)
-              raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
-            end
-          
-            File.foreach(generated_xcode_build_settings_path) do |line|
-              matches = line.match(/FLUTTER_ROOT\=(.*)/)
-              return matches[1].strip if matches
-            end
-            raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
-          end
-          
-          require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
-          
-          flutter_ios_podfile_setup
-          
-          target 'Runner' do
-            use_frameworks!
-            use_modular_headers!
-          
-            flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-          
-            target 'RunnerTests' do
-              inherit! :search_paths
-            end
-          end
-          
-          post_install do |installer|
-            installer.pods_project.targets.each do |target|
-              flutter_additional_ios_build_settings(target)
-          
-              target.build_configurations.each do |config|
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
-                config.build_settings['ENABLE_BITCODE'] = 'NO'
-          
-                # Remove problematic compiler flags that cause -G error
-                if config.build_settings['OTHER_CFLAGS']
-                  config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].reject { |flag| flag.include?('-G') }
-                end
-                if config.build_settings['OTHER_CPLUSPLUSFLAGS']
-                  config.build_settings['OTHER_CPLUSPLUSFLAGS'] = config.build_settings['OTHER_CPLUSPLUSFLAGS'].reject { |flag| flag.include?('-G') }
-                end
-              end
-            end
-          end
-          EOF
-          
-          echo "Updated Podfile:"
-          cat Podfile
-
-      # Step 6: Install Pods
-      - name: Install Pods
-        script: |
-          cd Campus-Link/campuslink/ios
-          
-          # Verify Flutter files exist before pod install
-          echo "Checking Flutter iOS files..."
-          ls -la Flutter/
-          
-          if [ ! -f "Flutter/Generated.xcconfig" ]; then
-            echo "ERROR: Generated.xcconfig still missing!"
-            exit 1
-          fi
-          
-          # Update CocoaPods repo
-          pod repo update --silent
-          
-          # Install pods
-          pod install --verbose
-          
-          echo "Pod installation completed successfully!"
-
-      # Step 7: Build iOS app
       - name: Build iOS
         script: |
           cd Campus-Link/campuslink
           
-          # Set environment variables for build
-          export IPHONEOS_DEPLOYMENT_TARGET=12.0
+          # Clean and get dependencies
+          flutter clean
+          flutter pub get
           
-          # Build iOS app with correct flags
+          # Set iOS deployment target to 11.0 (more compatible)
+          cd ios
+          sed -i '' 's/platform :ios, .*/platform :ios, '\''11.0'\''/' Podfile
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 11.0;/g' Runner.xcodeproj/project.pbxproj
+          cd ..
+          
+          # Build with minimal flags
           flutter build ios --debug --no-codesign
 
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
