@@ -13,71 +13,74 @@ workflows:
           cd Campus-Link/campuslink
           flutter pub get
 
-      # Step 2: Set iOS deployment target in Xcode project
-      - name: Set iOS Deployment Target in Xcode Project
-        script: |
-          cd Campus-Link/campuslink/ios
-          # Update the Xcode project deployment target
-          /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 13.0" Runner.xcodeproj/project.pbxproj 2>/dev/null || \
-          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 13.0;/g' Runner.xcodeproj/project.pbxproj
-
-      # Step 3: Clean iOS build and pods
+      # Step 2: Clean iOS build
       - name: Clean iOS build
         script: |
-          cd Campus-Link/campuslink/ios
+          cd Campus-Link/campuslink
+          flutter clean
+          cd ios
           rm -rf Pods Podfile.lock Runner.xcworkspace
 
-      # Step 4: Set iOS deployment target in Podfile
-      - name: Set iOS Deployment Target in Podfile
+      # Step 3: Force iOS 13.0 deployment target in Xcode project
+      - name: Force iOS 13.0 Deployment Target
         script: |
           cd Campus-Link/campuslink/ios
           
-          # Ensure Podfile exists with proper platform setting
-          if [ ! -f "Podfile" ]; then
-            echo "Creating Podfile with iOS 13.0 platform..."
-            echo "platform :ios, '13.0'" > Podfile
-            echo "use_frameworks!" >> Podfile
-            echo "target 'Runner' do" >> Podfile
-            echo "  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))" >> Podfile
-            echo "end" >> Podfile
-          else
-            echo "Updating existing Podfile..."
-            # Update platform at the beginning of the file
-            if ! grep -q "^platform :ios" Podfile; then
-              sed -i '' '1i\
-              platform :ios, '\''13.0'\''\
-              ' Podfile
-            else
-              sed -i '' "s/^platform :ios, .*/platform :ios, '13.0'/" Podfile
-            fi
+          # Update project.pbxproj deployment target
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 13.0;/g' Runner.xcodeproj/project.pbxproj
           
-            # Ensure use_frameworks! is present
-            if ! grep -q "use_frameworks!" Podfile; then
-              sed -i '' '/^platform :ios, '\''13.0'\''/a\
-              use_frameworks!\
-              ' Podfile
-            fi
-          fi
+          # Update all build configurations
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 13.0;/g' Runner.xcodeproj/project.pbxproj
           
-          # Ensure Runner target exists
-          if ! grep -q "target 'Runner'" Podfile; then
-            echo "" >> Podfile
-            echo "target 'Runner' do" >> Podfile
-            echo "  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))" >> Podfile
-            echo "end" >> Podfile
-          fi
+          # Also update any other deployment target settings
+          sed -i '' 's/DEVELOPMENT_TEAM = [^;]*;//g' Runner.xcodeproj/project.pbxproj
+          sed -i '' 's/MARKETING_VERSION = [^;]*;//g' Runner.xcodeproj/project.pbxproj
+
+      # Step 4: Create proper Podfile with post_install hook
+      - name: Configure Podfile
+        script: |
+          cd Campus-Link/campuslink/ios
+          
+          # Create or update Podfile with platform and post_install hook
+          cat > Podfile << 'EOF'
+          platform :ios, '13.0'
+          use_frameworks!
+          
+          # Workaround for Cocoapods issue with Flutter
+          use_modular_headers!
+          
+          target 'Runner' do
+            flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+          end
+          
+          post_install do |installer|
+            installer.pods_project.targets.each do |target|
+              target.build_configurations.each do |config|
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+                config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+              end
+            end
+          end
+          EOF
           
           cat Podfile
 
-      # Step 5: Install pods with explicit platform setting
+      # Step 5: Install pods with repo update
       - name: Install Pods
         script: |
           cd Campus-Link/campuslink/ios
-          # Install pods with explicit platform setting
           pod install --repo-update --verbose
 
-      # Step 6: Build iOS app
+      # Step 6: Check for plugins with old deployment targets
+      - name: Check Plugin Deployment Targets
+        script: |
+          cd Campus-Link/campuslink/ios
+          echo "Checking for plugins with old deployment targets..."
+          find . -name "*.podspec" -exec grep -l "deployment_target" {} \; | xargs grep "deployment_target"
+          find Pods -name "*.podspec" -exec grep -l "deployment_target" {} \; | xargs grep "deployment_target" || true
+
+      # Step 7: Build iOS app with verbose output
       - name: Build iOS
         script: |
           cd Campus-Link/campuslink
-          flutter build ios --debug --no-codesign
+          flutter build ios --debug --no-codesign --verbose
