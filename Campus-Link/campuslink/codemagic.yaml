@@ -13,20 +13,28 @@ workflows:
           flutter clean
           flutter pub get
 
+      - name: Repair CocoaPods Environment
+        script: |
+          # This is the critical new step. It fixes the Ruby/CocoaPods environment.
+          # We force uninstall all versions of cocoapods and install a specific,
+          # stable version known to work well with Xcode 15.
+          echo "Uninstalling all existing CocoaPods versions to ensure a clean slate..."
+          sudo gem uninstall cocoapods -a -x
+          
+          echo "Installing a stable version of CocoaPods..."
+          # Version 1.15.2 is very stable with Xcode 15
+          sudo gem install cocoapods -v 1.15.2
+          
+          echo "Updating pod repo..."
+          pod repo update
+
       - name: Configure iOS and Install Pods
         script: |
-          # This script centralizes all iOS configuration into the Podfile.
-          # This is the standard way to manage deployment targets and build settings.
-          
           cd Campus-Link/campuslink/ios
           
-          # Overwrite the Podfile to ensure our settings are used.
-          # This includes the deployment target and crucial fixes for Xcode 15.
+          # Create the Podfile with our specific settings (iOS 12.0 target)
           cat > Podfile << 'EOF'
-          # Set the platform and deployment target for the entire project.
           platform :ios, '12.0'
-          
-          # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
           ENV['COCOAPODS_DISABLE_STATS'] = 'true'
           
           project 'Runner', {
@@ -55,16 +63,13 @@ workflows:
           target 'Runner' do
             use_frameworks!
             use_modular_headers!
-          
             flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
           end
           
           post_install do |installer|
             installer.pods_project.targets.each do |target|
               flutter_additional_ios_build_settings(target)
-          
               target.build_configurations.each do |config|
-                # Ensure every pod also uses the 12.0 deployment target.
                 config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
                 config.build_settings['ENABLE_BITCODE'] = 'NO'
               end
@@ -72,14 +77,13 @@ workflows:
           end
           EOF
           
-          # Install the pods using the system's reliable CocoaPods installation.
+          # Now that the environment is fixed, this should succeed.
           pod install
 
       - name: Build iOS App
         script: |
           cd Campus-Link/campuslink
-          # The --no-pod-install flag tells Flutter not to mess with our Pods,
-          # as we have already installed them perfectly in the previous step.
+          # We still use --no-pod-install because we have already set up our pods perfectly.
           flutter build ios --debug --no-codesign --no-pod-install
 
     artifacts:
