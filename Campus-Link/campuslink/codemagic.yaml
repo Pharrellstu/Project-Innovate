@@ -1,10 +1,5 @@
 workflows:
-  ios-build:
-    name: Test iOS Workflow
-    environment:
-      flutter: stable
-      xcode: latest
-    scripts:
-      - name: Echo test
-        script: echo "Codemagic YAML is working!"
-
+  sample-workflow:
+    name: Codemagic Sample Workflow
+    max_build_duration: 120
+    instance_type: mac_mini_m2
