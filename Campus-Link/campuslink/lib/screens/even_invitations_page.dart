@@ -1,4 +1,3 @@
-import 'package:campuslink/screens/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campuslink/models/eventinvitation.dart';
 import 'package:campuslink/services/event_invitation_service.dart';
@@ -38,45 +37,6 @@ class _EventInvitationsPageState extends State<EventInvitationsPage>
     _tabController = TabController(length: 3, vsync: this);
     _loadInvitations();
   }
-
-    /*Future<void> _loadInvitations() async {
-      final currentUserId = AuthGate.getCurrentUserId();
-      if (currentUserId == null) throw Exception('User not authenticated');
-
-      final currentAccountId = await _userService.getAccountIdByAuthUserId(currentUserId);
-      if (currentAccountId == null) throw Exception('Account not found');
-
-      final allInvitations = await _invitationService.fetchInvitationsByReceiver(currentAccountId);
-
-
-
-      setState(() {
-        _pendingInvitations = allInvitations.where((inv) => inv.status == 'pending').toList();
-        _enrolledInvitations = allInvitations.where((inv) => inv.status == 'accepted').toList();
-        _cancelledInvitations = allInvitations.where((inv) => inv.status == 'declined').toList();
-      });
-
-    try {
-      final currentUserId = AuthGate.getCurrentUserId();
-      if (currentUserId == null) throw Exception('User not authenticated');
-
-      final currentAccountId = await _userService.getAccountIdByAuthUserId(currentUserId);
-      if (currentAccountId == null) throw Exception('Account not found');
-
-      final invitations = await _invitationService.fetchInvitationsForUser(currentAccountId);
-
-      // Categorize invitations by status
-      _pendingInvitations = invitations.where((i) => i.status == 'pending').toList();
-      _enrolledInvitations = invitations.where((i) => i.status == 'accepted').toList();
-      _cancelledInvitations = invitations.where((i) => i.status == 'declined').toList();
-
-      await _preloadEventAndUserDetails();
-    } catch (e) {
-      setState(() => _errorMessage = 'Failed to load invitations: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }*/
 
   Future<void> _loadInvitations() async {
     setState(() {
@@ -146,7 +106,7 @@ class _EventInvitationsPageState extends State<EventInvitationsPage>
         }
       });
 
-      // Optional: show a quick success message
+      // show a quick success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Invitation ${accept ? 'accepted' : 'declined'}!'),

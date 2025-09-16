@@ -1,6 +1,6 @@
 import 'package:campuslink/models/user.dart';
 
-// Represents a single message within a chat room.
+// single message within a chat room.
 class ChatMessage {
   final String id;
   final int chatId;
@@ -9,8 +9,7 @@ class ChatMessage {
   final int authorAccountId;
   final String? imageUrl;
 
-  // Holds the user details for the author of the message.
-  // This is populated in the service layer to avoid extra lookups in the UI.
+  // Holds the user details.
   final UserObject? author;
 
   ChatMessage({
@@ -30,14 +29,13 @@ class ChatMessage {
       authorAccountId: map['enrolledpersona'],
       text: map['messagecontent'] ?? '',
       createdAt: DateTime.parse(map['createdat']).toLocal(),
-      // The attachment URL is fetched via a join in the service.
       imageUrl: (map['messageattachment'] as Map<String, dynamic>?)?['fileurl'],
       author: author,
     );
   }
 }
 
-// Represents a chat conversation in the chat list.
+// chat conversation
 class ChatSummary {
   final int chatId;
   final String eventName;

@@ -23,26 +23,12 @@ class EventInvitationService {
     }
   }
 
-  /*Future<List<EventInvitationModel>> fetchInvitationsByReceiver(int receiverAccountId) async {
-    final response = await _supabase
-        .from(_table)
-        .select('*')
-        .eq('receiveraccount_id', receiverAccountId);
-
-    return (response as List)
-        .map((map) => EventInvitationModel.fromMap(map))
-        .toList();
-  }*/
-
-  // Add to EventInvitationService class
-
-// Replace fetchInvitationsForUser method with this:
   Future<List<EventInvitationModel>> fetchInvitationsForUser(int accountId) async {
     try {
       final rows = await _supabase
           .from(_table)
           .select()
-          .eq('receiveraccount_id', accountId); // Remove status filter
+          .eq('receiveraccount_id', accountId);
 
       return (rows as List)
           .map((r) => EventInvitationModel.fromMap(r as Map<String, dynamic>))
@@ -65,27 +51,6 @@ class EventInvitationService {
     }
   }
 
-  /// Create a new invitation
-  /*static Future<EventInvitationModel> create({
-    required int eventId,
-    required int receiverAccountId,
-    required int eventInvitationCreaterId,
-  }) async {
-    final payload = {
-      'event_id':                   eventId,
-      'receiveraccount_id':         receiverAccountId,
-      'eventinvitationcreater_id':  eventInvitationCreaterId,
-    };
-
-    final resp = await _supabase
-        .from(_table)
-        .insert(payload)
-        .select()
-        .single();
-
-    return EventInvitationModel.fromMap(resp as Map<String, dynamic>);
-  }*/
-
   /// Fetch all invitations
   static Future<List<EventInvitationModel>> fetchAll() async {
     final rows = await _supabase.from(_table).select();
@@ -105,7 +70,7 @@ class EventInvitationService {
     return EventInvitationModel.fromMap(resp as Map<String, dynamic>);
   }
 
-  /// Update an existing invitation
+  /// Update existing invitation
   static Future<bool> update(EventInvitationModel model) async {
     final rows = await _supabase
         .from(_table)
@@ -115,7 +80,7 @@ class EventInvitationService {
     return (rows as List).isNotEmpty;
   }
 
-  /// Delete an invitation
+  /// Delete invitation
   static Future<bool> delete(int id) async {
     final rows = await _supabase
         .from(_table)
@@ -125,7 +90,6 @@ class EventInvitationService {
     return (rows as List).isNotEmpty;
   }
 
-  // Add this new method to the EventInvitationService class
   static Future<void> acceptInvitationByEventAndReceiver(
       int eventId,
       int receiverAccountId

@@ -5,7 +5,6 @@ class EventEnrollmentService {
   static final _supabase = Supabase.instance.client;
   static const _table = 'eventenrollment';
 
-  /// Enroll user in an event
   static Future<void> enrollToEvent(int eventId, int accountId) async {
     try {
       await _supabase.from(_table).insert({
@@ -19,7 +18,6 @@ class EventEnrollmentService {
     }
   }
 
-  /// Check if user is enrolled in an event
   static Future<bool> isUserEnrolled(int eventId, int accountId) async {
     try {
       final response = await _supabase
@@ -54,7 +52,6 @@ class EventEnrollmentService {
   }
 
   /// unroll user from an event
-
   static Future<void> unEnrollToEvent(int eventId, int accountId) async {
     try {
       await _supabase.from(_table)

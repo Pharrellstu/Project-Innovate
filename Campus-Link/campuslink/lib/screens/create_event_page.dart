@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
 import '../models/user.dart';
 import 'create_event_screens/basic_info_screen.dart';
 import 'create_event_screens/time_and_location_screen.dart';

@@ -21,10 +21,10 @@ function LonelinessTypesSection() {
             <li>Major life transitions like graduation or breakups</li>
             <li>Temporary isolation due to illness or circumstances</li>
           </ul>
-          Remember, situational loneliness usually improves as you adapt to
-          new circumstances and rebuild connections.
+          Remember, situational loneliness usually improves as you adapt to new
+          circumstances and rebuild connections.
         </>
-      )
+      ),
     },
     {
       title: "Emotional Loneliness",
@@ -41,24 +41,24 @@ function LonelinessTypesSection() {
           Building one meaningful relationship can often help alleviate this
           profound sense of emotional isolation.
         </>
-      )
+      ),
     },
     {
       title: "Social Loneliness",
       content: (
         <>
-          This happens when you feel excluded from a social network or
-          community that you want to be part of.
+          This happens when you feel excluded from a social network or community
+          that you want to be part of.
           <ul>
             <li>Feeling left out of group activities or conversations</li>
             <li>Not having a regular friend group to hang out with</li>
             <li>Struggling to find people who share your interests</li>
             <li>Feeling like an outsider in social situations</li>
           </ul>
-          Joining clubs, attending events, or participating in group
-          activities can help you find your social tribe.
+          Joining clubs, attending events, or participating in group activities
+          can help you find your social tribe.
         </>
-      )
+      ),
     },
     {
       title: "Cultural Loneliness",
@@ -72,29 +72,30 @@ function LonelinessTypesSection() {
             <li>Feeling like others don't understand your background</li>
             <li>Struggling with cultural differences and expectations</li>
           </ul>
-          Connecting with others from similar backgrounds or finding
-          culturally diverse communities can provide comfort and
-          understanding.
+          Connecting with others from similar backgrounds or finding culturally
+          diverse communities can provide comfort and understanding.
         </>
-      )
+      ),
     },
     {
       title: "Transitional",
       content: (
         <>
-          This type of loneliness occurs during major life transitions when
-          your sense of identity or role is changing.
+          This type of loneliness occurs during major life transitions when your
+          sense of identity or role is changing.
           <ul>
             <li>Starting university and leaving home for the first time</li>
             <li>Changing from student life to professional life</li>
             <li>Shifting friend groups or social circles</li>
-            <li>Personal growth that creates distance from old relationships</li>
+            <li>
+              Personal growth that creates distance from old relationships
+            </li>
           </ul>
-          This loneliness often resolves as you establish your new identity
-          and form relationships that align with who you're becoming.
+          This loneliness often resolves as you establish your new identity and
+          form relationships that align with who you're becoming.
         </>
-      )
-    }
+      ),
+    },
   ];
   return (
     <section className="loneliness-types-section">
@@ -105,30 +106,33 @@ function LonelinessTypesSection() {
           common forms students face—whether you’re new on campus, finding it
           hard to connect, or missing a close confidant.
         </p>
-      </div>      <div className="loneliness-types-contents">
+      </div>{" "}
+      <div className="loneliness-types-contents">
         {lonelinessTypes.map((type, index) => (
-          <div 
+          <div
             key={index}
-            className={`loneliness-type ${activeIndex === index ? 'active' : ''}`}
+            className={`loneliness-type ${
+              activeIndex === index ? "active" : ""
+            }`}
           >
-            <div 
+            <div
               className="loneliness-type-header"
               onClick={() => toggleAccordion(index)}
             >
               <h2>{type.title}</h2>
               <span className="accordion-icon">
-                <svg 
-                  width="20" 
-                  height="20" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path 
-                    d="M6 9l6 6 6-6" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
+                  <path
+                    d="M6 9l6 6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                 </svg>
@@ -140,7 +144,6 @@ function LonelinessTypesSection() {
           </div>
         ))}
       </div>
-
       <div className="loneliness-support">
         <h2>Need Support?</h2>
         <p>

@@ -1,8 +1,5 @@
-import 'package:campuslink/widgets/interestingPeople.dart';
 import 'package:flutter/material.dart';
-import 'package:campuslink/widgets/nav_bar.dart';
 import 'package:campuslink/widgets/top_bar.dart';
-import 'package:campuslink/widgets/feed.dart';
 import 'package:campuslink/widgets/explore.dart';
 
 import '../widgets/accounts_page.dart'; // Create this later
@@ -14,7 +11,9 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
+  // Controller for the TabBar.
   late TabController _tabController;
 
   @override
@@ -33,13 +32,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: TopBar(title: 'HomePage', isCreateBtnVisible: true, isLogoutBtnVisible: false),
+        title: TopBar(
+          title: 'HomePage',
+          isCreateBtnVisible: true,
+          isLogoutBtnVisible: false,
+        ),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Explore'),
-            Tab(text: 'Accounts'),
-          ],
+          tabs: const [Tab(text: 'Explore'), Tab(text: 'Accounts')],
           labelColor: Theme.of(context).primaryColor,
           unselectedLabelColor: Colors.grey,
           indicatorColor: Theme.of(context).primaryColor,

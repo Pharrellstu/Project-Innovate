@@ -8,24 +8,30 @@ import Button from "../ui/Button";
 const sanitizeInput = (input: string): string => {
   // Remove potential XSS characters and SQL injection attempts
   return input
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
-    .replace(/<[^>]*>/g, '') // Remove all HTML tags
-    .replace(/javascript:/gi, '') // Remove javascript: protocols
-    .replace(/on\w+\s*=/gi, '') // Remove event handlers
-    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
-    .replace(/['";\\]/g, '') // Remove potentially dangerous characters
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "") // Remove script tags
+    .replace(/<[^>]*>/g, "") // Remove all HTML tags
+    .replace(/javascript:/gi, "") // Remove javascript: protocols
+    .replace(/on\w+\s*=/gi, "") // Remove event handlers
+    .replace(/[\x00-\x1F\x7F]/g, "") // Remove control characters
+    .replace(/['";\\]/g, "") // Remove potentially dangerous characters
     .trim();
 };
 
-const validateInput = (input: string, maxLength: number = 1000): { isValid: boolean; error?: string } => {
+const validateInput = (
+  input: string,
+  maxLength: number = 1000
+): { isValid: boolean; error?: string } => {
   if (!input || input.trim().length === 0) {
     return { isValid: false, error: "Field cannot be empty" };
   }
-  
+
   if (input.length > maxLength) {
-    return { isValid: false, error: `Text must be less than ${maxLength} characters` };
+    return {
+      isValid: false,
+      error: `Text must be less than ${maxLength} characters`,
+    };
   }
-  
+
   // Check for suspicious patterns
   const suspiciousPatterns = [
     /drop\s+table/i,
@@ -39,66 +45,76 @@ const validateInput = (input: string, maxLength: number = 1000): { isValid: bool
     /javascript\s*:/i,
     /vbscript\s*:/i,
     /data\s*:/i,
-    /base64/i
+    /base64/i,
   ];
-  
+
   for (const pattern of suspiciousPatterns) {
     if (pattern.test(input)) {
       return { isValid: false, error: "Invalid content detected" };
     }
   }
-  
+
   return { isValid: true };
 };
 
-const validateSubject = (subject: string): { isValid: boolean; error?: string } => {
+const validateSubject = (
+  subject: string
+): { isValid: boolean; error?: string } => {
   const basicValidation = validateInput(subject, 50); // Shorter limit for subject
   if (!basicValidation.isValid) {
     return basicValidation;
   }
-  
+
   // Count words (split by whitespace and filter empty strings)
-  const words = subject.trim().split(/\s+/).filter(word => word.length > 0);
-  
+  const words = subject
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+
   if (words.length < 3) {
     return { isValid: false, error: "Subject must be at least 3 words" };
   }
-  
+
   if (words.length > 5) {
     return { isValid: false, error: "Subject must be no more than 5 words" };
   }
-  
+
   return { isValid: true };
 };
 
 // Rate limiting
-const RATE_LIMIT_KEY = 'story_submissions';
+const RATE_LIMIT_KEY = "story_submissions";
 const MAX_SUBMISSIONS = 3; // Max 3 submissions per hour
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
 
 const checkRateLimit = (): { allowed: boolean; remaining?: number } => {
   const now = Date.now();
   const stored = localStorage.getItem(RATE_LIMIT_KEY);
-  
+
   if (!stored) {
     localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify([now]));
     return { allowed: true, remaining: MAX_SUBMISSIONS - 1 };
   }
-  
+
   try {
     const submissions: number[] = JSON.parse(stored);
     // Filter out submissions older than the rate limit window
-    const recentSubmissions = submissions.filter(time => now - time < RATE_LIMIT_WINDOW);
-    
+    const recentSubmissions = submissions.filter(
+      (time) => now - time < RATE_LIMIT_WINDOW
+    );
+
     if (recentSubmissions.length >= MAX_SUBMISSIONS) {
       return { allowed: false, remaining: 0 };
     }
-    
+
     // Add current submission and update storage
     recentSubmissions.push(now);
     localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(recentSubmissions));
-    
-    return { allowed: true, remaining: MAX_SUBMISSIONS - recentSubmissions.length };
+
+    return {
+      allowed: true,
+      remaining: MAX_SUBMISSIONS - recentSubmissions.length,
+    };
   } catch {
     // If parsing fails, reset
     localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify([now]));
@@ -110,63 +126,89 @@ function AboutSection() {
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
   const hasBeenShown = useRef<Set<HTMLElement>>(new Set());
   const navigate = useNavigate();
-    // Form state
+  // Form state
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<{subject?: string; message?: string}>({});
+  const [fieldErrors, setFieldErrors] = useState<{
+    subject?: string;
+    message?: string;
+  }>({});
   // Real-time input handlers with validation
   const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSubject(value);
-    
+
     // Clear any existing field errors
-    setFieldErrors(prev => ({ ...prev, subject: undefined }));
-    
+    setFieldErrors((prev) => ({ ...prev, subject: undefined }));
+
     // Count words
-    const words = value.trim().split(/\s+/).filter(word => word.length > 0);
-    const wordCount = value.trim() === '' ? 0 : words.length;
-    
+    const words = value
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
+    const wordCount = value.trim() === "" ? 0 : words.length;
+
     // Show word count feedback
     if (wordCount < 3) {
-      setFieldErrors(prev => ({ ...prev, subject: `${wordCount}/3-5 words (need ${3 - wordCount} more)` }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        subject: `${wordCount}/3-5 words (need ${3 - wordCount} more)`,
+      }));
     } else if (wordCount > 5) {
-      setFieldErrors(prev => ({ ...prev, subject: `${wordCount}/3-5 words (${wordCount - 5} too many)` }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        subject: `${wordCount}/3-5 words (${wordCount - 5} too many)`,
+      }));
     } else {
-      setFieldErrors(prev => ({ ...prev, subject: `${wordCount}/3-5 words ✓` }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        subject: `${wordCount}/3-5 words ✓`,
+      }));
     }
   };
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setMessage(value);
-    
+
     // Clear any existing field errors
-    setFieldErrors(prev => ({ ...prev, message: undefined }));
-    
+    setFieldErrors((prev) => ({ ...prev, message: undefined }));
+
     // Show character count feedback (target ~280 chars like example)
     if (value.length > 350) {
-      setFieldErrors(prev => ({ ...prev, message: `${value.length}/350 characters (${value.length - 350} too many)` }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        message: `${value.length}/350 characters (${
+          value.length - 350
+        } too many)`,
+      }));
     } else if (value.length > 280) {
-      setFieldErrors(prev => ({ ...prev, message: `${value.length}/350 characters (consider shortening)` }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        message: `${value.length}/350 characters (consider shortening)`,
+      }));
     } else if (value.length > 0) {
-      setFieldErrors(prev => ({ ...prev, message: `${value.length}/350 characters` }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        message: `${value.length}/350 characters`,
+      }));
     }
   };
 
   const handleAndMoreClick = () => {
-    navigate('/about');
+    navigate("/about");
   };
   const scrollToNextSection = () => {
-    const element = document.getElementById('about-section-3-pannel-1');
+    const element = document.getElementById("about-section-3-pannel-1");
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: "smooth" });
     }
   };
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!subject.trim() || !message.trim()) {
       setSubmitMessage("Please fill in all fields");
@@ -178,7 +220,7 @@ function AboutSection() {
     if (!rateLimitCheck.allowed) {
       setSubmitMessage("Too many submissions. Please try again later.");
       return;
-    }    // Input validation and sanitization
+    } // Input validation and sanitization
     const subjectValidation = validateSubject(subject); // Use new subject validator
     if (!subjectValidation.isValid) {
       setSubmitMessage(`Subject: ${subjectValidation.error}`);
@@ -208,11 +250,13 @@ function AboutSection() {
       await storyService.createStory({
         subject: cleanSubject,
         message: cleanMessage,
-        status: 'pending',
-        submitted_at: new Date().toISOString()
+        status: "pending",
+        submitted_at: new Date().toISOString(),
       });
 
-      setSubmitMessage("Story submitted successfully! It will be reviewed before being published.");
+      setSubmitMessage(
+        "Story submitted successfully! It will be reviewed before being published."
+      );
       setSubject("");
       setMessage("");
     } catch (error) {
@@ -284,7 +328,7 @@ function AboutSection() {
           </p>
           <ul>
             <li>Find Your People</li>
-            <li>Share Your Story</li>            <li>Built by Students, for Students</li>
+            <li>Share Your Story</li> <li>Built by Students, for Students</li>
           </ul>
           <Button variant="rounded-hollow" onClick={handleAndMoreClick}>
             And More
@@ -342,7 +386,8 @@ function AboutSection() {
           </p>
         </div>
         <div id="about-section-2-pannel-3" className="about-slide">
-          <h1>Share Your Story</h1>          <p>
+          <h1>Share Your Story</h1>{" "}
+          <p>
             Tell us anonymously about your own struggles or breakthroughs in
             finding friends on campus — your courage will guide others from
             solitude to solidarity.
@@ -371,37 +416,47 @@ function AboutSection() {
         ref={(el) => {
           panelRefs.current[2] = el;
         }}
-      >        <div id="about-section-3-pannel-1" className="about-slide">
+      >
+        {" "}
+        <div id="about-section-3-pannel-1" className="about-slide">
           <h1>Leave your story - Anonymously</h1>
           <p>
             Inspire others that are going through the same struggles you are
             going through. There are always others out there experiencing what
             you are. You are not alone!
           </p>
-          
           {submitMessage && (
-            <div className={`submit-message ${submitMessage.includes('successfully') ? 'success' : 'error'}`}>
+            <div
+              className={`submit-message ${
+                submitMessage.includes("successfully") ? "success" : "error"
+              }`}
+            >
               {submitMessage}
             </div>
-          )}          <form onSubmit={handleFormSubmit}>
+          )}{" "}
+          <form onSubmit={handleFormSubmit}>
             <div className="form-field">
-              <input 
-                type="text" 
-                name="subject" 
-                placeholder="Subject (up to 5 words)" 
+              <input
+                type="text"
+                name="subject"
+                placeholder="Subject (up to 5 words)"
                 value={subject}
                 onChange={handleSubjectChange}
                 disabled={isSubmitting}
                 maxLength={50}
-                required 
+                required
               />
               {fieldErrors.subject && (
-                <div className={`field-error ${fieldErrors.subject.includes('✓') ? 'field-success' : ''}`}>
+                <div
+                  className={`field-error ${
+                    fieldErrors.subject.includes("✓") ? "field-success" : ""
+                  }`}
+                >
                   {fieldErrors.subject}
                 </div>
               )}
             </div>
-            
+
             <div className="form-field">
               <textarea
                 name="message"
@@ -417,11 +472,13 @@ function AboutSection() {
                 <div className="field-error">{fieldErrors.message}</div>
               )}
             </div>
-            
-            <Button 
-              variant="rounded-hollow" 
+
+            <Button
+              variant="rounded-hollow"
               type="submit"
-              disabled={isSubmitting || subject.length === 0 || message.length === 0}
+              disabled={
+                isSubmitting || subject.length === 0 || message.length === 0
+              }
             >
               {isSubmitting ? "Submitting..." : "Submit Story"}
             </Button>

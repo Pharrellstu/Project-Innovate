@@ -11,7 +11,6 @@ class ChatService {
   final UserService _userService = UserService();
   final _userCache = <int, UserObject>{};
 
-  // Helper to cache user data to prevent repeatedly fetching from the DB.
   Future<UserObject?> _getCachedUser(int accountId) async {
     if (!_userCache.containsKey(accountId)) {
       final user = await _userService.getUserByAccountId(accountId);
@@ -22,13 +21,12 @@ class ChatService {
     return _userCache[accountId];
   }
 
-  // Helper to get the current user's account ID.
+  //  account ID for the current user.
   Future<int?> _getCurrentAccountId() async {
     final user = await _userService.getCurrentUser();
     return user.accountId;
   }
 
-  // Fetches the list of chat summaries for the current user. (No changes needed here)
   Future<List<ChatSummary>> fetchChatSummaries() async {
     final accountId = await _getCurrentAccountId();
     if (accountId == null) return [];
@@ -84,13 +82,9 @@ class ChatService {
     return summaries;
   }
 
-  // --- REWRITTEN REALTIME LOGIC FOR OLDER SUPABASE VERSION ---
-// Replace the entire getMessagesStream method with:
   Stream<List<ChatMessage>> getMessagesStream(int chatId) {
-    // 1. Create a StreamController to manage the stream of messages.
     final controller = StreamController<List<ChatMessage>>.broadcast();
 
-    // 2. Fetch the initial list of messages.
     Future<void> fetchInitialMessages() async {
       try {
         final response = await _supabase
@@ -112,13 +106,11 @@ class ChatService {
 
     fetchInitialMessages();
 
-    // 3. Create a polling mechanism since realtime doesn't work
     Timer? timer;
     timer = Timer.periodic(const Duration(seconds: 3), (_) {
       fetchInitialMessages();
     });
 
-    // 4. When the listener is cancelled, stop the timer
     controller.onCancel = () {
       timer?.cancel();
     };
@@ -126,9 +118,6 @@ class ChatService {
     return controller.stream;
   }
 
-  // --- END OF REWRITTEN LOGIC ---
-
-  // Sends a text message. (No changes needed)
   Future<void> sendMessage({required int chatId, required String text}) async {
     final accountId = await _getCurrentAccountId();
     if (accountId == null || text.trim().isEmpty) return;
@@ -141,7 +130,6 @@ class ChatService {
     });
   }
 
-  // Uploads an image and sends it as a message. (No changes needed)
   Future<void> sendImage({required int chatId, required File imageFile}) async {
     final accountId = await _getCurrentAccountId();
     if (accountId == null) return;

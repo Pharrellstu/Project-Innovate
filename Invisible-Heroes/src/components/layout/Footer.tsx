@@ -33,13 +33,13 @@ const socialIcons = [
     icon: <i className="fab fa-facebook-f"></i>,
   },
   {
-    name: "LinkedIn", 
+    name: "LinkedIn",
     href: "https://linkedin.com",
     icon: <i className="fab fa-linkedin-in"></i>,
   },
   {
     name: "Instagram",
-    href: "https://instagram.com", 
+    href: "https://instagram.com",
     icon: <i className="fab fa-instagram"></i>,
   },
   {
@@ -79,7 +79,9 @@ function Footer() {
         </div>
 
         <div className="stay-updated-div">
-          <h1 className="stay-updated-heading">{footerData.newsletter.title}</h1>
+          <h1 className="stay-updated-heading">
+            {footerData.newsletter.title}
+          </h1>
           <p className="stay-updated-text">
             {footerData.newsletter.description}
           </p>

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-
 import 'package:campuslink/models/user.dart';
 import 'package:campuslink/services/user_service.dart';
 import 'package:campuslink/services/auth_gate.dart';
@@ -52,7 +50,7 @@ class _eventFormPageState extends State<eventFormPage> {
         });
       }
     } catch (e) {
-      // Handle error
+
     } finally {
       if (mounted) setState(() => _loadingUsers = false);
     }
@@ -238,7 +236,6 @@ class _eventFormPageState extends State<eventFormPage> {
   }
 }
 
-// User Selection Dialog
 class UserSelectionDialog extends StatefulWidget {
   final List<UserObject> allUsers;
   final List<UserObject> initiallySelectedUsers;
@@ -277,13 +274,11 @@ class _UserSelectionDialogState extends State<UserSelectionDialog> {
   }
 
   Widget _buildProfileAvatar(UserObject user) {
-    // Avatar size for the dialog
     const double avatarSize = 25;
 
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Add gradient border for verified users
         if (user.isVerified == true)
           Container(
             padding: const EdgeInsets.all(1.5),
@@ -324,7 +319,7 @@ class _UserSelectionDialogState extends State<UserSelectionDialog> {
                 : null,
           ),
 
-        // Add verification badge for verified users
+        // add a tick for verificated users
         if (user.isVerified == true)
           Positioned(
             bottom: 0,

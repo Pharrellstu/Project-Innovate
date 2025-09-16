@@ -1,22 +1,19 @@
-/* Import CSS Variables */
 @import "../../styles/variables.css";
 
-/* Meet The Team Section */
 .meet-the-team-section {
-  margin-bottom: var(--section-spacing); /* Subtract both top and bottom padding from section spacing */
+  margin-bottom: var(--section-spacing);
 }
 
-/* Team Section Styles */
 .section-title {
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
   margin-bottom: 1rem;
   font-family: var(--font-heading);
-  font-size: var(--fs-h1); /* Added font size for main heading */
+  font-size: var(--fs-h1);
 }
 
 .team-member {
-  border-radius: 15px; /* Kept specific or use var(--border-radius-small) if 25px is acceptable */
+  border-radius: 15px;
   transition: var(--transition-smooth);
   background: var(--color-white);
   border: 1px solid var(--color-light);
@@ -25,7 +22,7 @@
 
 .team-member:hover {
   transform: translateY(-10px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1); /* Or use a variable like var(--shadow-nav) if suitable */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
 }
 
 .team-member img {
@@ -34,33 +31,30 @@
   border-radius: 50%;
   object-fit: cover;
   border: 4px solid var(--color-white);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Consider a shadow variable */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .team-member h5 {
   color: var(--color-text);
   font-weight: var(--font-weight-semibold);
   font-family: var(--font-heading);
-  font-size: var(--fs-h2); /* Added font size for card subheading */
+  font-size: var(--fs-h2);
 }
 
 .team-member .text-muted {
-  /* This class is often used for secondary text, consider its role */
-  color: var(
-    --color-primary
-  ) !important; /* Overriding Bootstrap's default muted color */
+  color: var(--color-primary) !important;
   font-weight: var(--font-weight-medium);
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-size: var(--fs-body-small); /* Adjusted for consistency */
+  font-size: var(--fs-body-small);
   font-family: var(--font-body);
 }
 
 .team-member .small {
-  color: var(--color-text); /* Or a lighter shade of text if defined */
-  opacity: 0.8; /* Example to make it less prominent */
+  color: var(--color-text);
+  opacity: 0.8;
   line-height: 1.6;
-  font-size: var(--fs-body-small); /* Adjusted for consistency */
+  font-size: var(--fs-body-small);
   font-family: var(--font-body);
 }
 
@@ -81,7 +75,7 @@
   color: var(--color-text);
   text-decoration: none;
   transition: var(--transition-smooth);
-  border: 1px solid #e9ecef; /* Consider var(--color-light) or a slightly darker shade */
+  border: 1px solid #e9ecef;
 }
 
 .social-links a:hover {
@@ -95,19 +89,16 @@
   font-size: 14px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .team-member {
     margin-bottom: 2rem;
   }
-
   .team-member img {
     width: 100px;
     height: 100px;
   }
 }
 
-/* Ensure consistent card heights */
 .row.g-4 {
   display: flex;
   flex-wrap: wrap;
@@ -115,10 +106,9 @@
 
 .col-lg-3.col-md-6 {
   display: flex;
-  margin-bottom: 2rem; /* Consider var(--section-gap) or similar */
+  margin-bottom: 2rem;
 }
 
-/* Background styling */
 section.py-5 {
   background-color: var(--color-light);
   padding-top: var(--section-padding);

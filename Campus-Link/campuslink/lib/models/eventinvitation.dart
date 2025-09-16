@@ -6,7 +6,7 @@ class EventInvitationModel {
   final String status;
 
   EventInvitationModel({
-    this.eventInvitationId = 0, // Default to 0 for new records
+    this.eventInvitationId = 0, // 0 for new records
     required this.eventId,
     required this.receiverAccountId,
     required this.eventInvitationCreaterId,
@@ -25,7 +25,6 @@ class EventInvitationModel {
 
   Map<String, dynamic> toMap() {
     return {
-      // Only include ID for updates, not for inserts
       if (eventInvitationId != 0) 'eventinvitation_id': eventInvitationId,
       'event_id':                 eventId,
       'receiveraccount_id':       receiverAccountId,
@@ -33,7 +32,6 @@ class EventInvitationModel {
     };
   }
 
-  // In eventinvitation.dart
   EventInvitationModel withStatus(String newStatus) {
     return EventInvitationModel(
       eventInvitationId: eventInvitationId,
@@ -45,7 +43,6 @@ class EventInvitationModel {
   }
 }
 
-// 1. Add this extension to your EventInvitationModel
 extension EventInvitationModelCopyWith on EventInvitationModel {
   EventInvitationModel copyWith({
     int? eventInvitationId,
@@ -53,7 +50,6 @@ extension EventInvitationModelCopyWith on EventInvitationModel {
     int? eventInvitationCreaterId,
     int? eventInvitationReceiverId,
     String? status,
-    // Add other properties as needed
   }) {
     return EventInvitationModel(
       eventInvitationId: eventInvitationId ?? this.eventInvitationId,
@@ -61,9 +57,7 @@ extension EventInvitationModelCopyWith on EventInvitationModel {
       eventInvitationCreaterId: eventInvitationCreaterId ?? this.eventInvitationCreaterId,
       receiverAccountId: eventInvitationReceiverId ?? this.receiverAccountId,
       status: status ?? this.status,
-      // Copy other properties
     );
   }
 }
 
-// 2. Modify your _respondToInvitation method

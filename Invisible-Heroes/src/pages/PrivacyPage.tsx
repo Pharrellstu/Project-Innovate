@@ -133,11 +133,11 @@ const PrivacyPage: React.FC = () => {
                 <p>
                   <strong>Address:</strong> CampusLink Privacy Team
                   <br />
-                  123 University Avenue
+                  NHL Stenden
                   <br />
-                  Innovation District
+                  University of Applied Sciences
                   <br />
-                  Tech City, TC 12345
+                  Emmen, The Netherlands
                 </p>
               </div>
             </section>

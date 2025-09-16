@@ -102,7 +102,6 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  // Add duration formatting method
   String _formatDuration(Duration? duration) {
     if (duration == null) return 'Not specified';
 
@@ -120,7 +119,6 @@ class OverviewPage extends StatelessWidget {
     }
   }
 
-  // Existing methods remain the same...
   Widget _buildSectionCard(String title, List<Widget> children) {
     return Card(
       elevation: 0,

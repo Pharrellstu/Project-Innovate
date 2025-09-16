@@ -5,7 +5,7 @@ class CommentService {
   static final _supabase = Supabase.instance.client;
   static const _table = 'comment';
 
-  /// Create a new comment
+  /// new comment Creation
   static Future<CommentModel> create({
     int? commentCreator,
     int? postId,
@@ -45,7 +45,7 @@ class CommentService {
         .toList();
   }
 
-  /// Fetch a comment by its PK
+  /// Fetch comment by its PK
   static Future<CommentModel?> fetchById(int id) async {
     final resp = await _supabase
         .from(_table)

@@ -1,9 +1,4 @@
-/* Import CSS Variables */
 @import "../../styles/variables.css";
-
-/* ================================
-   NAVIGATION BASE STYLES
-   ================================ */
 
 .navigation {
   padding: 2dvh 2.5rem;
@@ -25,10 +20,6 @@
   min-height: 60px;
 }
 
-/* ================================
-   LOGO STYLES
-   ================================ */
-
 .logo {
   font-size: clamp(32px, 4vw, 40px);
   font-weight: var(--font-weight-bold);
@@ -42,10 +33,6 @@
   font-family: var(--font-heading);
   font-size: clamp(24px, 5vw, 32px);
 }
-
-/* ================================
-   NAVIGATION MENU STYLES
-   ================================ */
 
 .navRight {
   display: flex;
@@ -65,10 +52,6 @@
 .listNavBarElement {
   margin: 0;
 }
-
-/* ================================
-   LINK STYLES
-   ================================ */
 
 .logo a,
 .logoMobile a,
@@ -116,10 +99,6 @@
   color: inherit;
 }
 
-/* ================================
-   NAVIGATION BUTTON STYLES
-   ================================ */
-
 .nav-sign-button,
 .nav-download-button,
 .nav-sign-button-mobile,
@@ -165,10 +144,6 @@
   transform: translateY(-1px);
   box-shadow: var(--shadow-button);
 }
-
-/* ================================
-   MOBILE NAVIGATION
-   ================================ */
 
 .navigationMobile {
   display: none;
@@ -225,7 +200,6 @@
   top: 8px;
 }
 
-/* Mobile menu animations */
 .nav-toggle:checked + .nav-toggle-label span {
   background: transparent;
 }
@@ -240,7 +214,6 @@
   top: 0;
 }
 
-/* Smooth mobile menu reveal animation */
 .nav-toggle:checked ~ .mobileMenu {
   opacity: 1;
   max-height: 500px;
@@ -248,7 +221,6 @@
   animation: slideDownBounce 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-/* Keyframe animation for smooth slide-down with subtle bounce */
 @keyframes slideDownBounce {
   0% {
     opacity: 0;
@@ -266,16 +238,10 @@
   }
 }
 
-/* ================================
-   MOBILE RESPONSIVE STYLES
-   ================================ */
-
-/* Tablet screens (769px to 1024px) - keep dropdown menu behavior */
 @media screen and (min-width: 769px) and (max-width: 1024px) {
   .navigation {
     display: none;
   }
-
   .navigationMobile {
     display: block;
     position: fixed;
@@ -286,7 +252,6 @@
     background-color: var(--color-white);
     transition: backdrop-filter 0.3s ease;
   }
-
   .contentMobileDiv {
     display: flex;
     align-items: center;
@@ -295,7 +260,6 @@
     position: relative;
     background-color: var(--color-white);
   }
-
   .mobileMenu {
     width: 100%;
     padding: 0 30px;
@@ -308,8 +272,6 @@
     left: 0;
     border-top: 1px solid var(--color-light);
     box-shadow: var(--shadow-nav);
-
-    /* Animation properties for smooth slide-down */
     opacity: 0;
     max-height: 0;
     overflow: hidden;
@@ -317,38 +279,28 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transition-delay: 0s;
   }
-
-  /* Add padding when menu is open */
   .nav-toggle:checked ~ .mobileMenu {
     padding: 1rem 30px;
   }
-
-  /* Staggered animation for menu items */
   .mobileMenu > * {
     opacity: 0;
     transform: translateY(-10px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-
   .nav-toggle:checked ~ .mobileMenu > * {
     opacity: 1;
     transform: translateY(0);
   }
-
-  /* Add hover effects for menu items */
   .mobileMenu a {
     padding: 0.5rem 0;
     border-radius: 8px;
     transition: all 0.2s ease;
     position: relative;
   }
-
   .mobileMenu a:hover {
     transform: translateX(8px);
     color: var(--color-primary);
   }
-
-  /* Stagger the animation delays for each menu item */
   .nav-toggle:checked ~ .mobileMenu > *:nth-child(1) {
     transition-delay: 0.05s;
   }
@@ -364,7 +316,6 @@
   .nav-toggle:checked ~ .mobileMenu > *:nth-child(5) {
     transition-delay: 0.25s;
   }
-
   .nav-sign-button-mobile,
   .nav-download-button-mobile {
     width: 100%;
@@ -372,12 +323,10 @@
   }
 }
 
-/* Mobile phones (768px and below) - full screen menu */
 @media screen and (max-width: 768px) {
   .navigation {
     display: none;
   }
-
   .navigationMobile {
     display: block;
     position: fixed;
@@ -397,8 +346,6 @@
     z-index: 102;
     border-bottom: 1px solid var(--color-light);
   }
-
-  /* Ensure logo stays visible when menu is open */
   .nav-toggle:checked ~ .mobileMenu + .logoMobile,
   .logoMobile {
     position: relative;
@@ -411,17 +358,15 @@
     width: 100vw;
     min-height: 100dvh;
     padding: 0;
-    padding-top: 100px; /* Space for the logo/header */
-    padding-bottom: 40px; /* Bottom padding to prevent cutoff */
+    padding-top: 100px;
+    padding-bottom: 40px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     gap: 2.5rem;
     background-color: var(--color-white);
-    overflow-y: auto; /* Allow scrolling if content is too tall */
-
-    /* Full screen animation properties */
+    overflow-y: auto;
     opacity: 0;
     visibility: hidden;
     transform: translateY(-100%);
@@ -430,43 +375,34 @@
       transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 101;
   }
-  /* Full screen menu reveal animation */
   .nav-toggle:checked ~ .mobileMenu {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
   }
-
-  /* Closing animation - faster for better UX */
   .nav-toggle:not(:checked) ~ .mobileMenu {
     transition: opacity 0.2s ease-out, visibility 0.2s ease-out,
       transform 0.2s ease-out;
   }
-
-  /* Enhanced hamburger icon positioning for full screen */
   .nav-toggle-label {
     z-index: 103;
     position: relative;
-  } /* Staggered animation for menu items - full screen version */
+  }
   .mobileMenu > * {
     opacity: 0;
     transform: translateY(30px);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    flex-shrink: 0; /* Prevent items from shrinking */
+    flex-shrink: 0;
   }
-
   .nav-toggle:checked ~ .mobileMenu > * {
     opacity: 1;
     transform: translateY(0);
   }
-
-  /* Faster closing animation for menu items */
   .nav-toggle:not(:checked) ~ .mobileMenu > * {
     transition: all 0.15s ease-out;
     opacity: 0;
     transform: translateY(-20px);
   }
-  /* Full screen menu item styling */
   .mobileMenu a {
     font-size: 1.4rem;
     line-height: 1.5;
@@ -477,14 +413,11 @@
     min-width: 220px;
     display: block;
   }
-
   .mobileMenu a:hover {
     transform: scale(1.05);
     color: var(--color-primary);
     background-color: rgba(0, 95, 169, 0.1);
   }
-
-  /* Enhanced stagger delays for full screen */
   .nav-toggle:checked ~ .mobileMenu > *:nth-child(1) {
     transition-delay: 0.1s;
   }
@@ -516,17 +449,11 @@
   }
 }
 
-/* ================================
-   SMOOTH SCROLLING SUPPORT
-   ================================ */
-
-/* Add scroll offset for fixed navigation */
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 120px; /* Offset for fixed navigation */
+  scroll-padding-top: 120px;
 }
 
-/* Ensure smooth scrolling works on all browsers */
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;

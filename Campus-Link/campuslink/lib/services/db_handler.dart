@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:campuslink/services/auth_gate.dart';
 import 'package:campuslink/models/user.dart';
-import 'package:campuslink/models/chatlist.dart'; // <-- Import ChatSummary, ChatMessage
+import 'package:campuslink/models/chatlist.dart';
 
 class DbHandler {
   static SupabaseClient supabase = Supabase.instance.client;

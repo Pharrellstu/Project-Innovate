@@ -26,13 +26,21 @@ class UserProfilePage extends StatefulWidget {
 
 class _UserProfilePageState extends State<UserProfilePage>
     with SingleTickerProviderStateMixin {
+  // Service to interact with user data.
   final UserService _userService = UserService();
+  // Future for fetching the user's profile data.
   late Future<UserObject?> _userFuture;
+  // Future for fetching the number of followers.
   late Future<int> _followersFuture;
+  // Future for fetching the number of users this user is following.
   late Future<int> _followingFuture;
+  // Future to check if the current user is following the viewed user.
   late Future<bool> _isFollowingFuture;
+  // Controller for the tab view.
   late TabController _tabController;
+  // Future for fetching events created by the user.
   late Future<List<EventModel>> _createdEventsFuture;
+  // Future for fetching events the user has joined.
   late Future<List<EventModel>> _joinedEventsFuture;
 
   @override
@@ -55,15 +63,19 @@ class _UserProfilePageState extends State<UserProfilePage>
       _userFuture.then((user) {
         if (user != null && mounted) {
           _followersFuture = _userService.getFollowersCount(user.accountId!);
-          _followingFuture = FollowingService.getFollowingCount(user.accountId!);
+          _followingFuture = FollowingService.getFollowingCount(
+            user.accountId!,
+          );
           _isFollowingFuture = FollowingService.isFollowing(
             followerId: widget.currentUserAccountId,
             followingId: user.accountId!,
           );
-          _createdEventsFuture =
-              EventService.fetchEventsCreatedByUser(user.authUserId!);
-          _joinedEventsFuture =
-              EventService.fetchEventsJoinedByUser(user.accountId!);
+          _createdEventsFuture = EventService.fetchEventsCreatedByUser(
+            user.authUserId!,
+          );
+          _joinedEventsFuture = EventService.fetchEventsJoinedByUser(
+            user.accountId!,
+          );
         }
       });
     });
@@ -120,8 +132,10 @@ class _UserProfilePageState extends State<UserProfilePage>
                   icon: const Icon(Icons.arrow_back, color: Colors.black),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: const Text('Profile',
-                    style: TextStyle(color: Colors.black, fontSize: 25)),
+                title: const Text(
+                  'Profile',
+                  style: TextStyle(color: Colors.black, fontSize: 25),
+                ),
                 floating: true,
                 pinned: true,
                 snap: true,
@@ -138,7 +152,7 @@ class _UserProfilePageState extends State<UserProfilePage>
                     _buildStatsCard(user),
                     const SizedBox(height: 20),
                     if (widget.userId != widget.currentUserAccountId)
-                    _buildFollowButton(user),
+                      _buildFollowButton(user),
                     const SizedBox(height: 20),
                     TabBar(
                       controller: _tabController,
@@ -206,7 +220,11 @@ class _UserProfilePageState extends State<UserProfilePage>
               ),
               child: Row(
                 children: [
-                  Icon(Icons.admin_panel_settings, color: Colors.orange, size: 16),
+                  Icon(
+                    Icons.admin_panel_settings,
+                    color: Colors.orange,
+                    size: 16,
+                  ),
                   const SizedBox(width: 5),
                   Text(
                     'Admin',
@@ -236,27 +254,34 @@ class _UserProfilePageState extends State<UserProfilePage>
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: user.isVerified == true
-                      ? const LinearGradient(
-                    colors: [Colors.blue, Colors.purple],
-                  )
-                      : const LinearGradient(
-                    colors: [Colors.grey, Colors.grey],
-                  ),
+                  gradient:
+                      user.isVerified == true
+                          ? const LinearGradient(
+                            colors: [Colors.blue, Colors.purple],
+                          )
+                          : const LinearGradient(
+                            colors: [Colors.grey, Colors.grey],
+                          ),
                 ),
                 child: CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.white,
                   child: CircleAvatar(
                     radius: 56,
-                    backgroundImage: user.profilePictureUrl != null &&
-                        user.profilePictureUrl!.isNotEmpty
-                        ? NetworkImage(user.profilePictureUrl!)
-                        : null,
-                    child: user.profilePictureUrl == null ||
-                        user.profilePictureUrl!.isEmpty
-                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
-                        : null,
+                    backgroundImage:
+                        user.profilePictureUrl != null &&
+                                user.profilePictureUrl!.isNotEmpty
+                            ? NetworkImage(user.profilePictureUrl!)
+                            : null,
+                    child:
+                        user.profilePictureUrl == null ||
+                                user.profilePictureUrl!.isEmpty
+                            ? const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Colors.grey,
+                            )
+                            : null,
                   ),
                 ),
               ),
@@ -338,58 +363,44 @@ class _UserProfilePageState extends State<UserProfilePage>
             future: _followersFuture,
             builder: (context, snapshot) {
               final count = snapshot.data ?? 0;
-              return _buildStatItem(
-                  count,
-                  'Followers',
-                  Icons.people,
-                      () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => FollowersPage(accountId: user.accountId!)));
-                  }
-              );
+              return _buildStatItem(count, 'Followers', Icons.people, () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FollowersPage(accountId: user.accountId!),
+                  ),
+                );
+              });
             },
           ),
-          Container(
-            height: 40,
-            width: 1,
-            color: Colors.grey[300],
-          ),
+          Container(height: 40, width: 1, color: Colors.grey[300]),
           FutureBuilder<int>(
             future: _followingFuture,
             builder: (context, snapshot) {
               final count = snapshot.data ?? 0;
-              return _buildStatItem(
-                  count,
-                  'Following',
-                  Icons.person_add,
-                      () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => FollowingPage(accountId: user.accountId!)));
-                  }
-              );
+              return _buildStatItem(count, 'Following', Icons.person_add, () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FollowingPage(accountId: user.accountId!),
+                  ),
+                );
+              });
             },
           ),
-          Container(
-            height: 40,
-            width: 1,
-            color: Colors.grey[300],
-          ),
-          _buildStatItem(
-              user.badgeCount ?? 0,
-              'Badges',
-              Icons.star,
-                  () {}
-          ),
+          Container(height: 40, width: 1, color: Colors.grey[300]),
+          _buildStatItem(user.badgeCount ?? 0, 'Badges', Icons.star, () {}),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(int count, String label, IconData icon, VoidCallback onTap) {
+  Widget _buildStatItem(
+    int count,
+    String label,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -418,7 +429,6 @@ class _UserProfilePageState extends State<UserProfilePage>
     );
   }
 
-
   Widget _buildFollowButton(UserObject user) {
     return FutureBuilder<bool>(
       future: _isFollowingFuture,
@@ -428,9 +438,10 @@ class _UserProfilePageState extends State<UserProfilePage>
           child: FollowButton(
             isFollowing: snapshot.data ?? false,
             // Disable the button while the state is loading
-            onPressed: snapshot.connectionState == ConnectionState.done
-                ? _toggleFollowStatus
-                : null,
+            onPressed:
+                snapshot.connectionState == ConnectionState.done
+                    ? _toggleFollowStatus
+                    : null,
           ),
         );
       },

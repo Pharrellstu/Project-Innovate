@@ -83,9 +83,8 @@ class UserService {
     try {
       final response = await supabase
           .from('account')
-          .select(); // Fetches all columns for every user
+          .select();
 
-      // Convert each Map in the List to a UserObject
       return response
           .map((userData) => UserObject(
         accountId: userData['accountid'],
@@ -105,11 +104,9 @@ class UserService {
           .toList();
     } catch (e) {
       log('Error fetching all users: $e');
-      return []; // Return empty list on error
+      return [];
     }
   }
-
-  // Add to UserService class
 
   Future<UserObject?> getUserByAccountId(int accountId) async {
     try {
@@ -140,7 +137,6 @@ class UserService {
     }
   }
 
-  // user_service.dart
   Future<UserObject?> getUserByAuthUserId(String authUserId) async {
     try {
       final response = await supabase

@@ -29,6 +29,7 @@ class MapPage extends StatefulWidget {
   _MapPageState createState() => _MapPageState();
 }
 
+/// State for the MapPage, handling map interactions, event fetching, and UI state.
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   // REFACTORED: Centralized future for page initialization to prevent race conditions.
   late Future<_PageData> _pageDataFuture;
@@ -36,27 +37,33 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   // Panel control variables
   double _panelHeightFraction = 0.25;
   late double _dragStartY;
+  // Stores the panel height at the start of a drag.
   late double _startHeightFraction;
 
-  // Event data management
+  // Holds all events fetched from the service.
   List<EventModel> _allEvents = [];
+  // Future that holds the filtered list of events to be displayed.
   Future<List<EventModel>>? _filteredEventsFuture;
 
-  // Search functionality
+  // Controller for the search input field.
   final TextEditingController _searchController = TextEditingController();
+  // The current search query string.
   String _searchQuery = '';
 
   // Location and map controls
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
 
-  // Event highlighting system
+  // Associates event IDs with GlobalKeys to enable scrolling to specific event items.
   final Map<int, GlobalKey> _eventItemKeys = {};
+  // The ID of the event currently highlighted in the list.
   int? _highlightedEventId;
+  // Timer to control how long an event remains highlighted.
   Timer? _highlightTimer;
 
-  // Filter states
+  // The currently selected category for filtering.
   String _categoryFilter = 'All';
+  // The currently selected location type for filtering.
   String _locationTypeFilter = 'All';
 
   // Default map center (Emmen, Netherlands)
@@ -206,13 +213,17 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                           tempLocationTypeFilter = newValue!;
                         });
                       },
-                      items: <String>['All', 'Online', 'Physical']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
+                      items:
+                          <String>[
+                            'All',
+                            'Online',
+                            'Physical',
+                          ].map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
                     ),
                   ],
                 ),
@@ -822,11 +833,12 @@ class _TrianglePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = ui.Paint()..color = color;
-    final path = ui.Path()
-      ..moveTo(size.width / 2, size.height)
-      ..lineTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..close();
+    final path =
+        ui.Path()
+          ..moveTo(size.width / 2, size.height)
+          ..lineTo(0, 0)
+          ..lineTo(size.width, 0)
+          ..close();
     canvas.drawPath(path, paint);
   }
 

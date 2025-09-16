@@ -1,7 +1,5 @@
-/* Import CSS Variables */
 @import "../../styles/variables.css";
 
-/* Loneliness Types Section */
 .loneliness-types-section {
   padding: 0 var(--section-padding);
   margin-bottom: var(--section-spacing);
@@ -162,20 +160,16 @@
   margin: 0;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .loneliness-types-contents {
     gap: 0.5rem;
   }
-  
   .loneliness-type-header {
     padding: 1.25rem 1.5rem;
   }
-  
   .loneliness-type-content p {
     padding: 1.25rem 1.5rem;
   }
-  
   .loneliness-support {
     padding: 1.5rem;
   }
@@ -185,33 +179,26 @@
   .loneliness-types-section {
     padding: calc(var(--section-padding) * 0.7);
   }
-  
   .loneliness-types-contents {
     gap: 0.25rem;
   }
-  
   .loneliness-type-header {
     padding: 1rem 1.25rem;
   }
-  
   .loneliness-type-content p {
     padding: 1rem 1.25rem;
   }
-  
   .loneliness-support {
     padding: 1.25rem;
   }
-    /* Disable hover effects on mobile */
   .loneliness-type:hover {
     transform: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
-  
   .loneliness-type.active {
     transform: none;
     box-shadow: 0 4px 12px rgba(0, 95, 169, 0.15);
   }
-  
   .loneliness-support:hover {
     transform: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
