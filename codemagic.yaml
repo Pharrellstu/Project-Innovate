@@ -9,17 +9,23 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          cd  Campus-Link/campuslink
+          cd Campus-Link/campuslink
           flutter pub get
 
       - name: Set iOS Deployment Target
         script: |
           cd Campus-Link/campuslink/ios
+
+          # Patch Podfile
           if [ ! -f "Podfile" ]; then
             echo "platform :ios, '13.0'" > Podfile
           else
             sed -i '' "s/platform :ios, '[0-9]\+.[0-9]\+'/platform :ios, '13.0'/" Podfile
           fi
+
+          # Patch all plugin podspecs to iOS 13
+          find . -name "*.podspec" -exec sed -i '' "s/s.ios.deployment_target[ ]*=[ ]*'[0-9]\+.[0-9]\+'/s.ios.deployment_target = '13.0'/" {} \;
+
           cat Podfile
 
       - name: Build iOS
