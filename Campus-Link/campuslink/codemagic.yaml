@@ -1,19 +1,10 @@
 workflows:
   ios-build:
-    name: iOS Build
+    name: Test iOS Workflow
     environment:
       flutter: stable
       xcode: latest
     scripts:
-      - name: Set iOS Deployment Target
-        script: |
-          cd ios
-          if [ ! -f "Podfile" ]; then
-            echo "platform :ios, '13.0'" > Podfile
-          else
-            sed -i '' "s/platform :ios, '[0-9]\+.[0-9]\+'/platform :ios, '13.0'/" Podfile
-          fi
-          cat Podfile
-      - name: Flutter build iOS
-        script: |
-          flutter build ios --debug --no-codesign
+      - name: Echo test
+        script: echo "Codemagic YAML is working!"
+
