@@ -5,32 +5,85 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       flutter: stable
-      xcode: 15.0.1
+      xcode: 15.0.1  # Use specific Xcode version to avoid toolchain issues
+      cocoapods: 1.16.2  # Use recommended CocoaPods version
     scripts:
-      - name: Install Flutter dependencies
+      # Step 1: Install Flutter dependencies
+      - name: Install dependencies
         script: |
           cd Campus-Link/campuslink
           flutter clean
           flutter pub get
 
-      - name: Repair CocoaPods Environment
+      # Step 2: Set iOS deployment target globally
+      - name: Set iOS Deployment Target
         script: |
-          echo "Uninstalling all existing CocoaPods versions to ensure a clean slate..."
-          sudo gem uninstall cocoapods -a -x
+          cd Campus-Link/campuslink/ios
+          # Set deployment target to 12.0 (more compatible than 13.0)
+          export IPHONEOS_DEPLOYMENT_TARGET=12.0
           
-          echo "Installing a stable version of CocoaPods..."
-          sudo gem install cocoapods -v 1.15.2
+          # Update Xcode project file
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/g' Runner.xcodeproj/project.pbxproj
           
-          echo "Updating pod repo..."
-          pod repo update
+          # Also update any other deployment target references
+          sed -i '' 's/MinimumOSVersion.*</MinimumOSVersion><string>12.0</string>/g' Runner/Info.plist 2>/dev/null || true
 
-      - name: Configure iOS and Install Pods
+      # Step 3: Clean iOS build and pods completely
+      - name: Clean iOS build
+        script: |
+          cd Campus-Link/campuslink/ios
+          rm -rf Pods Podfile.lock Runner.xcworkspace .symlinks
+          rm -rf ~/Library/Caches/CocoaPods
+          rm -rf ~/.cocoapods/repos/trunk
+          flutter clean
+
+      # Step 4: Generate Flutter iOS configuration files
+      - name: Generate Flutter iOS files
+        script: |
+          cd Campus-Link/campuslink
+          
+          # Generate the iOS Flutter files including Generated.xcconfig
+          flutter build ios --config-only
+          
+          # Verify the files were created
+          ls -la ios/Flutter/
+          
+          if [ ! -f "ios/Flutter/Generated.xcconfig" ]; then
+            echo "Generated.xcconfig not found, creating manually..."
+            mkdir -p ios/Flutter
+            cat > ios/Flutter/Generated.xcconfig << 'EOF'
+          FLUTTER_ROOT=/Users/builder/programs/flutter
+          FLUTTER_APPLICATION_PATH=/Users/builder/clone/Campus-Link/campuslink
+          COCOAPODS_PARALLEL_CODE_SIGN=true
+          FLUTTER_TARGET=lib/main.dart
+          FLUTTER_BUILD_DIR=build
+          FLUTTER_BUILD_NAME=1.0.0
+          FLUTTER_BUILD_NUMBER=1
+          EXCLUDED_ARCHS[sdk=iphonesimulator*]=i386
+          EXCLUDED_ARCHS[sdk=iphoneos*]=armv7
+          DART_OBFUSCATION=false
+          TRACK_WIDGET_CREATION=true
+          TREE_SHAKE_ICONS=false
+          PACKAGE_CONFIG=.dart_tool/package_config.json
+          EOF
+          fi
+
+      # Step 5: Update existing Podfile instead of creating new one
+      - name: Update Podfile
         script: |
           cd Campus-Link/campuslink/ios
           
+          # Backup original Podfile if it exists
+          if [ -f "Podfile" ]; then
+            cp Podfile Podfile.backup
+          fi
+          
+          # Update the existing Podfile to fix deployment target
           cat > Podfile << 'EOF'
-          # UPDATED: Changed from 13.0 to 14.0 to meet dependency requirements.
-          platform :ios, '14.0'
+          # Uncomment this line to define a global platform for your project
+          platform :ios, '12.0'
+          
+          # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
           ENV['COCOAPODS_DISABLE_STATS'] = 'true'
           
           project 'Runner', {
@@ -59,27 +112,82 @@ workflows:
           target 'Runner' do
             use_frameworks!
             use_modular_headers!
+          
             flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+          
+            target 'RunnerTests' do
+              inherit! :search_paths
+            end
           end
           
           post_install do |installer|
             installer.pods_project.targets.each do |target|
               flutter_additional_ios_build_settings(target)
+          
               target.build_configurations.each do |config|
-                # UPDATED: Changed from 13.0 to 14.0 to match the platform target.
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
                 config.build_settings['ENABLE_BITCODE'] = 'NO'
+          
+                # Fix DT_TOOLCHAIN_DIR error by using TOOLCHAIN_DIR
+                config.build_settings['LIBRARY_SEARCH_PATHS'] = (config.build_settings['LIBRARY_SEARCH_PATHS'] || []).map do |path|
+                  path.gsub('$(DT_TOOLCHAIN_DIR)', '$(TOOLCHAIN_DIR)')
+                end
+          
+                # Remove problematic compiler flags that cause -G error
+                if config.build_settings['OTHER_CFLAGS']
+                  config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].reject { |flag| flag.include?('-G') }
+                end
+                if config.build_settings['OTHER_CPLUSPLUSFLAGS']
+                  config.build_settings['OTHER_CPLUSPLUSFLAGS'] = config.build_settings['OTHER_CPLUSPLUSFLAGS'].reject { |flag| flag.include?('-G') }
+                end
+          
+                # Additional fixes for Xcode 15+
+                config.build_settings['OTHER_LDFLAGS'] = (config.build_settings['OTHER_LDFLAGS'] || []).map do |flag|
+                  flag.gsub('$(DT_TOOLCHAIN_DIR)', '$(TOOLCHAIN_DIR)')
+                end
               end
             end
           end
           EOF
           
-          pod install
+          echo "Updated Podfile:"
+          cat Podfile
 
+      # Step 6: Install Pods with toolchain fix
+      - name: Install Pods
+        script: |
+          cd Campus-Link/campuslink/ios
+          
+          # Verify Flutter files exist before pod install
+          echo "Checking Flutter iOS files..."
+          ls -la Flutter/
+          
+          if [ ! -f "Flutter/Generated.xcconfig" ]; then
+            echo "ERROR: Generated.xcconfig still missing!"
+            exit 1
+          fi
+          
+          # Update CocoaPods to latest version to fix toolchain issues
+          sudo gem install cocoapods -v 1.16.2
+          
+          # Update CocoaPods repo
+          pod repo update --silent
+          
+          # Install pods with legacy build system to avoid DT_TOOLCHAIN_DIR error
+          pod install --verbose
+          
+          echo "Pod installation completed successfully!"
+
+      # Step 7: Build iOS app
       - name: Build iOS App
         script: |
           cd Campus-Link/campuslink
-          flutter build ios --debug --no-codesign --no-pod-install
+          
+          # Set environment variables for build
+          export IPHONEOS_DEPLOYMENT_TARGET=12.0
+          
+          # Build iOS app with only valid flags
+          flutter build ios --debug --no-codesign
 
     artifacts:
       - build/ios/ipa/*.ipa
