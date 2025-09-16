@@ -15,14 +15,10 @@ workflows:
 
       - name: Repair CocoaPods Environment
         script: |
-          # This is the critical new step. It fixes the Ruby/CocoaPods environment.
-          # We force uninstall all versions of cocoapods and install a specific,
-          # stable version known to work well with Xcode 15.
           echo "Uninstalling all existing CocoaPods versions to ensure a clean slate..."
           sudo gem uninstall cocoapods -a -x
           
           echo "Installing a stable version of CocoaPods..."
-          # Version 1.15.2 is very stable with Xcode 15
           sudo gem install cocoapods -v 1.15.2
           
           echo "Updating pod repo..."
@@ -32,9 +28,9 @@ workflows:
         script: |
           cd Campus-Link/campuslink/ios
           
-          # Create the Podfile with our specific settings (iOS 12.0 target)
           cat > Podfile << 'EOF'
-          platform :ios, '12.0'
+          # UPDATED: Changed from 12.0 to 13.0 to meet dependency requirements.
+          platform :ios, '13.0'
           ENV['COCOAPODS_DISABLE_STATS'] = 'true'
           
           project 'Runner', {
@@ -70,20 +66,19 @@ workflows:
             installer.pods_project.targets.each do |target|
               flutter_additional_ios_build_settings(target)
               target.build_configurations.each do |config|
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+                # UPDATED: Changed from 12.0 to 13.0 to match the platform target.
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
                 config.build_settings['ENABLE_BITCODE'] = 'NO'
               end
             end
           end
           EOF
           
-          # Now that the environment is fixed, this should succeed.
           pod install
 
       - name: Build iOS App
         script: |
           cd Campus-Link/campuslink
-          # We still use --no-pod-install because we have already set up our pods perfectly.
           flutter build ios --debug --no-codesign --no-pod-install
 
     artifacts:
