@@ -192,7 +192,6 @@ class _AuthFormState extends State<AuthForm> {
           // buttons row
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
-            spacing: 20,
             children: [
               // Sign Up button
               TextButton(
@@ -213,6 +212,8 @@ class _AuthFormState extends State<AuthForm> {
                   ),
                 ),
               ),
+
+              const SizedBox(width: 20),
 
               // Login button
               ElevatedButton(
