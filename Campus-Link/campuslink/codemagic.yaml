@@ -4,32 +4,56 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m2
     environment:
-      flutter: stable
+      flutter: "3.16.0"  # Use a specific Flutter version instead of "stable"
       xcode: 15.0.1
+      cocoapods: 1.16.2
     scripts:
-      - name: Install Flutter dependencies
+      # Step 1: Install Flutter dependencies
+      - name: Install dependencies
         script: |
           cd Campus-Link/campuslink
           flutter clean
           flutter pub get
 
-      - name: Repair CocoaPods Environment
+      # Step 2: Set iOS deployment target globally
+      - name: Set iOS Deployment Target
         script: |
-          echo "Uninstalling all existing CocoaPods versions to ensure a clean slate..."
-          sudo gem uninstall cocoapods -a -x
+          cd Campus-Link/campuslink/ios
+          # Set deployment target to 12.0
+          export IPHONEOS_DEPLOYMENT_TARGET=12.0
           
-          echo "Installing a stable version of CocoaPods..."
-          sudo gem install cocoapods -v 1.15.2
-          
-          echo "Updating pod repo..."
-          pod repo update
+          # Update Xcode project file
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/g' Runner.xcodeproj/project.pbxproj
 
-      - name: Configure iOS and Install Pods
+      # Step 3: Clean iOS build and pods completely
+      - name: Clean iOS build
+        script: |
+          cd Campus-Link/campuslink/ios
+          rm -rf Pods Podfile.lock Runner.xcworkspace .symlinks
+          rm -rf ~/Library/Caches/CocoaPods
+          rm -rf ~/.cocoapods/repos/trunk
+
+      # Step 4: Generate Flutter iOS configuration files
+      - name: Generate Flutter iOS files
+        script: |
+          cd Campus-Link/campuslink
+          
+          # Generate the iOS Flutter files including Generated.xcconfig
+          flutter build ios --config-only
+          
+          # Verify the files were created
+          ls -la ios/Flutter/
+
+      # Step 5: Update Podfile
+      - name: Update Podfile
         script: |
           cd Campus-Link/campuslink/ios
           
+          # Update the existing Podfile to fix deployment target
           cat > Podfile << 'EOF'
-          platform :ios, '14.0'
+          platform :ios, '12.0'
+          
+          # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
           ENV['COCOAPODS_DISABLE_STATS'] = 'true'
           
           project 'Runner', {
@@ -58,26 +82,48 @@ workflows:
           target 'Runner' do
             use_frameworks!
             use_modular_headers!
+          
             flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
           end
           
           post_install do |installer|
             installer.pods_project.targets.each do |target|
               flutter_additional_ios_build_settings(target)
+          
               target.build_configurations.each do |config|
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
                 config.build_settings['ENABLE_BITCODE'] = 'NO'
               end
             end
           end
           EOF
           
-          pod install
+          echo "Updated Podfile:"
+          cat Podfile
 
+      # Step 6: Install Pods
+      - name: Install Pods
+        script: |
+          cd Campus-Link/campuslink/ios
+          
+          # Verify Flutter files exist before pod install
+          echo "Checking Flutter iOS files..."
+          ls -la Flutter/
+          
+          # Install pods
+          pod install --repo-update --verbose
+          
+          echo "Pod installation completed successfully!"
+
+      # Step 7: Build iOS app
       - name: Build iOS App
         script: |
           cd Campus-Link/campuslink
-          # REMOVED the --no-pod-install flag to support the flutter version
+          
+          # Set environment variables for build
+          export IPHONEOS_DEPLOYMENT_TARGET=12.0
+          
+          # Build iOS app with correct flags
           flutter build ios --debug --no-codesign
 
     artifacts:
