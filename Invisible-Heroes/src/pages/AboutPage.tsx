@@ -4,6 +4,7 @@ import AboutHeroSection from "../components/about/AboutHeroSection";
 import AboutStorySection from "../components/about/AboutStorySection";
 import LonelinessTypesSection from "../components/about/LonelinessTypesSection";
 import MeetTheTeamSection from "../components/about/MeetTheTeamSection";
+import VideoStorySection from "../components/about/VideoStorySection";
 import "./css/AboutPage.css";
 
 function AboutPage() {
@@ -14,6 +15,7 @@ function AboutPage() {
         <AboutHeroSection />
         <AboutStorySection />
         <LonelinessTypesSection />
+  <VideoStorySection />
         <MeetTheTeamSection />
       </div>
       <Footer />
