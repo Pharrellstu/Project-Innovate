@@ -1,4 +1,11 @@
 import "./MeetTheTeamSection.css";
+import pharrellImg from "../../assets/team/pharrell.jpg";
+import peterImg from "../../assets/team/peter.jpg";
+import alexImg from "../../assets/team/alex.jpeg";
+import amirImg from "../../assets/team/amir.jpg";
+import oliverImg from "../../assets/team/oliver.jpg";
+import joeyImg from "../../assets/team/joey.jpg";
+import nickImg from "../../assets/team/nick.jpeg";
 
 function MeetTheTeamSection() {
   return (
@@ -18,7 +25,7 @@ function MeetTheTeamSection() {
           <div className="col-lg-3 col-md-6">
             <div className="team-member text-center p-4">
               <img
-                src="src/assets/team/pharrell.jpg"
+                src={pharrellImg}
                 alt="Pharrell Buckman"
                 className="mb-4 shadow"
               />
@@ -51,7 +58,7 @@ function MeetTheTeamSection() {
           <div className="col-lg-3 col-md-6">
             <div className="team-member text-center p-4">
               <img
-                src="src/assets/team/peter.jpg"
+                src={peterImg}
                 alt="Peter Kapsiar"
                 className="mb-4 shadow"
               />
@@ -84,7 +91,7 @@ function MeetTheTeamSection() {
           <div className="col-lg-3 col-md-6">
             <div className="team-member text-center p-4">
               <img
-                src="src/assets/team/alex.jpeg"
+                src={alexImg}
                 alt="Alexandros Karayiannis"
                 className="mb-4 shadow"
               />
@@ -115,7 +122,7 @@ function MeetTheTeamSection() {
           <div className="col-lg-3 col-md-6">
             <div className="team-member text-center p-4">
               <img
-                src="src/assets/team/amir.jpg"
+                src={amirImg}
                 alt="Amir Ranjbar Maki"
                 className="mb-4 shadow"
               />
@@ -146,7 +153,7 @@ function MeetTheTeamSection() {
           <div className="col-lg-3 col-md-6">
             <div className="team-member text-center p-4">
               <img
-                src="src/assets/team/oliver.jpg"
+                src={oliverImg}
                 alt="Oliver Nemess"
                 className="mb-4 shadow"
               />
@@ -177,7 +184,7 @@ function MeetTheTeamSection() {
           <div className="col-lg-3 col-md-6">
             <div className="team-member text-center p-4">
               <img
-                src="src/assets/team/joey.jpg"
+                src={joeyImg}
                 alt="Joey Harms"
                 className="mb-4 shadow"
               />
@@ -208,7 +215,7 @@ function MeetTheTeamSection() {
           <div className="col-lg-3 col-md-6">
             <div className="team-member text-center p-4">
               <img
-                src="src/assets/team/nick.jpeg"
+                src={nickImg}
                 alt="Nick Grahovskis"
                 className="mb-4 shadow"
               />

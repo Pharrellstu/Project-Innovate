@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import groupPhoto from "../../assets/team/group-picture.jpg";
 import "./AboutStorySection.css";
 
 function AboutStorySection() {
@@ -26,7 +27,7 @@ function AboutStorySection() {
   return (
     <div className="about-story-section">
       <img
-        src="/src/assets/team/group-picture.jpg"
+        src={groupPhoto}
         alt="Group photo of the students that brought this project to life"
         className={isExpanded ? "expanded" : ""}
       />
