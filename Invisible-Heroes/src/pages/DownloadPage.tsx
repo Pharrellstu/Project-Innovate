@@ -2,6 +2,7 @@ import Navigation from "../components/layout/Navigation";
 import FooterSimple from "../components/layout/FooterSimple";
 import Button from "../components/ui/Button";
 import "./css/DownloadPage.css";
+import iphoneWithMap from "../assets/iphoneWithMap.jpg";
 
 function DownloadPage() {
   return (
@@ -21,7 +22,7 @@ function DownloadPage() {
         </div>
         <div className="right-section">
           <img
-            src="/src/assets/iphoneWithMap.jpg"
+            src={iphoneWithMap}
             alt="Iphone with the CampusLink application running that contains a geographic map of events"
           />
         </div>
